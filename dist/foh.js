@@ -10192,10 +10192,20 @@ function buildCliSignupFallbackInstructions(signUpUrl) {
 
 // src/lib/open-url.ts
 var import_child_process = require("child_process");
+function buildOpenUrlCommand(url2, platform = process.platform) {
+  if (platform === "win32") {
+    return {
+      command: "rundll32.exe",
+      args: ["url.dll,FileProtocolHandler", url2]
+    };
+  }
+  if (platform === "darwin") {
+    return { command: "open", args: [url2] };
+  }
+  return { command: "xdg-open", args: [url2] };
+}
 function openUrl(url2) {
-  const platform = process.platform;
-  const command = platform === "win32" ? "cmd" : platform === "darwin" ? "open" : "xdg-open";
-  const args = platform === "win32" ? ["/c", "start", "", url2] : [url2];
+  const { command, args } = buildOpenUrlCommand(url2);
   try {
     const child = (0, import_child_process.spawn)(command, args, {
       detached: true,
@@ -32350,7 +32360,7 @@ var StdioServerTransport = class {
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.3";
+var CLI_VERSION = "0.1.4";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;

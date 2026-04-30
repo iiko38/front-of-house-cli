@@ -4,7 +4,7 @@ AI-operator provisioning CLI for Front Of House.
 
 Public mirror: https://github.com/iiko38/front-of-house-cli
 
-Current published baseline: `@f-o-h/cli@0.1.3`
+Current published baseline: `@f-o-h/cli@0.1.4`
 
 This mirror is a generated release artifact. The private product monorepo is not
 published here, and no open-source license is granted unless stated separately.
