@@ -10146,7 +10146,10 @@ function resolveConsoleBaseUrl(cliOverride) {
   return normalizeBaseUrl(cliOverride ?? process.env.FOH_CONSOLE_URL);
 }
 function buildConsoleSignInUrl(consoleUrl) {
-  return `${normalizeBaseUrl(consoleUrl)}/sign-in?source=cli`;
+  return `${normalizeBaseUrl(consoleUrl)}/sign-in?redirect=%2Fdashboard`;
+}
+function buildConsoleSignUpUrl(consoleUrl) {
+  return `${normalizeBaseUrl(consoleUrl)}/sign-up?redirect=%2Fdashboard`;
 }
 function buildCliAuthFallbackCommands() {
   return [
@@ -10167,6 +10170,22 @@ function buildCliAuthFallbackInstructions(signInUrl) {
       "Ask the user for FOH email/password or an approved service-token path.",
       "Run the explicit CLI auth commands in next_commands.",
       "Never scrape browser cookies or local storage."
+    ]
+  };
+}
+function buildCliSignupFallbackInstructions(signUpUrl) {
+  return {
+    human: [
+      `Open ${signUpUrl}`,
+      "Create a Front Of House account.",
+      "Confirm your email if prompted.",
+      "Return to the terminal and run `foh auth login --web --json` or credential login."
+    ],
+    ai_agent: [
+      "Show the sign_up_url to the user if browser opening is unavailable.",
+      "Ask the user to complete signup and email confirmation in the browser.",
+      "After the user confirms signup, run `foh auth login --web --json`.",
+      "Never ask the user to paste browser cookies or local storage."
     ]
   };
 }
@@ -10211,6 +10230,25 @@ function emitBrowserAuthLink(opts) {
     note: "Browser sign-in opens the console. Until device-code auth is implemented, authenticate this CLI with the explicit credential command after sign-in.",
     next_commands: nextCommands,
     text_fallback: buildCliAuthFallbackInstructions(signInUrl)
+  }, { json: opts.json ?? false });
+}
+function emitBrowserSignupLink(opts) {
+  const consoleUrl = resolveConsoleBaseUrl(opts.consoleUrl);
+  const signUpUrl = buildConsoleSignUpUrl(consoleUrl);
+  const openResult = openUrl(signUpUrl);
+  format({
+    status: openResult.attempted ? "browser_signup_link_opened" : "browser_signup_link",
+    sign_up_url: signUpUrl,
+    opened: openResult.attempted,
+    opener_command: openResult.command,
+    opener_error: openResult.error ?? null,
+    cli_auth_required_after_signup: true,
+    note: "Signup is completed in the FOH console. After account creation and email confirmation, return to the CLI and authenticate.",
+    next_commands: [
+      "foh auth login --web --json",
+      ...buildCliAuthFallbackCommands()
+    ],
+    text_fallback: buildCliSignupFallbackInstructions(signUpUrl)
   }, { json: opts.json ?? false });
 }
 async function resolveLoginInputs(opts) {
@@ -10347,6 +10385,12 @@ function registerAuth(program3) {
     }
     format(output, { json: opts.json ?? false });
   }));
+  auth.command("signup").description("Open account signup and print text fallback commands").option("--web", "Open browser signup and print text fallback commands", true).option("--browser", "Alias for --web").option("--console-url <url>", "Console signup URL override").option("--json", "Output as JSON").action((opts) => {
+    emitBrowserSignupLink({
+      consoleUrl: opts.consoleUrl,
+      json: opts.json
+    });
+  });
   auth.command("logout").description("Remove stored credentials").option("--json", "Output as JSON").action((opts) => {
     clearCredentials();
     format({ status: "logged_out" }, { json: opts.json ?? false });
@@ -32184,7 +32228,7 @@ var StdioServerTransport = class {
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.1";
+var CLI_VERSION = "0.1.2";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -33702,6 +33746,7 @@ function buildMissingOptionsPlan(missing, opts) {
     reason: "setup requires an authenticated org, an agent template, and an agent name before it can mutate customer resources",
     sign_in_url: signInUrl,
     next_commands: [
+      "foh auth signup --web --json",
       "foh auth login --web --json",
       ...buildCliAuthFallbackCommands(),
       "foh templates list --json",
