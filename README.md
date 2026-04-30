@@ -4,7 +4,7 @@ AI-operator provisioning CLI for Front Of House.
 
 Public mirror: https://github.com/iiko38/front-of-house-cli
 
-Current published baseline: `@f-o-h/cli@0.1.2`
+Current published baseline: `@f-o-h/cli@0.1.3`
 
 This mirror is a generated release artifact. The private product monorepo is not
 published here, and no open-source license is granted unless stated separately.
@@ -51,8 +51,9 @@ foh setup --org <org-id> --agent-template <template-id> --agent-name "Demo Agent
 ```
 
 `auth signup --web` opens the console signup page when possible and always
-prints the fallback URL. `auth login --web` does the same for sign-in. The CLI
-still requires explicit credential auth until device-code browser-token
-exchange is available.
+prints the fallback URL. `auth login --web` starts browser device
+authorization, opens `/cli-auth`, waits for console approval, and stores the
+returned short-lived token. Credential auth remains available as fallback.
 
 The CLI defaults to the production API at `https://api.frontofhouse.okii.uk`.
+

@@ -10163,11 +10163,11 @@ function buildCliAuthFallbackInstructions(signInUrl) {
     human: [
       `Open ${signInUrl}`,
       "Sign in to Front Of House.",
-      "Return to the terminal and authenticate the CLI with email/password until browser-token exchange is available."
+      "Return to the terminal. If device approval is unavailable, authenticate the CLI with email/password."
     ],
     ai_agent: [
       "Show the sign_in_url to the user if browser opening is unavailable.",
-      "Ask the user for FOH email/password or an approved service-token path.",
+      "Prefer browser device approval. Ask for email/password only if device approval is unavailable.",
       "Run the explicit CLI auth commands in next_commands.",
       "Never scrape browser cookies or local storage."
     ]
@@ -10179,7 +10179,7 @@ function buildCliSignupFallbackInstructions(signUpUrl) {
       `Open ${signUpUrl}`,
       "Create a Front Of House account.",
       "Confirm your email if prompted.",
-      "Return to the terminal and run `foh auth login --web --json` or credential login."
+      "Return to the terminal and run `foh auth login --web --json`."
     ],
     ai_agent: [
       "Show the sign_up_url to the user if browser opening is unavailable.",
@@ -10227,10 +10227,21 @@ function emitBrowserAuthLink(opts) {
     opener_command: openResult.command,
     opener_error: openResult.error ?? null,
     cli_auth_required: true,
-    note: "Browser sign-in opens the console. Until device-code auth is implemented, authenticate this CLI with the explicit credential command after sign-in.",
+    note: "Browser device auth is unavailable from this API. Authenticate this CLI with the explicit credential command after sign-in.",
     next_commands: nextCommands,
     text_fallback: buildCliAuthFallbackInstructions(signInUrl)
   }, { json: opts.json ?? false });
+}
+function writeDeviceProgress(event, jsonMode) {
+  const line = jsonMode ? JSON.stringify({ event: "device_auth_started", ...event }, null, 2) : [
+    "Browser auth started.",
+    `Open: ${event["verification_uri_complete"]}`,
+    `Code: ${event["user_code"]}`,
+    "Waiting for browser approval..."
+  ].join("\n");
+  const stream = jsonMode ? process.stderr : process.stdout;
+  stream.write(`${line}
+`);
 }
 function emitBrowserSignupLink(opts) {
   const consoleUrl = resolveConsoleBaseUrl(opts.consoleUrl);
@@ -10307,13 +10318,154 @@ async function maybeSelectDefaultOrg(orgs, jsonMode) {
 `);
   }
 }
+async function fetchOrgMemberships(apiUrl, token) {
+  try {
+    const orgsRes = await fetch(`${apiUrl}/v1/console/auth/my-orgs`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (orgsRes.ok) {
+      const orgsData = await orgsRes.json();
+      return {
+        orgs: Array.isArray(orgsData.orgs) ? orgsData.orgs : [],
+        available: true
+      };
+    }
+  } catch {
+  }
+  return { orgs: [], available: false };
+}
+async function storeAuthenticatedSession(params) {
+  const { orgs, available } = await fetchOrgMemberships(params.apiUrl, params.token);
+  let autoOrgId;
+  const usableOrgs = orgs.filter((org) => isUsableOrgId(org.org_id));
+  if (usableOrgs.length === 1) {
+    autoOrgId = usableOrgs[0].org_id;
+  } else if (usableOrgs.length > 1) {
+    autoOrgId = await maybeSelectDefaultOrg(orgs, params.jsonMode);
+  }
+  saveCredentials({
+    apiUrl: params.apiUrl,
+    token: params.token,
+    expiresAt: params.expiresAt,
+    orgId: autoOrgId
+  });
+  const output = {
+    status: "authenticated",
+    apiUrl: params.apiUrl,
+    expires_at: params.expiresAt
+  };
+  if (autoOrgId) {
+    output["default_org_id"] = autoOrgId;
+    output["note"] = "Default org stored; --org flag is now optional.";
+  } else if (orgs.length > 1) {
+    output["note"] = `${orgs.length} orgs found. Run: foh org use --org <id> to set a default.`;
+  } else if (orgs.length === 0 && available) {
+    output["note"] = "No orgs found. Run: foh org create --name <name> to create one.";
+  } else {
+    output["note"] = "Authenticated, but org discovery is unavailable. Run: foh org list when API connectivity is healthy.";
+  }
+  return output;
+}
+function sleep(ms) {
+  return new Promise((resolve5) => setTimeout(resolve5, ms));
+}
+async function runDeviceLogin(opts) {
+  const jsonMode = Boolean(opts.json);
+  let startRes;
+  try {
+    startRes = await fetch(`${opts.apiUrl}/v1/console/auth/device/start`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ client: "foh-cli" })
+    });
+  } catch {
+    emitBrowserAuthLink({
+      consoleUrl: opts.consoleUrl,
+      json: opts.json
+    });
+    return;
+  }
+  if (!startRes.ok) {
+    emitBrowserAuthLink({
+      consoleUrl: opts.consoleUrl,
+      json: opts.json
+    });
+    return;
+  }
+  const start = await startRes.json();
+  const openResult = openUrl(start.verification_uri_complete);
+  const startedPacket = {
+    status: "browser_device_auth_started",
+    sign_in_url: start.verification_uri_complete,
+    verification_uri: start.verification_uri,
+    verification_uri_complete: start.verification_uri_complete,
+    user_code: start.user_code,
+    opened: openResult.attempted,
+    opener_command: openResult.command,
+    opener_error: openResult.error ?? null,
+    expires_in: start.expires_in,
+    poll_interval_seconds: start.interval
+  };
+  if (opts.wait === false) {
+    format({
+      ...startedPacket,
+      next_commands: [
+        "Complete approval in the opened browser window.",
+        "Then rerun: foh auth login --web --json"
+      ]
+    }, { json: jsonMode });
+    return;
+  }
+  writeDeviceProgress(startedPacket, jsonMode);
+  const timeoutSeconds = Math.max(1, Number(opts.timeoutSeconds ?? start.expires_in) || start.expires_in);
+  const deadline = Date.now() + Math.min(timeoutSeconds, start.expires_in) * 1e3;
+  const intervalMs = Math.max(0.05, Number(start.interval) || 2) * 1e3;
+  while (Date.now() < deadline) {
+    await sleep(intervalMs);
+    const pollRes = await fetch(`${opts.apiUrl}/v1/console/auth/device/poll`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ device_code: start.device_code })
+    });
+    const poll = await pollRes.json().catch(() => ({}));
+    if (pollRes.status === 202 || poll.status === "authorization_pending") {
+      continue;
+    }
+    if (pollRes.ok && poll.token && poll.expires_at) {
+      const output = await storeAuthenticatedSession({
+        apiUrl: opts.apiUrl,
+        token: poll.token,
+        expiresAt: poll.expires_at,
+        jsonMode
+      });
+      format({
+        ...output,
+        auth_method: "browser_device"
+      }, { json: jsonMode });
+      return;
+    }
+    throw new FohError({
+      step: "auth.login.web",
+      error: poll.error || poll.code || `HTTP ${pollRes.status}`,
+      remediation: "Restart browser auth with: foh auth login --web"
+    });
+  }
+  throw new FohError({
+    step: "auth.login.web",
+    error: "Timed out waiting for browser approval",
+    remediation: "Complete browser approval faster, or rerun: foh auth login --web"
+  });
+}
 function registerAuth(program3) {
   const auth = program3.command("auth").description("Manage CLI authentication");
-  auth.command("login").description("Authenticate with the FOH API and store a token locally").option("--email <email>", "FOH account email").option("--password <password>", "FOH account password").option("--web", "Open browser sign-in and print text fallback commands").option("--browser", "Alias for --web").option("--wizard", "Run guided login wizard prompts").option("--console-url <url>", "Console sign-in URL override").option("--api-url <url>", "Internal API base URL override (operators only)").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+  auth.command("login").description("Authenticate with the FOH API and store a token locally").option("--email <email>", "FOH account email").option("--password <password>", "FOH account password").option("--web", "Open browser sign-in and print text fallback commands").option("--browser", "Alias for --web").option("--wizard", "Run guided login wizard prompts").option("--console-url <url>", "Console sign-in URL override").option("--api-url <url>", "Internal API base URL override (operators only)").option("--timeout-seconds <seconds>", "Maximum seconds to wait for browser approval").option("--no-wait", "Only print/open the browser approval link; do not poll").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
     if ((opts.web || opts.browser) && !opts.email && !opts.password) {
-      emitBrowserAuthLink({
+      await runDeviceLogin({
+        apiUrl: resolveApiBaseUrl(opts.apiUrl),
         consoleUrl: opts.consoleUrl,
-        json: opts.json
+        json: opts.json,
+        wait: opts.wait,
+        timeoutSeconds: opts.timeoutSeconds
       });
       return;
     }
@@ -10347,42 +10499,12 @@ function registerAuth(program3) {
       });
     }
     const data = await res.json();
-    let orgs = [];
-    let orgDiscoveryAvailable = false;
-    try {
-      const orgsRes = await fetch(`${apiUrl}/v1/console/auth/my-orgs`, {
-        headers: { Authorization: `Bearer ${data.token}` }
-      });
-      if (orgsRes.ok) {
-        const orgsData = await orgsRes.json();
-        orgs = Array.isArray(orgsData.orgs) ? orgsData.orgs : [];
-        orgDiscoveryAvailable = true;
-      }
-    } catch {
-    }
-    let autoOrgId;
-    const usableOrgs = orgs.filter((org) => isUsableOrgId(org.org_id));
-    if (usableOrgs.length === 1) {
-      autoOrgId = usableOrgs[0].org_id;
-    } else if (usableOrgs.length > 1) {
-      autoOrgId = await maybeSelectDefaultOrg(orgs, Boolean(opts.json));
-    }
-    saveCredentials({ apiUrl, token: data.token, expiresAt: data.expires_at, orgId: autoOrgId });
-    const output = {
-      status: "authenticated",
+    const output = await storeAuthenticatedSession({
       apiUrl,
-      expires_at: data.expires_at
-    };
-    if (autoOrgId) {
-      output["default_org_id"] = autoOrgId;
-      output["note"] = "Default org stored; --org flag is now optional.";
-    } else if (orgs.length > 1) {
-      output["note"] = `${orgs.length} orgs found. Run: foh org use --org <id> to set a default.`;
-    } else if (orgs.length === 0 && orgDiscoveryAvailable) {
-      output["note"] = "No orgs found. Run: foh org create --name <name> to create one.";
-    } else {
-      output["note"] = "Authenticated, but org discovery is unavailable. Run: foh org list when API connectivity is healthy.";
-    }
+      token: data.token,
+      expiresAt: data.expires_at,
+      jsonMode: Boolean(opts.json)
+    });
     format(output, { json: opts.json ?? false });
   }));
   auth.command("signup").description("Open account signup and print text fallback commands").option("--web", "Open browser signup and print text fallback commands", true).option("--browser", "Alias for --web").option("--console-url <url>", "Console signup URL override").option("--json", "Output as JSON").action((opts) => {
@@ -10779,10 +10901,10 @@ async function pollUntil(check2, opts) {
     const label = opts.label ?? step;
     process.stderr.write(import_picocolors2.default.dim(`  ${label}: waiting... (${Math.round(elapsed / 1e3)}s)
 `));
-    await sleep(opts.intervalMs);
+    await sleep2(opts.intervalMs);
   }
 }
-function sleep(ms) {
+function sleep2(ms) {
   return new Promise((resolve5) => setTimeout(resolve5, ms));
 }
 
@@ -32228,7 +32350,7 @@ var StdioServerTransport = class {
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.2";
+var CLI_VERSION = "0.1.3";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -35848,7 +35970,7 @@ async function runGuidedStart(apiUrlOverride, executeCommand) {
   }
   if (!state.orgId) {
     process.stdout.write("Step 2/3: Set default org\n");
-    const orgs = await fetchOrgMemberships(apiUrlOverride);
+    const orgs = await fetchOrgMemberships2(apiUrlOverride);
     if (orgs.length === 1) {
       const code = await executeCommand(["org", "use", "--org", orgs[0].org_id], apiUrlOverride);
       if (code !== 0) process.stdout.write(`org use exited with code ${code}.
@@ -35874,7 +35996,7 @@ async function runGuidedStart(apiUrlOverride, executeCommand) {
               process.stdout.write(`org create exited with code ${createCode}.
 `);
             } else {
-              const refreshedOrgs = await fetchOrgMemberships(apiUrlOverride);
+              const refreshedOrgs = await fetchOrgMemberships2(apiUrlOverride);
               if (refreshedOrgs.length === 1) {
                 const useCode = await executeCommand(["org", "use", "--org", refreshedOrgs[0].org_id], apiUrlOverride);
                 if (useCode !== 0) process.stdout.write(`org use exited with code ${useCode}.
@@ -35904,7 +36026,7 @@ async function maybeRunTenantStatus(apiUrlOverride, executeCommand) {
 `);
   }
 }
-async function fetchOrgMemberships(apiUrlOverride) {
+async function fetchOrgMemberships2(apiUrlOverride) {
   try {
     const creds = loadCredentials(apiUrlOverride);
     const res = await fetch(`${creds.apiUrl}/v1/console/auth/my-orgs`, {
