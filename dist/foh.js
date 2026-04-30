@@ -6046,7 +6046,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve5.call(this, root, ref);
+      let _sch = resolve7.call(this, root, ref);
       if (_sch === void 0) {
         const schema2 = (_a2 = root.localRefs) === null || _a2 === void 0 ? void 0 : _a2[ref];
         const { schemaId } = this.opts;
@@ -6073,7 +6073,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve5(root, ref) {
+    function resolve7(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -6648,7 +6648,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve5(baseURI, relativeURI, options) {
+    function resolve7(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const resolved = resolveComponent(parse3(baseURI, schemelessOptions), parse3(relativeURI, schemelessOptions), schemelessOptions, true);
       schemelessOptions.skipEscape = true;
@@ -6875,7 +6875,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve5,
+      resolve: resolve7,
       resolveComponent,
       equal,
       serialize,
@@ -10063,21 +10063,21 @@ async function promptLine(label, {
   allowEmpty = false,
   defaultValue
 } = {}) {
-  return await new Promise((resolve5) => {
+  return await new Promise((resolve7) => {
     const suffix = defaultValue ? ` [${defaultValue}]` : "";
     const rl = (0, import_readline.createInterface)({ input: process.stdin, output: process.stdout, terminal: true });
     rl.question(`${label}${suffix}: `, (answer) => {
       rl.close();
       const value = String(answer ?? "").trim();
       if (!value && typeof defaultValue === "string") {
-        resolve5(defaultValue);
+        resolve7(defaultValue);
         return;
       }
       if (!value && !allowEmpty) {
-        resolve5("");
+        resolve7("");
         return;
       }
-      resolve5(value);
+      resolve7(value);
     });
   });
 }
@@ -10085,7 +10085,7 @@ async function promptSecret(label) {
   if (!process.stdin.isTTY || !process.stdout.isTTY || typeof process.stdin.setRawMode !== "function") {
     return await promptLine(label);
   }
-  return await new Promise((resolve5) => {
+  return await new Promise((resolve7) => {
     const stdin = process.stdin;
     const stdout = process.stdout;
     const wasRaw = Boolean(stdin.isRaw);
@@ -10099,7 +10099,7 @@ async function promptSecret(label) {
     const finish = () => {
       cleanup();
       stdout.write("\n");
-      resolve5(value);
+      resolve7(value);
     };
     const onData = (chunk) => {
       const text = typeof chunk === "string" ? chunk : chunk.toString("utf8");
@@ -10108,7 +10108,7 @@ async function promptSecret(label) {
           cleanup();
           process.exitCode = 130;
           stdout.write("\n");
-          return resolve5("");
+          return resolve7("");
         }
         if (char === "\r" || char === "\n") {
           finish();
@@ -10377,7 +10377,7 @@ async function storeAuthenticatedSession(params) {
   return output;
 }
 function sleep(ms) {
-  return new Promise((resolve5) => setTimeout(resolve5, ms));
+  return new Promise((resolve7) => setTimeout(resolve7, ms));
 }
 async function runDeviceLogin(opts) {
   const jsonMode = Boolean(opts.json);
@@ -10915,7 +10915,7 @@ async function pollUntil(check2, opts) {
   }
 }
 function sleep2(ms) {
-  return new Promise((resolve5) => setTimeout(resolve5, ms));
+  return new Promise((resolve7) => setTimeout(resolve7, ms));
 }
 
 // src/commands/compliance.ts
@@ -13783,8 +13783,8 @@ function registerAgentGuardrailCommands(agent) {
     try {
       rule = JSON.parse(opts.rule);
     } catch {
-      const { readFileSync: readFileSync6 } = await import("fs");
-      rule = JSON.parse(readFileSync6(opts.rule, "utf-8"));
+      const { readFileSync: readFileSync7 } = await import("fs");
+      rule = JSON.parse(readFileSync7(opts.rule, "utf-8"));
     }
     const data = await apiFetch(`/v1/console/agents/${opts.agent}/guardrails`, {
       method: "POST",
@@ -14190,6 +14190,58 @@ function registerAgent(program3) {
     const data = await apiFetch(`/v1/console/agents/${opts.agent}`, { apiUrlOverride: opts.apiUrl });
     format(data, { json: opts.json ?? false });
   }));
+  agent.command("replay").description("Create a replay/debug packet from a trace or conversation").option("--trace <id>", "Trace event ID to replay through the server trace replay endpoint").option("--conversation <id>", "Conversation ID to package with transcript and traces").requiredOption("--agent <id>", "Agent ID").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+    if (!opts.trace && !opts.conversation) {
+      throw new FohError({
+        step: "agent.replay",
+        error: "Missing replay source",
+        remediation: "Pass --trace <id> or --conversation <id>.",
+        statusCode: 400
+      });
+    }
+    if (opts.trace && opts.conversation) {
+      throw new FohError({
+        step: "agent.replay",
+        error: "Ambiguous replay source",
+        remediation: "Pass only one of --trace or --conversation.",
+        statusCode: 400
+      });
+    }
+    if (opts.trace) {
+      const data2 = await apiFetch(`/v1/console/traces/${opts.trace}/replay`, {
+        method: "POST",
+        orgId: opts.org,
+        apiUrlOverride: opts.apiUrl
+      });
+      format({
+        schema_version: "foh_agent_replay_packet.v1",
+        status: "server_replay_completed",
+        source: { type: "trace", trace_id: opts.trace, agent_id: opts.agent },
+        replay: data2,
+        next_commands: [`foh tests from-trace --agent ${opts.agent} --trace ${opts.trace} --json`]
+      }, { json: opts.json ?? false });
+      return;
+    }
+    const data = await apiFetch(`/v1/console/agents/${opts.agent}/conversations/${opts.conversation}?include_traces=true`, {
+      orgId: opts.org,
+      apiUrlOverride: opts.apiUrl
+    });
+    const traces = Array.isArray(data.traces) ? data.traces : [];
+    const firstTraceId = traces.map((trace) => String(trace.id || "").trim()).find(Boolean);
+    format({
+      schema_version: "foh_agent_replay_packet.v1",
+      status: firstTraceId ? "conversation_replay_packet_created" : "conversation_not_replayable",
+      source: { type: "conversation", conversation_id: opts.conversation, agent_id: opts.agent },
+      conversation: data.conversation ?? null,
+      trace_count: traces.length,
+      traces,
+      not_replayable_reason: firstTraceId ? null : "conversation_has_no_trace_events",
+      next_commands: firstTraceId ? [
+        `foh agent replay --agent ${opts.agent} --trace ${firstTraceId} --json`,
+        `foh tests from-trace --agent ${opts.agent} --trace ${firstTraceId} --json`
+      ] : [`foh transcripts get --agent ${opts.agent} --conversation ${opts.conversation} --include-traces --json`]
+    }, { json: opts.json ?? false });
+  }));
   const blueprint = agent.command("blueprint").description("Compile or apply Conversation Blueprint v1");
   blueprint.command("compile").description("Compile a Conversation Blueprint v1 file to the current policy graph draft without saving it").requiredOption("--agent <id>", "Agent ID").requiredOption("--blueprint <json|@file>", "Conversation Blueprint v1 JSON or @path").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
     const parsedBlueprint = await parseJsonOption(opts.blueprint, "--blueprint");
@@ -14316,9 +14368,9 @@ function registerAgent(program3) {
       process.stdout.write(yaml);
       return;
     }
-    const { writeFileSync: writeFileSync4 } = await import("fs");
+    const { writeFileSync: writeFileSync6 } = await import("fs");
     const outputPath = opts.output ?? "tenant.yaml";
-    writeFileSync4(
+    writeFileSync6(
       outputPath,
       `# tenant.yaml - Front Of House agent manifest
 # Edit this file and run: foh plan tenant.yaml
@@ -15753,11 +15805,11 @@ function registerVoice(program3) {
     }
     const outputPath = String(opts.out || `foh-voice-preview-${provider}-${voiceId}.mp3`).trim();
     const audio = Buffer.from(await res.arrayBuffer());
-    const { mkdirSync: mkdirSync4, writeFileSync: writeFileSync4 } = await import("fs");
-    const { dirname: dirname5, resolve: resolve5 } = await import("path");
-    const absolutePath = resolve5(outputPath);
+    const { mkdirSync: mkdirSync4, writeFileSync: writeFileSync6 } = await import("fs");
+    const { dirname: dirname5, resolve: resolve7 } = await import("path");
+    const absolutePath = resolve7(outputPath);
     mkdirSync4(dirname5(absolutePath), { recursive: true });
-    writeFileSync4(absolutePath, audio);
+    writeFileSync6(absolutePath, audio);
     format({
       status: "ok",
       provider,
@@ -30238,7 +30290,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve5) => setTimeout(resolve5, pollInterval));
+        await new Promise((resolve7) => setTimeout(resolve7, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error2) {
@@ -30255,7 +30307,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve5, reject) => {
+    return new Promise((resolve7, reject) => {
       const earlyReject = (error2) => {
         reject(error2);
       };
@@ -30333,7 +30385,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve5(parseResult.data);
+            resolve7(parseResult.data);
           }
         } catch (error2) {
           reject(error2);
@@ -30594,12 +30646,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve5, reject) => {
+    return new Promise((resolve7, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve5, interval);
+      const timeoutId = setTimeout(resolve7, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -31699,7 +31751,7 @@ var McpServer = class {
     let task = createTaskResult.task;
     const pollInterval = task.pollInterval ?? 5e3;
     while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-      await new Promise((resolve5) => setTimeout(resolve5, pollInterval));
+      await new Promise((resolve7) => setTimeout(resolve7, pollInterval));
       const updatedTask = await extra.taskStore.getTask(taskId);
       if (!updatedTask) {
         throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -32348,19 +32400,19 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve5) => {
+    return new Promise((resolve7) => {
       const json3 = serializeMessage(message);
       if (this._stdout.write(json3)) {
-        resolve5();
+        resolve7();
       } else {
-        this._stdout.once("drain", resolve5);
+        this._stdout.once("drain", resolve7);
       }
     });
   }
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.4";
+var CLI_VERSION = "0.1.5";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -32545,7 +32597,7 @@ async function runFohCli(params) {
     effectiveArgv.push("--json");
   }
   const command = `foh ${effectiveArgv.join(" ")}`;
-  return await new Promise((resolve5) => {
+  return await new Promise((resolve7) => {
     const child = (0, import_node_child_process.spawn)(process.execPath, [cliEntry, ...effectiveArgv], {
       stdio: ["ignore", "pipe", "pipe"],
       env: {
@@ -32570,7 +32622,7 @@ async function runFohCli(params) {
     });
     child.once("error", (error2) => {
       clearTimeout(timeoutHandle);
-      resolve5({
+      resolve7({
         ok: false,
         command,
         argv: effectiveArgv,
@@ -32586,7 +32638,7 @@ async function runFohCli(params) {
       const stderrText = finalizeBoundedText(stderrBuffer);
       const exitCode = Number.isFinite(code ?? NaN) ? Number(code) : 1;
       const stdoutJson = tryParseJson(stdoutText);
-      resolve5({
+      resolve7({
         ok: !timedOut && exitCode === 0,
         command,
         argv: effectiveArgv,
@@ -33361,14 +33413,107 @@ function registerMcp(program3) {
 // src/commands/knowledge.ts
 var import_fs2 = require("fs");
 var import_path2 = require("path");
+
+// src/lib/query-options.ts
+function parsePositiveInt(value, fallback, min, max) {
+  const parsed = Number(value ?? fallback);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.max(min, Math.min(max, Math.trunc(parsed)));
+}
+function withQuery(path2, params) {
+  const query = params.toString();
+  return query ? `${path2}?${query}` : path2;
+}
+
+// src/commands/knowledge.ts
 function readDraftKnowledgeText(draft) {
   const fromRaw = typeof draft.knowledge_base_raw === "string" ? draft.knowledge_base_raw : "";
   if (fromRaw.trim().length > 0) return fromRaw;
   const fromLegacy = typeof draft.knowledge_base === "string" ? draft.knowledge_base : "";
   return fromLegacy;
 }
+function tokenize(value) {
+  return value.toLowerCase().split(/[^a-z0-9]+/g).map((token) => token.trim()).filter((token) => token.length >= 3);
+}
+function chunkKnowledgeText(text) {
+  return text.split(/\n\s*\n|---+/g).map((chunk) => chunk.trim()).filter(Boolean).map((chunk, index) => ({ index, text: chunk }));
+}
+function scoreChunk(queryTokens, chunkText) {
+  if (queryTokens.size === 0) return 0;
+  const chunkTokens = new Set(tokenize(chunkText));
+  let overlap = 0;
+  for (const token of queryTokens) {
+    if (chunkTokens.has(token)) overlap += 1;
+  }
+  return Number((overlap / queryTokens.size).toFixed(6));
+}
 function registerKnowledge(program3) {
   const knowledge = program3.command("knowledge").description("Manage agent knowledge base");
+  knowledge.command("query").description("Debug agent knowledge retrieval for a question").requiredOption("--agent <id>", "Agent ID").requiredOption("--text <query>", "Question/query text").option("--limit <n>", "Max chunks to return (1-20)", "5").option("--min-score <n>", "Minimum overlap score for pass threshold", "0.2").option("--explain", "Include token/scoring metadata").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+    const query = String(opts.text || "").trim();
+    if (query.length < 3) {
+      throw new FohError({
+        step: "knowledge.query",
+        error: "Query text must be at least 3 characters",
+        remediation: 'Pass --text "<question>" with 3+ characters.',
+        statusCode: 400
+      });
+    }
+    const draft = await apiFetch(`/v1/console/agents/${opts.agent}/draft`, {
+      orgId: opts.org,
+      apiUrlOverride: opts.apiUrl
+    });
+    const knowledgeText = readDraftKnowledgeText(draft);
+    const chunks = chunkKnowledgeText(knowledgeText);
+    const queryTokens = new Set(tokenize(query));
+    const minScore = Math.max(0, Math.min(1, Number(opts.minScore ?? 0.2) || 0.2));
+    const limit = parsePositiveInt(opts.limit, 5, 1, 20);
+    const matches = chunks.map((chunk) => ({
+      chunk_id: `agent-draft-${opts.agent}#${chunk.index + 1}`,
+      source: "agent_draft_knowledge",
+      citation: `agent:${opts.agent}:chunk:${chunk.index + 1}`,
+      score: scoreChunk(queryTokens, chunk.text),
+      text: chunk.text.slice(0, 1200)
+    })).filter((chunk) => chunk.score > 0).sort((a, b) => b.score - a.score).slice(0, limit);
+    const topScore = matches[0]?.score ?? 0;
+    const status = matches.length === 0 ? "no_match" : topScore >= minScore ? "pass" : "low_confidence";
+    const reasonCode = status === "pass" ? "knowledge_query_match" : status === "low_confidence" ? "knowledge_query_low_confidence" : "knowledge_query_no_match";
+    const packet = status === "pass" ? null : {
+      schema_version: "foh_knowledge_query_failure_packet.v1",
+      agent_id: opts.agent,
+      query,
+      reason_code: reasonCode,
+      top_score: topScore,
+      chunk_count: chunks.length,
+      next_commands: [
+        `foh knowledge ingest-file --agent ${opts.agent} --file <path> --json`,
+        `foh knowledge query --agent ${opts.agent} --text "${query.replace(/"/g, '\\"')}" --explain --json`
+      ]
+    };
+    format({
+      schema_version: "foh_knowledge_query_debug.v1",
+      ok: status === "pass",
+      status,
+      reason_code: reasonCode,
+      agent_id: opts.agent,
+      query,
+      retrieval: {
+        source: "agent_draft_direct",
+        chunk_count: chunks.length,
+        match_count: matches.length,
+        top_score: topScore,
+        min_score: minScore
+      },
+      matches,
+      failure_packet: packet,
+      ...opts.explain ? {
+        explain: {
+          query_tokens: Array.from(queryTokens),
+          scoring: "token_overlap_ratio_v1"
+        }
+      } : {}
+    }, { json: opts.json ?? false });
+  }));
   knowledge.command("ingest-file").description("Ingest a local file into the knowledge base").requiredOption("--file <path>", "Path to file to ingest").option("--agent <id>", "Scope to agent").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
     const content = (0, import_fs2.readFileSync)(opts.file, "utf-8");
     let data;
@@ -33997,7 +34142,7 @@ function registerSetup(program3) {
       const startedAtIso = nowIso();
       const startedAtMs = Date.now();
       if (shouldResumeSkip(name)) {
-        const skipped = timedStepResult(
+        const skipped2 = timedStepResult(
           {
             step: name,
             status: "skipped",
@@ -34006,10 +34151,10 @@ function registerSetup(program3) {
           startedAtIso,
           startedAtMs
         );
-        completed.push(skipped);
+        completed.push(skipped2);
         process.stderr.write(import_picocolors4.default.dim(`  [RESUME] ${name}: skipped (resume-from ${resumeState.resumeFrom})
 `));
-        return skipped;
+        return skipped2;
       }
       if (opts.dryRun) {
         const dryRunResult = timedStepResult(
@@ -34365,8 +34510,8 @@ function registerSetup(program3) {
         }
         try {
           const manifest = await agentExport(resolvedAgentId, { apiUrlOverride: opts.apiUrl });
-          const { writeFileSync: writeFileSync4 } = await import("fs");
-          writeFileSync4(
+          const { writeFileSync: writeFileSync6 } = await import("fs");
+          writeFileSync6(
             "tenant.yaml",
             `# tenant.yaml - Front Of House agent manifest
 # Edit this file and run: foh plan tenant.yaml
@@ -34506,8 +34651,8 @@ function registerSim(program3) {
       }
       const cert = response.certificate;
       if (opts.out) {
-        const { writeFileSync: writeFileSync4 } = await import("fs");
-        writeFileSync4(opts.out, JSON.stringify(cert, null, 2) + "\n", "utf-8");
+        const { writeFileSync: writeFileSync6 } = await import("fs");
+        writeFileSync6(opts.out, JSON.stringify(cert, null, 2) + "\n", "utf-8");
         process.stderr.write(`  Certificate written to ${opts.out}
 `);
       }
@@ -34557,8 +34702,8 @@ function registerSim(program3) {
         });
       }
       if (opts.out) {
-        const { writeFileSync: writeFileSync4 } = await import("fs");
-        writeFileSync4(opts.out, JSON.stringify(response.certificate, null, 2) + "\n", "utf-8");
+        const { writeFileSync: writeFileSync6 } = await import("fs");
+        writeFileSync6(opts.out, JSON.stringify(response.certificate, null, 2) + "\n", "utf-8");
         process.stderr.write(`  Final certificate written to ${opts.out}
 `);
       }
@@ -34595,19 +34740,6 @@ ${passIcon}  Certification loop summary
 
 // src/commands/conversations.ts
 var import_crypto4 = require("crypto");
-
-// src/lib/query-options.ts
-function parsePositiveInt(value, fallback, min, max) {
-  const parsed = Number(value ?? fallback);
-  if (!Number.isFinite(parsed)) return fallback;
-  return Math.max(min, Math.min(max, Math.trunc(parsed)));
-}
-function withQuery(path2, params) {
-  const query = params.toString();
-  return query ? `${path2}?${query}` : path2;
-}
-
-// src/commands/conversations.ts
 function registerConversations(program3) {
   const conversations = program3.command("conversations").description("Search and operate on conversation traces and lead data");
   conversations.command("list").description("List/search conversations for an agent").requiredOption("--agent <id>", "Agent ID").option("--q <query>", "Full-text transcript query").option("--from <iso-date>", "Start datetime (ISO8601)").option("--to <iso-date>", "End datetime (ISO8601)").option("--terminal-state <value>", "Terminal state filter").option("--journey <value>", "Journey filter").option("--has-tool-call <value>", "Tool outcome/tool id filter").option("--scope <value>", "Scope: agent or org").option("--scope-agent-id <id>", "Optional scoped agent id when --scope org").option("--guardrail-triggered", "Only conversations with guardrail_triggered trace events").option("--provider <value>", "Provider filter from trace payload").option("--page <n>", "Page number", "1").option("--limit <n>", "Page size (1-100)", "20").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
@@ -34766,6 +34898,140 @@ function registerConversations(program3) {
       apiUrlOverride: opts.apiUrl
     });
     format(data, { json: opts.json ?? false });
+  }));
+}
+
+// src/commands/transcripts.ts
+var import_fs5 = require("fs");
+var import_path4 = require("path");
+function listPath(agentId, opts) {
+  const params = new URLSearchParams();
+  if (opts.q) params.set("q", String(opts.q));
+  if (opts.from) params.set("from", String(opts.from));
+  if (opts.to) params.set("to", String(opts.to));
+  params.set("page", String(parsePositiveInt(opts.page, 1, 1, 1e4)));
+  params.set("limit", String(parsePositiveInt(opts.limit, 20, 1, 100)));
+  return withQuery(`/v1/console/agents/${agentId}/conversations`, params);
+}
+function jsonl(rows) {
+  return rows.map((row) => JSON.stringify(row)).join("\n") + (rows.length > 0 ? "\n" : "");
+}
+function registerTranscripts(program3) {
+  const transcripts = program3.command("transcripts").description("List, fetch, and export conversation transcripts");
+  transcripts.command("list").description("List transcript-bearing conversations for an agent").requiredOption("--agent <id>", "Agent ID").option("--q <query>", "Full-text transcript query").option("--from <iso-date>", "Start datetime (ISO8601)").option("--to <iso-date>", "End datetime (ISO8601)").option("--page <n>", "Page number", "1").option("--limit <n>", "Page size (1-100)", "20").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+    const data = await apiFetch(listPath(opts.agent, opts), { orgId: opts.org, apiUrlOverride: opts.apiUrl });
+    format(data, { json: opts.json ?? false });
+  }));
+  transcripts.command("get").description("Fetch one conversation transcript and optional trace events").requiredOption("--agent <id>", "Agent ID").requiredOption("--conversation <id>", "Conversation ID").option("--include-traces", "Include ordered trace events").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+    const params = new URLSearchParams();
+    if (opts.includeTraces) params.set("include_traces", "true");
+    const path2 = withQuery(`/v1/console/agents/${opts.agent}/conversations/${opts.conversation}`, params);
+    const data = await apiFetch(path2, { orgId: opts.org, apiUrlOverride: opts.apiUrl });
+    format(data, { json: opts.json ?? false });
+  }));
+  transcripts.command("export").description("Export recent transcripts as JSON or JSONL").requiredOption("--agent <id>", "Agent ID").option("--q <query>", "Full-text transcript query").option("--from <iso-date>", "Start datetime (ISO8601)").option("--to <iso-date>", "End datetime (ISO8601)").option("--limit <n>", "Rows to export (1-100)", "100").option("--format <value>", "Export format: jsonl or json", "jsonl").option("--out <path>", "Output file path").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+    const exportFormat = String(opts.format || "jsonl").trim().toLowerCase();
+    if (!["jsonl", "json"].includes(exportFormat)) {
+      throw new FohError({
+        step: "transcripts.export",
+        error: `Invalid format: ${opts.format}`,
+        remediation: "Use --format jsonl or --format json.",
+        statusCode: 400
+      });
+    }
+    const data = await apiFetch(listPath(opts.agent, { ...opts, page: "1" }), {
+      orgId: opts.org,
+      apiUrlOverride: opts.apiUrl
+    });
+    const rows = Array.isArray(data.conversations) ? data.conversations : [];
+    const content = exportFormat === "json" ? stableStringify({ schema_version: "foh_transcript_export.v1", conversations: rows }) : jsonl(rows);
+    if (opts.out) {
+      const outputPath = (0, import_path4.resolve)(String(opts.out));
+      (0, import_fs5.writeFileSync)(outputPath, content, "utf-8");
+      format({ status: "exported", format: exportFormat, count: rows.length, output_path: outputPath }, { json: opts.json ?? false });
+      return;
+    }
+    if (opts.json || exportFormat === "json") {
+      format({ schema_version: "foh_transcript_export.v1", conversations: rows }, { json: opts.json ?? false });
+      return;
+    }
+    process.stdout.write(content);
+  }));
+}
+
+// src/commands/analytics.ts
+function parsePreset(raw) {
+  const value = String(raw || "7d").trim().toLowerCase();
+  if (value === "today" || value === "7d" || value === "failed" || value === "lead-capture") return value;
+  throw new FohError({
+    step: "analytics.fetch",
+    error: `Invalid preset: ${raw}`,
+    remediation: "Use --preset today, 7d, failed, or lead-capture.",
+    statusCode: 400
+  });
+}
+function presetWindowDays(preset, rawWindowDays) {
+  if (rawWindowDays !== void 0) return parsePositiveInt(String(rawWindowDays), preset === "today" ? 1 : 7, 1, 90);
+  if (preset === "today") return 1;
+  return 7;
+}
+function registerAnalytics(program3) {
+  const analytics = program3.command("analytics").description("Fetch runtime analytics and inspection summaries");
+  analytics.command("fetch").description("Fetch an agent analytics summary from existing reporting lanes").requiredOption("--agent <id>", "Agent ID").option("--preset <value>", "Preset: today, 7d, failed, lead-capture", "7d").option("--window-days <n>", "Lookback window override (1-90)").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+    const preset = parsePreset(opts.preset);
+    const windowDays = presetWindowDays(preset, opts.windowDays);
+    const qualityParams = new URLSearchParams({ windowDays: String(windowDays), environment: "production" });
+    const conversationParams = new URLSearchParams({
+      page: "1",
+      limit: "10"
+    });
+    if (preset === "failed") conversationParams.set("terminal_state", "failed_visible");
+    if (preset === "lead-capture") conversationParams.set("journey", "lead_capture");
+    const [qualityScorecard, leadDataTrends, loopKpis, conversations, voiceSlo] = await Promise.all([
+      apiFetch(`/v1/console/agents/${opts.agent}/quality-scorecard?${qualityParams.toString()}`, {
+        orgId: opts.org,
+        apiUrlOverride: opts.apiUrl
+      }),
+      apiFetch(`/v1/console/agents/${opts.agent}/lead-data-trends?windowDays=${windowDays}`, {
+        orgId: opts.org,
+        apiUrlOverride: opts.apiUrl
+      }),
+      apiFetch(`/v1/console/agents/${opts.agent}/loop-kpis?windowDays=${windowDays}`, {
+        orgId: opts.org,
+        apiUrlOverride: opts.apiUrl
+      }),
+      apiFetch(withQuery(`/v1/console/agents/${opts.agent}/conversations`, conversationParams), {
+        orgId: opts.org,
+        apiUrlOverride: opts.apiUrl
+      }),
+      apiFetch(`/v1/console/voice-slo?agentId=${opts.agent}&days=${windowDays}`, {
+        orgId: opts.org,
+        apiUrlOverride: opts.apiUrl
+      }).catch((error2) => ({
+        ok: false,
+        skipped: true,
+        reason_code: "voice_slo_unavailable",
+        message: error2 instanceof Error ? error2.message : String(error2)
+      }))
+    ]);
+    format({
+      schema_version: "foh_analytics_fetch.v1",
+      ok: true,
+      agent_id: opts.agent,
+      preset,
+      window_days: windowDays,
+      summaries: {
+        quality_scorecard: qualityScorecard,
+        lead_data_trends: leadDataTrends,
+        loop_kpis: loopKpis,
+        conversations,
+        voice_slo: voiceSlo
+      },
+      next_commands: [
+        `foh transcripts list --agent ${opts.agent} --limit 10 --json`,
+        `foh ops reporting weekly-report --agent ${opts.agent} --window-days ${Math.min(30, windowDays)} --json`
+      ]
+    }, { json: opts.json ?? false });
   }));
 }
 
@@ -34950,6 +35216,164 @@ function registerTests(program3) {
       apiUrlOverride: opts.apiUrl
     });
     format(data, { json: opts.json ?? false });
+  }));
+}
+
+// src/commands/test.ts
+var import_fs6 = require("fs");
+var import_path5 = require("path");
+function asStringList(value) {
+  if (typeof value === "string" && value.trim()) return [value.trim()];
+  if (Array.isArray(value)) return value.map((entry) => String(entry || "").trim()).filter(Boolean);
+  return [];
+}
+function parseSuiteFile(path2) {
+  const raw = (0, import_fs6.readFileSync)(path2, "utf-8");
+  const parsed = path2.toLowerCase().endsWith(".json") ? JSON.parse(raw) : load(raw);
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new FohError({
+      step: "test.run",
+      error: "Suite file must contain an object",
+      remediation: "Use a JSON/YAML object with scenarios[].turns[].",
+      statusCode: 400
+    });
+  }
+  return parsed;
+}
+function validateSuite(suite) {
+  const scenarios = Array.isArray(suite.scenarios) ? suite.scenarios : [];
+  if (scenarios.length === 0) {
+    throw new FohError({
+      step: "test.run",
+      error: "Suite contains no scenarios",
+      remediation: "Add at least one scenarios[] entry with turns[].",
+      statusCode: 400
+    });
+  }
+  for (const scenario of scenarios) {
+    if (!Array.isArray(scenario.turns) || scenario.turns.length === 0) {
+      throw new FohError({
+        step: "test.run",
+        error: `Scenario "${scenario.id || scenario.name || "(unnamed)"}" has no turns`,
+        remediation: "Add turns with user/message and expect.contains assertions.",
+        statusCode: 400
+      });
+    }
+  }
+  return scenarios;
+}
+function evaluateReply(reply, expect) {
+  const lowerReply = reply.toLowerCase();
+  const contains = asStringList(expect?.contains);
+  const notContains = asStringList(expect?.not_contains);
+  const failures = [];
+  for (const expected of contains) {
+    if (!lowerReply.includes(expected.toLowerCase())) {
+      failures.push(`missing expected text: ${expected}`);
+    }
+  }
+  for (const forbidden of notContains) {
+    if (lowerReply.includes(forbidden.toLowerCase())) {
+      failures.push(`contained forbidden text: ${forbidden}`);
+    }
+  }
+  return failures;
+}
+function registerTest(program3) {
+  const test = program3.command("test").description("Run local scenario suites against runtime channels");
+  test.command("run").description("Run a local YAML/JSON scenario suite").requiredOption("--suite <path>", "Suite YAML/JSON path").option("--agent <id>", "Agent ID (defaults to suite.agent)").option("--out <path>", "Write report JSON to path").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+    const suitePath = (0, import_path5.resolve)(String(opts.suite));
+    const suite = parseSuiteFile(suitePath);
+    const agentId = String(opts.agent || suite.agent || "").trim();
+    if (!agentId) {
+      throw new FohError({
+        step: "test.run",
+        error: "Missing agent ID",
+        remediation: "Pass --agent <id> or include agent in the suite file.",
+        statusCode: 400
+      });
+    }
+    const scenarios = validateSuite(suite);
+    const ensure = await apiFetch("/v1/console/channels/widget/ensure", {
+      method: "POST",
+      body: JSON.stringify({ agentId }),
+      orgId: opts.org,
+      apiUrlOverride: opts.apiUrl
+    });
+    const publicKey = ensure.channel?.public_key;
+    if (!publicKey) {
+      throw new FohError({
+        step: "test.run",
+        error: "Widget channel public key missing",
+        remediation: `Run: foh widget ensure --agent ${agentId} --json`,
+        statusCode: 409
+      });
+    }
+    let passed = 0;
+    let failed = 0;
+    const scenarioResults = [];
+    for (let scenarioIndex = 0; scenarioIndex < scenarios.length; scenarioIndex += 1) {
+      const scenario = scenarios[scenarioIndex];
+      let conversationId;
+      const turnResults = [];
+      for (let turnIndex = 0; turnIndex < (scenario.turns || []).length; turnIndex += 1) {
+        const turn = scenario.turns[turnIndex];
+        const message = String(turn.user || turn.message || "").trim();
+        if (!message) {
+          failed += 1;
+          turnResults.push({ turn: turnIndex + 1, ok: false, failures: ["missing user/message"] });
+          continue;
+        }
+        const response = await apiFetch("/v1/widget/inbound", {
+          method: "POST",
+          body: JSON.stringify({
+            channel_public_key: publicKey,
+            message_body: message,
+            preview: true,
+            ...conversationId ? { conversation_id: conversationId } : {}
+          }),
+          apiUrlOverride: opts.apiUrl
+        });
+        conversationId = response.conversationId || conversationId;
+        const reply = String(response.reply || "");
+        const failures = reply ? evaluateReply(reply, turn.expect) : ["empty reply"];
+        if (failures.length === 0) passed += 1;
+        else failed += 1;
+        turnResults.push({
+          turn: turnIndex + 1,
+          ok: failures.length === 0,
+          message,
+          reply,
+          failures,
+          conversation_id: response.conversationId ?? null,
+          trace_id: response.trace_id ?? null,
+          correlation_id: response.correlation_id ?? null
+        });
+      }
+      scenarioResults.push({
+        id: scenario.id || `scenario-${scenarioIndex + 1}`,
+        name: scenario.name ?? null,
+        ok: turnResults.every((turn) => turn.ok),
+        turns: turnResults
+      });
+    }
+    const report = {
+      schema_version: "foh_local_scenario_suite_report.v1",
+      suite_path: suitePath,
+      agent_id: agentId,
+      ok: failed === 0,
+      passed,
+      failed,
+      scenarios: scenarioResults
+    };
+    if (opts.out) {
+      const out = (0, import_path5.resolve)(String(opts.out));
+      (0, import_fs6.writeFileSync)(out, stableStringify(report), "utf-8");
+      format({ ...report, output_path: out }, { json: opts.json ?? false });
+    } else {
+      format(report, { json: opts.json ?? false });
+    }
+    if (failed > 0) markCommandFailed(1);
   }));
 }
 
@@ -35367,8 +35791,8 @@ function registerDiag(program3) {
 }
 
 // src/commands/bug.ts
-var import_fs5 = require("fs");
-var import_path4 = require("path");
+var import_fs7 = require("fs");
+var import_path6 = require("path");
 var ALLOWED_METHODS = /* @__PURE__ */ new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]);
 var MAX_BODY_PREVIEW_LENGTH = 200;
 function parseMethod(raw) {
@@ -35484,14 +35908,14 @@ function parseRequestBody(raw) {
   }
 }
 function writeJsonArtifact(path2, value) {
-  const absolutePath = (0, import_path4.resolve)(path2);
-  (0, import_fs5.mkdirSync)((0, import_path4.dirname)(absolutePath), { recursive: true });
-  (0, import_fs5.writeFileSync)(absolutePath, stableStringify(value), "utf-8");
+  const absolutePath = (0, import_path6.resolve)(path2);
+  (0, import_fs7.mkdirSync)((0, import_path6.dirname)(absolutePath), { recursive: true });
+  (0, import_fs7.writeFileSync)(absolutePath, stableStringify(value), "utf-8");
   return absolutePath;
 }
 function defaultArtifactPath() {
   const timestamp2 = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-  return (0, import_path4.resolve)(`test-results/bug-report.${timestamp2}.json`);
+  return (0, import_path6.resolve)(`test-results/bug-report.${timestamp2}.json`);
 }
 async function resolveBugReportWizardInputs(opts) {
   if (!opts.wizard) return opts;
@@ -35681,6 +36105,293 @@ function registerBug(program3) {
       throw e;
     }
   });
+}
+
+// src/commands/prove.ts
+function pass(name, summary, detail) {
+  return { name, status: "pass", reason_code: `${name}_ok`, summary, detail };
+}
+function hold(name, reasonCode, summary, nextCommand, detail) {
+  return { name, status: "hold", reason_code: reasonCode, summary, next_command: nextCommand, detail };
+}
+function fail(name, reasonCode, error2, nextCommand) {
+  const message = error2 instanceof Error ? error2.message : String(error2);
+  return { name, status: "fail", reason_code: reasonCode, summary: message, next_command: nextCommand };
+}
+function skipped(name, reasonCode, summary, nextCommand) {
+  return { name, status: "skipped", reason_code: reasonCode, summary, next_command: nextCommand };
+}
+function hasBlockingChecks(checks) {
+  return checks.some((check2) => check2.status === "hold" || check2.status === "fail");
+}
+function publicKeyFromEnsureResponse(response) {
+  const record2 = response && typeof response === "object" ? response : {};
+  const channel = record2.channel && typeof record2.channel === "object" ? record2.channel : {};
+  const publicKey = channel.public_key ?? record2.widget_public_key ?? record2.public_key;
+  return typeof publicKey === "string" && publicKey.trim() ? publicKey.trim() : void 0;
+}
+function agentIdFromList(response) {
+  const agents = Array.isArray(response.agents) ? response.agents : [];
+  const usable = agents.filter((agent) => typeof agent.id === "string" && agent.id.trim());
+  if (usable.length === 1) return { agentId: usable[0].id, count: usable.length };
+  if (usable.length === 0) return { count: 0, reason: "no_agents" };
+  return { count: usable.length, reason: "multiple_agents" };
+}
+function firstUsableOrgId(response) {
+  const record2 = response && typeof response === "object" ? response : {};
+  const orgs = Array.isArray(record2.orgs) ? record2.orgs : [];
+  const usable = orgs.map((org) => org && typeof org === "object" ? org : {}).map((org) => String(org.org_id ?? org.id ?? "").trim()).filter(Boolean);
+  return { orgId: usable.length === 1 ? usable[0] : void 0, count: usable.length };
+}
+function registerProve(program3) {
+  program3.command("prove").description("Produce one setup/runtime proof bundle for an agent").option("--agent <id>", "Agent ID to prove").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--cert-mode <m>", "Simulation cert mode: quick, full, stress", "quick").option("--cert-adaptive-runs <n>", "Adaptive runs for full/stress certification", "30").option("--cert-max-improvement-rounds <n>", "Max prompt improvement rounds in cert loop (0-5)", "1").option("--require-phone", "Hold proof if no phone/contact number is provisioned").option("--skip-cert", "Skip simulation certification check").option("--skip-smoke", "Skip widget runtime smoke check").option("--skip-voice-health", "Skip realtime voice provider health check").option("--out <path>", "Write signed proof report JSON to this path").option("--strict", "Exit non-zero unless all non-skipped checks pass").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+    const checks = [];
+    const ctx = {
+      tokenPresent: false,
+      traceIds: [],
+      correlationIds: []
+    };
+    try {
+      const creds = loadCredentials(opts.apiUrl);
+      ctx.apiUrl = creds.apiUrl;
+      ctx.tokenPresent = Boolean(creds.token);
+      ctx.orgId = opts.org || creds.orgId;
+      checks.push(pass("auth", "CLI credentials are present and not expired.", {
+        api_url: creds.apiUrl,
+        org_id_from_credentials: creds.orgId ?? null
+      }));
+    } catch (error2) {
+      checks.push(hold("auth", "auth_missing_or_expired", "CLI is not authenticated.", "foh auth login --web", {
+        message: error2 instanceof Error ? error2.message : String(error2)
+      }));
+    }
+    if (ctx.tokenPresent && !ctx.orgId) {
+      try {
+        const orgs = await apiFetch("/v1/console/auth/my-orgs", { apiUrlOverride: opts.apiUrl });
+        const resolved = firstUsableOrgId(orgs);
+        if (resolved.orgId) {
+          ctx.orgId = resolved.orgId;
+          checks.push(pass("org", "Resolved the only available org.", { org_id: resolved.orgId }));
+        } else {
+          checks.push(hold(
+            "org",
+            resolved.count === 0 ? "org_missing" : "org_ambiguous",
+            resolved.count === 0 ? "No usable org was found for this account." : `Found ${resolved.count} orgs; choose one explicitly.`,
+            "foh org list --json && foh org use --org <org-id>",
+            { org_count: resolved.count }
+          ));
+        }
+      } catch (error2) {
+        checks.push(fail("org", "org_resolution_failed", error2, "foh org list --json"));
+      }
+    } else if (ctx.orgId) {
+      checks.push(pass("org", "Org context is selected.", { org_id: ctx.orgId }));
+    } else {
+      checks.push(skipped("org", "auth_required", "Skipped until authentication is fixed.", "foh auth login --web"));
+    }
+    if (ctx.orgId) {
+      if (opts.agent) {
+        ctx.agentId = String(opts.agent);
+        checks.push(pass("agent_selection", "Using explicitly supplied agent.", { agent_id: ctx.agentId }));
+      } else {
+        try {
+          const list = await apiFetch("/v1/console/agents", {
+            orgId: ctx.orgId,
+            apiUrlOverride: opts.apiUrl
+          });
+          const resolved = agentIdFromList(list);
+          if (resolved.agentId) {
+            ctx.agentId = resolved.agentId;
+            checks.push(pass("agent_selection", "Resolved the only available agent.", { agent_id: resolved.agentId }));
+          } else {
+            checks.push(hold(
+              "agent_selection",
+              resolved.reason === "no_agents" ? "agent_missing" : "agent_ambiguous",
+              resolved.reason === "no_agents" ? "No agent exists in this org." : `Found ${resolved.count} agents; choose one explicitly.`,
+              resolved.reason === "no_agents" ? "foh setup --json" : "foh agent list --json && foh prove --agent <agent-id> --json",
+              { agent_count: resolved.count }
+            ));
+          }
+        } catch (error2) {
+          checks.push(fail("agent_selection", "agent_selection_failed", error2, "foh agent list --json"));
+        }
+      }
+    } else {
+      checks.push(skipped("agent_selection", "org_required", "Skipped until org context is fixed.", "foh org use --org <org-id>"));
+    }
+    if (ctx.agentId) {
+      try {
+        const validation = await apiFetch(`/v1/console/agents/${ctx.agentId}/validate`, {
+          method: "POST",
+          orgId: ctx.orgId,
+          apiUrlOverride: opts.apiUrl
+        });
+        const issues = Array.isArray(validation.issues) ? validation.issues : [];
+        if (validation.ok === false || issues.length > 0) {
+          checks.push(hold("agent_validation", "agent_validation_issues", `Agent validation returned ${issues.length} issue(s).`, `foh agent validate --agent ${ctx.agentId} --json`, validation));
+        } else {
+          checks.push(pass("agent_validation", "Agent validation passed.", validation));
+        }
+      } catch (error2) {
+        checks.push(fail("agent_validation", "agent_validation_failed", error2, `foh agent validate --agent ${ctx.agentId} --json`));
+      }
+      if (ctx.orgId) {
+        try {
+          const onboarding = await apiFetch(`/v1/console/org/${ctx.orgId}/onboarding`, {
+            orgId: ctx.orgId,
+            apiUrlOverride: opts.apiUrl
+          });
+          const phoneNumber = typeof onboarding.phone_number === "string" && onboarding.phone_number.trim() ? onboarding.phone_number.trim() : null;
+          if (phoneNumber) {
+            checks.push(pass("contact_channel", "Contact phone number is provisioned.", {
+              phone_number_present: true,
+              provisioning_status: onboarding.provisioning_status ?? null
+            }));
+          } else if (opts.requirePhone) {
+            checks.push(hold("contact_channel", "contact_phone_missing", "No phone/contact number is provisioned for this org.", `foh provision buy --org ${ctx.orgId} --json`, {
+              provisioning_status: onboarding.provisioning_status ?? null
+            }));
+          } else {
+            checks.push(skipped("contact_channel", "contact_phone_not_required", "No phone/contact number is provisioned; pass --require-phone to make this a blocker.", `foh provision buy --org ${ctx.orgId} --json`));
+          }
+        } catch (error2) {
+          checks.push(fail("contact_channel", "contact_channel_check_failed", error2, `foh provision status --org ${ctx.orgId} --json`));
+        }
+      }
+      if (opts.skipVoiceHealth) {
+        checks.push(skipped("voice_realtime_health", "operator_skipped", "Skipped by --skip-voice-health.", "foh voice realtime-health --json"));
+      } else {
+        try {
+          const health = await apiFetch(
+            "/v1/console/realtime/health",
+            { apiUrlOverride: opts.apiUrl }
+          );
+          const providers = Array.isArray(health.providers) ? health.providers : [];
+          if (providers.length === 0) {
+            checks.push(skipped("voice_realtime_health", "voice_health_no_providers", "Realtime voice health returned no providers.", "foh voice realtime-health --json"));
+          } else if (providers.every((provider) => provider?.ready === true)) {
+            checks.push(pass("voice_realtime_health", "Realtime voice providers are ready.", {
+              provider_count: providers.length
+            }));
+          } else {
+            checks.push(hold("voice_realtime_health", "voice_realtime_provider_not_ready", "One or more realtime voice providers are not ready.", "foh voice realtime-health --json", {
+              providers
+            }));
+          }
+        } catch (error2) {
+          checks.push(fail("voice_realtime_health", "voice_realtime_health_failed", error2, "foh voice realtime-health --json"));
+        }
+      }
+      try {
+        const ensure = await apiFetch("/v1/console/channels/widget/ensure", {
+          method: "POST",
+          body: JSON.stringify({ agentId: ctx.agentId }),
+          orgId: ctx.orgId,
+          apiUrlOverride: opts.apiUrl
+        });
+        const publicKey = publicKeyFromEnsureResponse(ensure);
+        if (!publicKey) {
+          checks.push(hold("widget_channel", "widget_public_key_missing", "Widget channel exists but no public key was returned.", `foh widget ensure --agent ${ctx.agentId} --json`, ensure));
+        } else {
+          ctx.widgetPublicKey = publicKey;
+          checks.push(pass("widget_channel", "Widget channel is available.", { public_key_present: true }));
+        }
+      } catch (error2) {
+        checks.push(fail("widget_channel", "widget_channel_failed", error2, `foh widget ensure --agent ${ctx.agentId} --json`));
+      }
+      try {
+        const embed = await apiFetch("/v1/console/channels/widget/embed-snippet", {
+          orgId: ctx.orgId,
+          apiUrlOverride: opts.apiUrl,
+          headers: { "x-agent-id": ctx.agentId }
+        });
+        if (typeof embed.snippet === "string" && embed.snippet.trim()) {
+          checks.push(pass("widget_embed", "Widget embed snippet is available.", { snippet_present: true }));
+        } else {
+          checks.push(hold("widget_embed", "widget_embed_missing", "Widget embed snippet is missing.", `foh widget embed-snippet --agent ${ctx.agentId}`));
+        }
+      } catch (error2) {
+        checks.push(fail("widget_embed", "widget_embed_failed", error2, `foh widget embed-snippet --agent ${ctx.agentId}`));
+      }
+      if (opts.skipSmoke) {
+        checks.push(skipped("widget_smoke", "operator_skipped", "Skipped by --skip-smoke.", `foh widget smoke --agent ${ctx.agentId} --json`));
+      } else if (!ctx.widgetPublicKey) {
+        checks.push(skipped("widget_smoke", "widget_public_key_required", "Skipped because widget public key is unavailable.", `foh widget ensure --agent ${ctx.agentId} --json`));
+      } else {
+        try {
+          const smoke = await runWidgetSmoke(ctx.widgetPublicKey, opts.apiUrl);
+          ctx.conversationId = smoke.conversation_id;
+          ctx.traceIds = smoke.trace_ids;
+          ctx.correlationIds = smoke.correlation_ids;
+          if (smoke.failed > 0) {
+            checks.push(hold("widget_smoke", "widget_smoke_failed", `${smoke.failed} widget smoke turn(s) failed.`, `foh widget smoke --agent ${ctx.agentId} --json`, smoke));
+          } else {
+            checks.push(pass("widget_smoke", "Widget runtime smoke passed.", smoke));
+          }
+        } catch (error2) {
+          checks.push(fail("widget_smoke", "widget_smoke_failed", error2, `foh widget smoke --agent ${ctx.agentId} --json`));
+        }
+      }
+      if (opts.skipCert) {
+        checks.push(skipped("simulation_certification", "operator_skipped", "Skipped by --skip-cert.", `foh sim certify-loop --agent ${ctx.agentId} --json`));
+      } else {
+        try {
+          const certMode = normalizeAgentCertMode(opts.certMode);
+          const loop = await runSetupCertifyLoop(ctx.agentId, {
+            mode: certMode,
+            adaptiveRuns: Math.max(1, Number(opts.certAdaptiveRuns ?? 30) || 30),
+            maxImprovementRounds: Math.max(0, Math.min(5, Number(opts.certMaxImprovementRounds ?? 1) || 1)),
+            orgId: ctx.orgId,
+            apiUrlOverride: opts.apiUrl
+          });
+          if (!loop.overall_pass) {
+            checks.push(hold("simulation_certification", "simulation_certification_failed", "Simulation certification did not pass.", `foh sim certify-loop --agent ${ctx.agentId} --${certMode === "quick" ? "full" : certMode} --json`, loop));
+          } else {
+            checks.push(pass("simulation_certification", "Simulation certification passed.", {
+              mode: loop.mode,
+              attempts: loop.attempts?.length ?? 0,
+              improvement_runs: loop.improvement_runs,
+              scenario_summary: loop.certificate?.scenario_summary
+            }));
+          }
+        } catch (error2) {
+          checks.push(fail("simulation_certification", "simulation_certification_failed", error2, `foh sim certify-loop --agent ${ctx.agentId} --json`));
+        }
+      }
+    } else {
+      checks.push(skipped("agent_validation", "agent_required", "Skipped until an agent is selected.", "foh agent list --json"));
+      checks.push(skipped("contact_channel", "agent_required", "Skipped until an agent is selected.", "foh agent list --json"));
+      checks.push(skipped("voice_realtime_health", "agent_required", "Skipped until an agent is selected.", "foh agent list --json"));
+      checks.push(skipped("widget_channel", "agent_required", "Skipped until an agent is selected.", "foh agent list --json"));
+      checks.push(skipped("widget_embed", "agent_required", "Skipped until an agent is selected.", "foh agent list --json"));
+      checks.push(skipped("widget_smoke", "agent_required", "Skipped until an agent is selected.", "foh agent list --json"));
+      checks.push(skipped("simulation_certification", "agent_required", "Skipped until an agent is selected.", "foh agent list --json"));
+    }
+    const status = hasBlockingChecks(checks) ? "hold" : "pass";
+    const nextCommands = Array.from(new Set(checks.map((check2) => check2.next_command).filter((command) => Boolean(command))));
+    if (status === "pass" && ctx.agentId) {
+      nextCommands.push(`foh agent publish --agent ${ctx.agentId} --json`);
+    }
+    const report = signReport({
+      schema_version: "foh_cli_proof_report.v1",
+      generated_at: (/* @__PURE__ */ new Date()).toISOString(),
+      ok: status === "pass",
+      status,
+      ids: {
+        org_id: ctx.orgId ?? null,
+        agent_id: ctx.agentId ?? null,
+        widget_public_key_present: Boolean(ctx.widgetPublicKey),
+        conversation_id: ctx.conversationId ?? null,
+        trace_ids: ctx.traceIds,
+        correlation_ids: ctx.correlationIds
+      },
+      checks,
+      next_commands: nextCommands
+    });
+    const artifactPath = opts.out ? writeSignedJsonArtifact(String(opts.out), report) : void 0;
+    format(artifactPath ? { ...report, artifact_path: artifactPath } : report, { json: opts.json ?? false });
+    if (opts.strict && status !== "pass") markCommandFailed(1);
+  }));
 }
 
 // src/tui/command-palette.ts
@@ -36128,7 +36839,7 @@ async function runSelf(args, apiUrlOverride) {
   if (apiUrlOverride && !spawnArgs.includes("--api-url")) {
     spawnArgs.push("--api-url", apiUrlOverride);
   }
-  return await new Promise((resolve5, reject) => {
+  return await new Promise((resolve7, reject) => {
     const child = (0, import_child_process2.spawn)(process.execPath, [process.argv[1], ...spawnArgs], {
       stdio: "inherit",
       env: {
@@ -36138,7 +36849,7 @@ async function runSelf(args, apiUrlOverride) {
       }
     });
     child.once("error", reject);
-    child.once("close", (code) => resolve5(typeof code === "number" ? code : 1));
+    child.once("close", (code) => resolve7(typeof code === "number" ? code : 1));
   });
 }
 function shouldUseInteractiveHome(argv) {
@@ -36428,8 +37139,8 @@ function maybeDefaultToHome(argv = process.argv) {
 }
 
 // src/lib/update.ts
-var import_fs6 = require("fs");
-var import_path5 = require("path");
+var import_fs8 = require("fs");
+var import_path7 = require("path");
 var import_child_process3 = require("child_process");
 var import_crypto5 = require("crypto");
 function parseSemver(version2) {
@@ -36450,7 +37161,7 @@ function compareSemver(a, b) {
 }
 function readPackageJsonVersion(path2) {
   try {
-    const raw = (0, import_fs6.readFileSync)(path2, "utf-8");
+    const raw = (0, import_fs8.readFileSync)(path2, "utf-8");
     const parsed = JSON.parse(raw);
     const version2 = String(parsed.version ?? "").trim();
     return version2 || void 0;
@@ -36459,13 +37170,13 @@ function readPackageJsonVersion(path2) {
   }
 }
 function findRepoRoot(startCwd = process.cwd()) {
-  let current = (0, import_path5.resolve)(startCwd);
+  let current = (0, import_path7.resolve)(startCwd);
   while (true) {
-    const rootPackageJsonPath = (0, import_path5.join)(current, "package.json");
-    const cliPackageJsonPath = (0, import_path5.join)(current, "packages", "cli", "package.json");
-    if ((0, import_fs6.existsSync)(rootPackageJsonPath) && (0, import_fs6.existsSync)(cliPackageJsonPath)) {
+    const rootPackageJsonPath = (0, import_path7.join)(current, "package.json");
+    const cliPackageJsonPath = (0, import_path7.join)(current, "packages", "cli", "package.json");
+    if ((0, import_fs8.existsSync)(rootPackageJsonPath) && (0, import_fs8.existsSync)(cliPackageJsonPath)) {
       try {
-        const raw = (0, import_fs6.readFileSync)(rootPackageJsonPath, "utf-8");
+        const raw = (0, import_fs8.readFileSync)(rootPackageJsonPath, "utf-8");
         const parsed = JSON.parse(raw);
         if (String(parsed.name ?? "").trim() === "front-of-house") {
           return current;
@@ -36473,7 +37184,7 @@ function findRepoRoot(startCwd = process.cwd()) {
       } catch {
       }
     }
-    const parent = (0, import_path5.dirname)(current);
+    const parent = (0, import_path7.dirname)(current);
     if (parent === current) return void 0;
     current = parent;
   }
@@ -36487,7 +37198,7 @@ function detectUpdateAvailability(currentVersion, cwd = process.cwd()) {
       remediation: "Run this command from the Front Of House repo root to compare/install the latest CLI."
     };
   }
-  const cliPackageJsonPath = (0, import_path5.join)(repoRoot, "packages", "cli", "package.json");
+  const cliPackageJsonPath = (0, import_path7.join)(repoRoot, "packages", "cli", "package.json");
   const latestVersion = readPackageJsonVersion(cliPackageJsonPath);
   if (!latestVersion) {
     return {
@@ -36514,19 +37225,19 @@ function detectUpdateAvailability(currentVersion, cwd = process.cwd()) {
   };
 }
 async function applyRepoUpdate(repoRoot) {
-  const scriptPath = (0, import_path5.join)(repoRoot, "scripts", "Install-FohCli.ps1");
+  const scriptPath = (0, import_path7.join)(repoRoot, "scripts", "Install-FohCli.ps1");
   if (process.platform === "win32") {
-    return await new Promise((resolve5, reject) => {
+    return await new Promise((resolve7, reject) => {
       const child = (0, import_child_process3.spawn)(
         "powershell",
         ["-ExecutionPolicy", "Bypass", "-File", scriptPath],
         { stdio: "inherit" }
       );
       child.once("error", reject);
-      child.once("close", (code) => resolve5(typeof code === "number" ? code : 1));
+      child.once("close", (code) => resolve7(typeof code === "number" ? code : 1));
     });
   }
-  return await new Promise((resolve5, reject) => {
+  return await new Promise((resolve7, reject) => {
     const child = (0, import_child_process3.spawn)(
       "corepack",
       ["pnpm", "cli:install:global"],
@@ -36536,7 +37247,7 @@ async function applyRepoUpdate(repoRoot) {
       }
     );
     child.once("error", reject);
-    child.once("close", (code) => resolve5(typeof code === "number" ? code : 1));
+    child.once("close", (code) => resolve7(typeof code === "number" ? code : 1));
   });
 }
 function shouldShowUpdateNotice(argv = process.argv) {
@@ -36550,7 +37261,7 @@ function shouldShowUpdateNotice(argv = process.argv) {
 }
 function hashFileSha256(filePath) {
   try {
-    const bytes = (0, import_fs6.readFileSync)(filePath);
+    const bytes = (0, import_fs8.readFileSync)(filePath);
     return (0, import_crypto5.createHash)("sha256").update(bytes).digest("hex");
   } catch {
     return void 0;
@@ -36560,10 +37271,10 @@ function verifyCliArtifactIntegrity(params = {}) {
   const cwd = params.cwd ?? process.cwd();
   const argv = params.argv ?? process.argv;
   const expectedSha256 = String(params.expectedSha256 ?? "").trim().toLowerCase() || void 0;
-  const runtimePath = (0, import_path5.resolve)(String(argv[1] || ""));
+  const runtimePath = (0, import_path7.resolve)(String(argv[1] || ""));
   const runtimeHash = runtimePath ? hashFileSha256(runtimePath) : void 0;
   const warnings = [];
-  if (!runtimePath || !(0, import_fs6.existsSync)(runtimePath)) {
+  if (!runtimePath || !(0, import_fs8.existsSync)(runtimePath)) {
     warnings.push("runtime_path_unreadable");
   }
   if (!runtimeHash) {
@@ -36581,8 +37292,8 @@ function verifyCliArtifactIntegrity(params = {}) {
   let repoDistHash;
   let runtimeMatchesRepoDist;
   if (repoRoot) {
-    repoDistPath = (0, import_path5.join)(repoRoot, "packages", "cli", "dist", "foh.js");
-    if ((0, import_fs6.existsSync)(repoDistPath)) {
+    repoDistPath = (0, import_path7.join)(repoRoot, "packages", "cli", "dist", "foh.js");
+    if ((0, import_fs8.existsSync)(repoDistPath)) {
       repoDistHash = hashFileSha256(repoDistPath);
       if (runtimeHash && repoDistHash) {
         runtimeMatchesRepoDist = runtimeHash === repoDistHash;
@@ -36805,6 +37516,9 @@ registerMcp(program2);
 registerKnowledge(program2);
 registerLeads(program2);
 registerConversations(program2);
+registerTranscripts(program2);
+registerAnalytics(program2);
+registerTest(program2);
 registerTests(program2);
 registerOps(program2);
 registerSetup(program2);
@@ -36812,6 +37526,7 @@ registerManifest(program2);
 registerSim(program2);
 registerDiag(program2);
 registerBug(program2);
+registerProve(program2);
 registerUpdate(program2);
 registerHome(program2);
 hideInternalApiUrlOptions(program2);
