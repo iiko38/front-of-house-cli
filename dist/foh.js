@@ -10136,7 +10136,83 @@ async function promptSecret(label) {
   });
 }
 
+// src/lib/console-url.ts
+var DEFAULT_FOH_CONSOLE_URL = "https://app.frontofhouse.okii.uk";
+function normalizeBaseUrl(value) {
+  const normalized = String(value ?? "").trim().replace(/\/+$/, "");
+  return normalized || DEFAULT_FOH_CONSOLE_URL;
+}
+function resolveConsoleBaseUrl(cliOverride) {
+  return normalizeBaseUrl(cliOverride ?? process.env.FOH_CONSOLE_URL);
+}
+function buildConsoleSignInUrl(consoleUrl) {
+  return `${normalizeBaseUrl(consoleUrl)}/sign-in?source=cli`;
+}
+function buildCliAuthFallbackCommands() {
+  return [
+    "foh auth login --email <email> --password <password> --json",
+    "foh org list --json",
+    "foh org use --org <org-id> --json"
+  ];
+}
+function buildCliAuthFallbackInstructions(signInUrl) {
+  return {
+    human: [
+      `Open ${signInUrl}`,
+      "Sign in to Front Of House.",
+      "Return to the terminal and authenticate the CLI with email/password until browser-token exchange is available."
+    ],
+    ai_agent: [
+      "Show the sign_in_url to the user if browser opening is unavailable.",
+      "Ask the user for FOH email/password or an approved service-token path.",
+      "Run the explicit CLI auth commands in next_commands.",
+      "Never scrape browser cookies or local storage."
+    ]
+  };
+}
+
+// src/lib/open-url.ts
+var import_child_process = require("child_process");
+function openUrl(url2) {
+  const platform = process.platform;
+  const command = platform === "win32" ? "cmd" : platform === "darwin" ? "open" : "xdg-open";
+  const args = platform === "win32" ? ["/c", "start", "", url2] : [url2];
+  try {
+    const child = (0, import_child_process.spawn)(command, args, {
+      detached: true,
+      stdio: "ignore",
+      shell: false,
+      windowsHide: true
+    });
+    child.unref();
+    return { attempted: true, command };
+  } catch (error2) {
+    return {
+      attempted: false,
+      command,
+      error: error2 instanceof Error ? error2.message : String(error2)
+    };
+  }
+}
+
 // src/commands/auth.ts
+function emitBrowserAuthLink(opts) {
+  const consoleUrl = resolveConsoleBaseUrl(opts.consoleUrl);
+  const signInUrl = buildConsoleSignInUrl(consoleUrl);
+  const openResult = openUrl(signInUrl);
+  const nextCommands = buildCliAuthFallbackCommands();
+  format({
+    status: openResult.attempted ? "browser_auth_link_opened" : "browser_auth_link",
+    sign_in_url: signInUrl,
+    opened: openResult.attempted,
+    opener_command: openResult.command,
+    opener_error: openResult.error ?? null,
+    cli_auth_required: true,
+    note: "Browser sign-in opens the console. Until device-code auth is implemented, authenticate this CLI with the explicit credential command after sign-in.",
+    next_commands: nextCommands,
+    text_fallback: buildCliAuthFallbackInstructions(signInUrl)
+  }, { json: opts.json ?? false });
+}
 async function resolveLoginInputs(opts) {
   let email3 = String(opts.email ?? "").trim();
   let password = String(opts.password ?? "").trim();
@@ -10195,7 +10271,14 @@ async function maybeSelectDefaultOrg(orgs, jsonMode) {
 }
 function registerAuth(program3) {
   const auth = program3.command("auth").description("Manage CLI authentication");
-  auth.command("login").description("Authenticate with the FOH API and store a token locally").option("--email <email>", "FOH account email").option("--password <password>", "FOH account password").option("--wizard", "Run guided login wizard prompts").option("--api-url <url>", "Internal API base URL override (operators only)").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+  auth.command("login").description("Authenticate with the FOH API and store a token locally").option("--email <email>", "FOH account email").option("--password <password>", "FOH account password").option("--web", "Open browser sign-in and print text fallback commands").option("--browser", "Alias for --web").option("--wizard", "Run guided login wizard prompts").option("--console-url <url>", "Console sign-in URL override").option("--api-url <url>", "Internal API base URL override (operators only)").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+    if ((opts.web || opts.browser) && !opts.email && !opts.password) {
+      emitBrowserAuthLink({
+        consoleUrl: opts.consoleUrl,
+        json: opts.json
+      });
+      return;
+    }
     const apiUrl = resolveApiBaseUrl(opts.apiUrl);
     const login = await resolveLoginInputs({
       email: opts.email,
@@ -32101,7 +32184,7 @@ var StdioServerTransport = class {
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.0";
+var CLI_VERSION = "0.1.1";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -33606,8 +33689,52 @@ function timedStepResult(result, startedAtIso, startedAtMs) {
     duration_ms: Math.max(0, Date.now() - startedAtMs)
   };
 }
+function optionNameToFlag(key) {
+  return "--" + key.replace(/([A-Z])/g, "-$1").toLowerCase();
+}
+function buildMissingOptionsPlan(missing, opts) {
+  const missingFlags = missing.map(optionNameToFlag);
+  const signInUrl = buildConsoleSignInUrl(resolveConsoleBaseUrl(opts.consoleUrl));
+  return {
+    status: "blocked",
+    code: "setup_required_options_missing",
+    missing_options: missingFlags,
+    reason: "setup requires an authenticated org, an agent template, and an agent name before it can mutate customer resources",
+    sign_in_url: signInUrl,
+    next_commands: [
+      "foh auth login --web --json",
+      ...buildCliAuthFallbackCommands(),
+      "foh templates list --json",
+      'foh setup --org <org-id> --agent-template <template-id> --agent-name "Demo Agent" --widget-domains <domain> --report-out setup-report.json --json'
+    ],
+    text_fallback: buildCliAuthFallbackInstructions(signInUrl),
+    ai_agent_instruction: [
+      "Do not guess org IDs, template IDs, or customer domains.",
+      "If no browser is available, print sign_in_url and ask the user to sign in.",
+      "After auth, discover orgs and templates with the listed commands.",
+      "Rerun setup only after all missing_options are resolved."
+    ]
+  };
+}
+function emitMissingOptionsPlan(missing, opts) {
+  const plan = buildMissingOptionsPlan(missing, { consoleUrl: opts.consoleUrl });
+  if (resolveJsonMode({ json: opts.json })) {
+    format(plan, { json: true });
+    return;
+  }
+  const flags = missing.map(optionNameToFlag).join(", ");
+  process.stderr.write(`error: required options missing: ${flags}
+`);
+  process.stderr.write(`  Sign in: ${plan.sign_in_url}
+`);
+  process.stderr.write("  Remediation:\n");
+  for (const command of plan.next_commands) {
+    process.stderr.write(`    ${command}
+`);
+  }
+}
 function registerSetup(program3) {
-  program3.command("setup").description("Fully provision a new agency customer in one command").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--agent-template <id>", "Agent template ID (e.g. viewing-request)").option("--agent-name <name>", "Name for the new agent").option("--phone-country <cc>", "Phone number country code", "GB").option("--phone-area-code <code>", "Phone area code preference").option("--widget-domains <domains>", "Comma-separated widget domain allowlist").option("--voice-provider <p>", "TTS provider: openai, azure, twilio").option("--voice-id <id>", "Voice ID").option("--skip-compliance", "Skip compliance submission and wait").option("--skip-voice", "Skip voice configuration").option("--skip-tests", "Skip smoke tests").option("--cert-mode <m>", "Simulation cert mode: quick, full, stress", "quick").option("--cert-adaptive-runs <n>", "Adaptive run count for certification loop", "30").option("--cert-max-improvement-rounds <n>", "Max instruction improvement rounds in cert loop (0-5)", "1").option("--resume-from <step>", `Resume from a setup step (${SETUP_STEP_ORDER.join(", ")})`).option("--report-out <path>", "Optional path to write signed setup run report JSON").option("--dry-run", "Print all steps that would run without making any API calls").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => {
+  program3.command("setup").description("Fully provision a new agency customer in one command").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--agent-template <id>", "Agent template ID (e.g. viewing-request)").option("--agent-name <name>", "Name for the new agent").option("--phone-country <cc>", "Phone number country code", "GB").option("--phone-area-code <code>", "Phone area code preference").option("--widget-domains <domains>", "Comma-separated widget domain allowlist").option("--voice-provider <p>", "TTS provider: openai, azure, twilio").option("--voice-id <id>", "Voice ID").option("--skip-compliance", "Skip compliance submission and wait").option("--skip-voice", "Skip voice configuration").option("--skip-tests", "Skip smoke tests").option("--cert-mode <m>", "Simulation cert mode: quick, full, stress", "quick").option("--cert-adaptive-runs <n>", "Adaptive run count for certification loop", "30").option("--cert-max-improvement-rounds <n>", "Max instruction improvement rounds in cert loop (0-5)", "1").option("--resume-from <step>", `Resume from a setup step (${SETUP_STEP_ORDER.join(", ")})`).option("--report-out <path>", "Optional path to write signed setup run report JSON").option("--dry-run", "Print all steps that would run without making any API calls").option("--api-url <url>", "API base URL override").option("--console-url <url>", "Console sign-in URL override").option("--json", "Output as JSON").action(async (opts) => {
     if (!opts.org) {
       try {
         opts.org = loadCredentials(opts.apiUrl).orgId;
@@ -33616,12 +33743,7 @@ function registerSetup(program3) {
     }
     const missing = ["org", "agentTemplate", "agentName"].filter((key) => !opts[key]);
     if (missing.length) {
-      const flags = missing.map((key) => "--" + key.replace(/([A-Z])/g, "-$1").toLowerCase()).join(", ");
-      process.stderr.write(`error: required options missing: ${flags}
-`);
-      if (missing.includes("org")) {
-        process.stderr.write("  Remediation: Run: foh org use --org <id>  to set a default, or pass --org <id>\n");
-      }
+      emitMissingOptionsPlan(missing, { json: opts.json, consoleUrl: opts.consoleUrl });
       markCommandFailed(1);
       return;
     }
@@ -35775,7 +35897,7 @@ function getHomeQuickActions(state) {
 }
 
 // src/commands/home-interaction.ts
-var import_child_process = require("child_process");
+var import_child_process2 = require("child_process");
 var import_readline2 = require("readline");
 
 // src/tui/keypress.ts
@@ -35830,7 +35952,7 @@ async function runSelf(args, apiUrlOverride) {
     spawnArgs.push("--api-url", apiUrlOverride);
   }
   return await new Promise((resolve5, reject) => {
-    const child = (0, import_child_process.spawn)(process.execPath, [process.argv[1], ...spawnArgs], {
+    const child = (0, import_child_process2.spawn)(process.execPath, [process.argv[1], ...spawnArgs], {
       stdio: "inherit",
       env: {
         ...process.env,
@@ -36131,7 +36253,7 @@ function maybeDefaultToHome(argv = process.argv) {
 // src/lib/update.ts
 var import_fs6 = require("fs");
 var import_path5 = require("path");
-var import_child_process2 = require("child_process");
+var import_child_process3 = require("child_process");
 var import_crypto5 = require("crypto");
 function parseSemver(version2) {
   const trimmed = String(version2 ?? "").trim();
@@ -36218,7 +36340,7 @@ async function applyRepoUpdate(repoRoot) {
   const scriptPath = (0, import_path5.join)(repoRoot, "scripts", "Install-FohCli.ps1");
   if (process.platform === "win32") {
     return await new Promise((resolve5, reject) => {
-      const child = (0, import_child_process2.spawn)(
+      const child = (0, import_child_process3.spawn)(
         "powershell",
         ["-ExecutionPolicy", "Bypass", "-File", scriptPath],
         { stdio: "inherit" }
@@ -36228,7 +36350,7 @@ async function applyRepoUpdate(repoRoot) {
     });
   }
   return await new Promise((resolve5, reject) => {
-    const child = (0, import_child_process2.spawn)(
+    const child = (0, import_child_process3.spawn)(
       "corepack",
       ["pnpm", "cli:install:global"],
       {
