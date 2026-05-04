@@ -32640,7 +32640,7 @@ var StdioServerTransport = class {
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.12";
+var CLI_VERSION = "0.1.13";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -38739,6 +38739,9 @@ function proofArtifactPasses(runDir) {
 function readIfExists(path2) {
   return (0, import_fs14.existsSync)(path2) ? (0, import_fs14.readFileSync)(path2, "utf8") : "";
 }
+function relativeArtifactName(path2) {
+  return (0, import_path12.basename)(path2);
+}
 function classifyRun(input) {
   if (input.timedOut) return { status: "hold", reasonCode: "codex_runner_timeout" };
   if (!input.artifactSafetyOk) return { status: "fail", reasonCode: "external_agent_artifact_safety_blocked" };
@@ -38791,21 +38794,21 @@ function buildExecutedRunArtifact(input) {
     commands_run: commands.map((command) => command.command),
     docs_pages_used: [],
     artifacts: {
-      terminal_transcript: input.run.outputs.jsonl,
+      terminal_transcript: relativeArtifactName(input.run.outputs.jsonl),
       command_log: (0, import_fs14.existsSync)((0, import_path12.join)(input.run.run_dir, "commands.ndjson")) ? "commands.ndjson" : null,
       proof_bundle: (0, import_fs14.existsSync)((0, import_path12.join)(input.run.run_dir, "proof.json")) ? "proof.json" : null,
       replay_packet: (0, import_fs14.existsSync)((0, import_path12.join)(input.run.run_dir, "replay.json")) ? "replay.json" : null,
       knowledge_packet: (0, import_fs14.existsSync)((0, import_path12.join)(input.run.run_dir, "knowledge.json")) ? "knowledge.json" : null,
       improvement_packet: input.status === "pass" ? null : "improvement-packet.json",
       notes: (0, import_fs14.existsSync)((0, import_path12.join)(input.run.run_dir, "notes.md")) ? "notes.md" : null,
-      codex_last_message: input.run.outputs.last_message,
-      codex_stderr: input.run.outputs.stderr,
-      artifact_safety: input.run.outputs.artifact_safety
+      codex_last_message: relativeArtifactName(input.run.outputs.last_message),
+      codex_stderr: relativeArtifactName(input.run.outputs.stderr),
+      artifact_safety: relativeArtifactName(input.run.outputs.artifact_safety)
     },
     summary: input.status === "pass" ? "Controlled Codex external-agent run produced passing proof evidence." : `Controlled Codex external-agent run ended as ${input.status} with reason ${input.reasonCode}.`,
     next_commands: input.status === "pass" ? ["corepack pnpm eval:external-agent:runs:summary"] : [
-      `foh eval external-agent scan-artifacts --run-dir ${input.run.run_dir} --private-repo-root <private_repo_root> --write-redacted --json`,
-      `foh bug improve --from external-agent-run --file ${input.run.outputs.run} --out ${(0, import_path12.join)(input.run.run_dir, "improvement-packet.json")} --json`,
+      "foh eval external-agent scan-artifacts --run-dir <run_dir> --private-repo-root <private_repo_root> --write-redacted --json",
+      "foh bug improve --from external-agent-run --file <run_dir>/run.json --out <run_dir>/improvement-packet.json --json",
       "corepack pnpm eval:external-agent:runs:summary"
     ]
   };
