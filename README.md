@@ -4,7 +4,7 @@ AI-operator provisioning CLI for Front Of House.
 
 Public mirror: https://github.com/iiko38/front-of-house-cli
 
-Current published baseline: `@f-o-h/cli@0.1.11`
+Current published baseline: `@f-o-h/cli@0.1.12`
 
 This mirror is a generated release artifact. The private product monorepo is not
 published here, and no open-source license is granted unless stated separately.
@@ -121,6 +121,29 @@ foh eval external-agent execute \
 This writes `executor-plan.json`, creates intentionally empty clean workspaces
 outside the private repo, validates the local Codex binary/help flags, and
 prints exact `codex exec` commands without executing them.
+
+Before promoting run artifacts, scan and redact them:
+
+```bash
+foh eval external-agent scan-artifacts \
+  --run-dir test-results/external-agent-runs/<batch>/<run-id> \
+  --private-repo-root <private-repo-root> \
+  --write-redacted \
+  --json
+```
+
+After dry-run review, one controlled Codex run can be launched explicitly with
+`--live`. Live mode is intentionally limited to one run per batch and finalizes
+`run.json` even on timeout or non-zero exit:
+
+```bash
+foh eval external-agent execute \
+  --runner codex \
+  --batch test-results/external-agent-runs/<one-model-batch>/batch.json \
+  --timeout-minutes 30 \
+  --live \
+  --json
+```
 
 ## Local Scenario Suites
 

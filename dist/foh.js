@@ -6046,7 +6046,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve11.call(this, root, ref);
+      let _sch = resolve12.call(this, root, ref);
       if (_sch === void 0) {
         const schema2 = (_a2 = root.localRefs) === null || _a2 === void 0 ? void 0 : _a2[ref];
         const { schemaId } = this.opts;
@@ -6073,7 +6073,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve11(root, ref) {
+    function resolve12(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -6648,7 +6648,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve11(baseURI, relativeURI, options) {
+    function resolve12(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const resolved = resolveComponent(parse3(baseURI, schemelessOptions), parse3(relativeURI, schemelessOptions), schemelessOptions, true);
       schemelessOptions.skipEscape = true;
@@ -6875,7 +6875,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve11,
+      resolve: resolve12,
       resolveComponent,
       equal,
       serialize,
@@ -10105,21 +10105,21 @@ async function promptLine(label, {
   allowEmpty = false,
   defaultValue
 } = {}) {
-  return await new Promise((resolve11) => {
+  return await new Promise((resolve12) => {
     const suffix = defaultValue ? ` [${defaultValue}]` : "";
     const rl = (0, import_readline.createInterface)({ input: process.stdin, output: process.stdout, terminal: true });
     rl.question(`${label}${suffix}: `, (answer) => {
       rl.close();
       const value = String(answer ?? "").trim();
       if (!value && typeof defaultValue === "string") {
-        resolve11(defaultValue);
+        resolve12(defaultValue);
         return;
       }
       if (!value && !allowEmpty) {
-        resolve11("");
+        resolve12("");
         return;
       }
-      resolve11(value);
+      resolve12(value);
     });
   });
 }
@@ -10127,7 +10127,7 @@ async function promptSecret(label) {
   if (!process.stdin.isTTY || !process.stdout.isTTY || typeof process.stdin.setRawMode !== "function") {
     return await promptLine(label);
   }
-  return await new Promise((resolve11) => {
+  return await new Promise((resolve12) => {
     const stdin = process.stdin;
     const stdout = process.stdout;
     const wasRaw = Boolean(stdin.isRaw);
@@ -10141,7 +10141,7 @@ async function promptSecret(label) {
     const finish = () => {
       cleanup();
       stdout.write("\n");
-      resolve11(value);
+      resolve12(value);
     };
     const onData = (chunk) => {
       const text = typeof chunk === "string" ? chunk : chunk.toString("utf8");
@@ -10150,7 +10150,7 @@ async function promptSecret(label) {
           cleanup();
           process.exitCode = 130;
           stdout.write("\n");
-          return resolve11("");
+          return resolve12("");
         }
         if (char === "\r" || char === "\n") {
           finish();
@@ -10419,7 +10419,7 @@ async function storeAuthenticatedSession(params) {
   return output;
 }
 function sleep(ms) {
-  return new Promise((resolve11) => setTimeout(resolve11, ms));
+  return new Promise((resolve12) => setTimeout(resolve12, ms));
 }
 async function runDeviceLogin(opts) {
   const jsonMode = Boolean(opts.json);
@@ -10957,7 +10957,7 @@ async function pollUntil(check2, opts) {
   }
 }
 function sleep2(ms) {
-  return new Promise((resolve11) => setTimeout(resolve11, ms));
+  return new Promise((resolve12) => setTimeout(resolve12, ms));
 }
 
 // src/commands/compliance.ts
@@ -13995,8 +13995,8 @@ function registerAgentGuardrailCommands(agent) {
     try {
       rule = JSON.parse(opts.rule);
     } catch {
-      const { readFileSync: readFileSync11 } = await import("fs");
-      rule = JSON.parse(readFileSync11(opts.rule, "utf-8"));
+      const { readFileSync: readFileSync12 } = await import("fs");
+      rule = JSON.parse(readFileSync12(opts.rule, "utf-8"));
     }
     const data = await apiFetch(`/v1/console/agents/${opts.agent}/guardrails`, {
       method: "POST",
@@ -14596,9 +14596,9 @@ function registerAgent(program3) {
       process.stdout.write(yaml);
       return;
     }
-    const { writeFileSync: writeFileSync8 } = await import("fs");
+    const { writeFileSync: writeFileSync9 } = await import("fs");
     const outputPath = opts.output ?? "tenant.yaml";
-    writeFileSync8(
+    writeFileSync9(
       outputPath,
       `# tenant.yaml - Front Of House agent manifest
 # Edit this file and run: foh plan tenant.yaml
@@ -16033,11 +16033,11 @@ function registerVoice(program3) {
     }
     const outputPath = String(opts.out || `foh-voice-preview-${provider}-${voiceId}.mp3`).trim();
     const audio = Buffer.from(await res.arrayBuffer());
-    const { mkdirSync: mkdirSync7, writeFileSync: writeFileSync8 } = await import("fs");
-    const { dirname: dirname5, resolve: resolve11 } = await import("path");
-    const absolutePath = resolve11(outputPath);
+    const { mkdirSync: mkdirSync7, writeFileSync: writeFileSync9 } = await import("fs");
+    const { dirname: dirname5, resolve: resolve12 } = await import("path");
+    const absolutePath = resolve12(outputPath);
     mkdirSync7(dirname5(absolutePath), { recursive: true });
-    writeFileSync8(absolutePath, audio);
+    writeFileSync9(absolutePath, audio);
     format({
       status: "ok",
       provider,
@@ -30518,7 +30518,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve11) => setTimeout(resolve11, pollInterval));
+        await new Promise((resolve12) => setTimeout(resolve12, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error2) {
@@ -30535,7 +30535,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve11, reject) => {
+    return new Promise((resolve12, reject) => {
       const earlyReject = (error2) => {
         reject(error2);
       };
@@ -30613,7 +30613,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve11(parseResult.data);
+            resolve12(parseResult.data);
           }
         } catch (error2) {
           reject(error2);
@@ -30874,12 +30874,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve11, reject) => {
+    return new Promise((resolve12, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve11, interval);
+      const timeoutId = setTimeout(resolve12, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -31979,7 +31979,7 @@ var McpServer = class {
     let task = createTaskResult.task;
     const pollInterval = task.pollInterval ?? 5e3;
     while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-      await new Promise((resolve11) => setTimeout(resolve11, pollInterval));
+      await new Promise((resolve12) => setTimeout(resolve12, pollInterval));
       const updatedTask = await extra.taskStore.getTask(taskId);
       if (!updatedTask) {
         throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -32628,19 +32628,19 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve11) => {
+    return new Promise((resolve12) => {
       const json3 = serializeMessage(message);
       if (this._stdout.write(json3)) {
-        resolve11();
+        resolve12();
       } else {
-        this._stdout.once("drain", resolve11);
+        this._stdout.once("drain", resolve12);
       }
     });
   }
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.11";
+var CLI_VERSION = "0.1.12";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -32825,7 +32825,7 @@ async function runFohCli(params) {
     effectiveArgv.push("--json");
   }
   const command = `foh ${effectiveArgv.join(" ")}`;
-  return await new Promise((resolve11) => {
+  return await new Promise((resolve12) => {
     const child = (0, import_node_child_process.spawn)(process.execPath, [cliEntry, ...effectiveArgv], {
       stdio: ["ignore", "pipe", "pipe"],
       env: {
@@ -32850,7 +32850,7 @@ async function runFohCli(params) {
     });
     child.once("error", (error2) => {
       clearTimeout(timeoutHandle);
-      resolve11({
+      resolve12({
         ok: false,
         command,
         argv: effectiveArgv,
@@ -32866,7 +32866,7 @@ async function runFohCli(params) {
       const stderrText = finalizeBoundedText(stderrBuffer);
       const exitCode = Number.isFinite(code ?? NaN) ? Number(code) : 1;
       const stdoutJson = tryParseJson(stdoutText);
-      resolve11({
+      resolve12({
         ok: !timedOut && exitCode === 0,
         command,
         argv: effectiveArgv,
@@ -34775,8 +34775,8 @@ function registerSetup(program3) {
         }
         try {
           const manifest = await agentExport(resolvedAgentId, { apiUrlOverride: opts.apiUrl });
-          const { writeFileSync: writeFileSync8 } = await import("fs");
-          writeFileSync8(
+          const { writeFileSync: writeFileSync9 } = await import("fs");
+          writeFileSync9(
             "tenant.yaml",
             `# tenant.yaml - Front Of House agent manifest
 # Edit this file and run: foh plan tenant.yaml
@@ -34944,8 +34944,8 @@ function registerSim(program3) {
       }
       const cert = response.certificate;
       if (opts.out) {
-        const { writeFileSync: writeFileSync8 } = await import("fs");
-        writeFileSync8(opts.out, JSON.stringify(cert, null, 2) + "\n", "utf-8");
+        const { writeFileSync: writeFileSync9 } = await import("fs");
+        writeFileSync9(opts.out, JSON.stringify(cert, null, 2) + "\n", "utf-8");
         process.stderr.write(`  Certificate written to ${opts.out}
 `);
       }
@@ -34995,8 +34995,8 @@ function registerSim(program3) {
         });
       }
       if (opts.out) {
-        const { writeFileSync: writeFileSync8 } = await import("fs");
-        writeFileSync8(opts.out, JSON.stringify(response.certificate, null, 2) + "\n", "utf-8");
+        const { writeFileSync: writeFileSync9 } = await import("fs");
+        writeFileSync9(opts.out, JSON.stringify(response.certificate, null, 2) + "\n", "utf-8");
         process.stderr.write(`  Final certificate written to ${opts.out}
 `);
       }
@@ -37710,7 +37710,7 @@ async function runSelf(args, apiUrlOverride) {
   if (apiUrlOverride && !spawnArgs.includes("--api-url")) {
     spawnArgs.push("--api-url", apiUrlOverride);
   }
-  return await new Promise((resolve11, reject) => {
+  return await new Promise((resolve12, reject) => {
     const child = (0, import_child_process2.spawn)(process.execPath, [process.argv[1], ...spawnArgs], {
       stdio: "inherit",
       env: {
@@ -37720,7 +37720,7 @@ async function runSelf(args, apiUrlOverride) {
       }
     });
     child.once("error", reject);
-    child.once("close", (code) => resolve11(typeof code === "number" ? code : 1));
+    child.once("close", (code) => resolve12(typeof code === "number" ? code : 1));
   });
 }
 function shouldUseInteractiveHome(argv) {
@@ -38098,17 +38098,17 @@ function detectUpdateAvailability(currentVersion, cwd = process.cwd()) {
 async function applyRepoUpdate(repoRoot) {
   const scriptPath = (0, import_path9.join)(repoRoot, "scripts", "Install-FohCli.ps1");
   if (process.platform === "win32") {
-    return await new Promise((resolve11, reject) => {
+    return await new Promise((resolve12, reject) => {
       const child = (0, import_child_process3.spawn)(
         "powershell",
         ["-ExecutionPolicy", "Bypass", "-File", scriptPath],
         { stdio: "inherit" }
       );
       child.once("error", reject);
-      child.once("close", (code) => resolve11(typeof code === "number" ? code : 1));
+      child.once("close", (code) => resolve12(typeof code === "number" ? code : 1));
     });
   }
-  return await new Promise((resolve11, reject) => {
+  return await new Promise((resolve12, reject) => {
     const child = (0, import_child_process3.spawn)(
       "corepack",
       ["pnpm", "cli:install:global"],
@@ -38118,7 +38118,7 @@ async function applyRepoUpdate(repoRoot) {
       }
     );
     child.once("error", reject);
-    child.once("close", (code) => resolve11(typeof code === "number" ? code : 1));
+    child.once("close", (code) => resolve12(typeof code === "number" ? code : 1));
   });
 }
 function shouldShowUpdateNotice(argv = process.argv) {
@@ -38254,18 +38254,149 @@ function registerUpdate(program3) {
 }
 
 // src/commands/eval.ts
-var import_fs14 = require("fs");
-var import_path12 = require("path");
+var import_fs15 = require("fs");
+var import_path13 = require("path");
 var import_child_process5 = require("child_process");
 
-// src/lib/external-agent-capture.ts
+// src/lib/external-agent-artifact-safety.ts
 var import_fs12 = require("fs");
 var import_path10 = require("path");
+var DEFAULT_MAX_BYTES_PER_FILE = 5 * 1024 * 1024;
+var TEXT_ARTIFACT_NAMES = /* @__PURE__ */ new Set([
+  "codex-events.jsonl",
+  "codex-exec.jsonl",
+  "codex-last-message.md",
+  "commands.ndjson",
+  "executor-plan.json",
+  "improvement-packet.json",
+  "knowledge.json",
+  "notes.md",
+  "proof.json",
+  "replay.json",
+  "run.json",
+  "terminal-transcript.txt"
+]);
+var SECRET_RE2 = /\b(?:Bearer\s+)?(?:sk|pk|xai|whsec|EAAN|ghp|gho|github_pat|npm_)[A-Za-z0-9_\-.]{12,}\b/gi;
+var EMAIL_RE2 = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
+var PHONE_RE2 = /(?<!\w)(?:\+?\d[\d\s().-]{7,}\d)(?!\w)/g;
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function pathVariants(path2) {
+  const resolved = (0, import_path10.resolve)(path2);
+  const slash = resolved.replace(/\\/g, "/");
+  const backslash = resolved.replace(/\//g, "\\");
+  return Array.from(new Set([
+    resolved,
+    slash,
+    backslash,
+    backslash.replace(/\\/g, "\\\\")
+  ].filter((entry) => entry.length > 3)));
+}
+function regexForLiteralVariants(values) {
+  const parts = values.map((value) => escapeRegExp(value)).filter(Boolean);
+  if (parts.length === 0) return null;
+  return new RegExp(parts.join("|"), "gi");
+}
+function matchesFor(pattern, text) {
+  if (!pattern) return 0;
+  const matches = text.match(pattern);
+  return matches ? matches.length : 0;
+}
+function redactionPatterns(input) {
+  return {
+    secret: SECRET_RE2,
+    email: EMAIL_RE2,
+    phone: PHONE_RE2,
+    privateRepo: input.privateRepoRoot ? regexForLiteralVariants(pathVariants(input.privateRepoRoot)) : null,
+    home: input.homeDir ? regexForLiteralVariants(pathVariants(input.homeDir)) : null
+  };
+}
+function redactExternalAgentArtifactText(text, input = {}) {
+  const patterns = redactionPatterns(input);
+  let redacted = text.replace(patterns.secret, "[redacted_secret]").replace(patterns.email, "[redacted_email]").replace(patterns.phone, "[redacted_phone]");
+  if (patterns.privateRepo) redacted = redacted.replace(patterns.privateRepo, "[redacted_private_repo_path]");
+  if (patterns.home) redacted = redacted.replace(patterns.home, "[redacted_home_path]");
+  return redacted;
+}
+function artifactFiles(runDir) {
+  if (!(0, import_fs12.existsSync)(runDir)) return [];
+  return (0, import_fs12.readdirSync)(runDir).map((name) => (0, import_path10.join)(runDir, name)).filter((path2) => {
+    const stat = (0, import_fs12.statSync)(path2);
+    return stat.isFile() && TEXT_ARTIFACT_NAMES.has(path2.split(/[\\/]/).pop() || "");
+  }).sort();
+}
+function finding(kind, file2, count) {
+  if (count < 1) return null;
+  return {
+    kind,
+    file: file2,
+    count,
+    fatal: kind === "secret_like_token" || kind === "private_repo_path"
+  };
+}
+function scanText(input) {
+  const patterns = redactionPatterns(input);
+  return [
+    finding("secret_like_token", input.file, matchesFor(patterns.secret, input.text)),
+    finding("private_repo_path", input.file, matchesFor(patterns.privateRepo, input.text)),
+    finding("local_home_path", input.file, matchesFor(patterns.home, input.text)),
+    finding("email_address", input.file, matchesFor(patterns.email, input.text)),
+    finding("phone_number", input.file, matchesFor(patterns.phone, input.text))
+  ].filter(Boolean);
+}
+function scanExternalAgentArtifacts(options) {
+  const runDir = (0, import_path10.resolve)(options.runDir);
+  const privateRepoRoot = options.privateRepoRoot ? (0, import_path10.resolve)(options.privateRepoRoot) : void 0;
+  const homeDir = options.homeDir || process.env.USERPROFILE || process.env.HOME;
+  const maxBytes = options.maxBytesPerFile ?? DEFAULT_MAX_BYTES_PER_FILE;
+  const files = artifactFiles(runDir);
+  const findings = [];
+  const redactedFiles = [];
+  for (const file2 of files) {
+    const stat = (0, import_fs12.statSync)(file2);
+    if (stat.size > maxBytes) {
+      findings.push({
+        kind: "artifact_too_large",
+        file: file2,
+        count: 1,
+        fatal: true
+      });
+      continue;
+    }
+    const text = (0, import_fs12.readFileSync)(file2, "utf8");
+    findings.push(...scanText({ text, file: file2, privateRepoRoot, homeDir }));
+    if (options.writeRedacted) {
+      const redacted = redactExternalAgentArtifactText(text, { privateRepoRoot, homeDir });
+      const out = `${file2}.redacted`;
+      (0, import_fs12.writeFileSync)(out, redacted, "utf8");
+      redactedFiles.push(out);
+    }
+  }
+  const blockedReasonCodes = Array.from(new Set(findings.filter((entry) => entry.fatal).map((entry) => `artifact_contains_${entry.kind}`)));
+  const ok = blockedReasonCodes.length === 0;
+  return {
+    schema_version: "external_agent_artifact_safety_report.v1",
+    ok,
+    status: ok ? "pass" : "blocked",
+    reason_code: ok ? "external_agent_artifacts_safe" : "external_agent_artifacts_contain_blocked_content",
+    scanned_at: (/* @__PURE__ */ new Date()).toISOString(),
+    run_dir: runDir,
+    files_scanned: files,
+    redacted_files: redactedFiles,
+    findings,
+    blocked_reason_codes: blockedReasonCodes
+  };
+}
+
+// src/lib/external-agent-capture.ts
+var import_fs13 = require("fs");
+var import_path11 = require("path");
 var EXTERNAL_AGENT_RUN_DIR_ENV = "FOH_EXTERNAL_AGENT_RUN_DIR";
 var EXTERNAL_AGENT_PROMPT_VERSION_ENV = "FOH_EXTERNAL_AGENT_PROMPT_VERSION";
-var SECRET_RE2 = /\b(?:Bearer\s+)?(?:sk|pk|xai|whsec|EAAN|ghp|gho|github_pat|npm_)[A-Za-z0-9_\-.]{12,}\b/gi;
+var SECRET_RE3 = /\b(?:Bearer\s+)?(?:sk|pk|xai|whsec|EAAN|ghp|gho|github_pat|npm_)[A-Za-z0-9_\-.]{12,}\b/gi;
 function redactText(value) {
-  return value.replace(SECRET_RE2, "[redacted_secret]");
+  return value.replace(SECRET_RE3, "[redacted_secret]");
 }
 function redactPath(value) {
   let redacted = redactText(value);
@@ -38279,13 +38410,13 @@ function safeJsonLine(value) {
 function getExternalAgentRunDir() {
   const raw = process.env[EXTERNAL_AGENT_RUN_DIR_ENV];
   if (!raw || !raw.trim()) return null;
-  return (0, import_path10.resolve)(raw);
+  return (0, import_path11.resolve)(raw);
 }
 function recordExternalAgentCliInvocation(input) {
   const runDir = getExternalAgentRunDir();
   if (!runDir) return;
   try {
-    (0, import_fs12.mkdirSync)(runDir, { recursive: true });
+    (0, import_fs13.mkdirSync)(runDir, { recursive: true });
     const args = input.argv.slice(2).map((arg) => redactText(String(arg)));
     const record2 = {
       schema_version: "external_agent_cli_command.v1",
@@ -38297,20 +38428,20 @@ function recordExternalAgentCliInvocation(input) {
       json_requested: args.includes("--json"),
       prompt_version: process.env[EXTERNAL_AGENT_PROMPT_VERSION_ENV] || null
     };
-    (0, import_fs12.appendFileSync)((0, import_path10.join)(runDir, "commands.ndjson"), safeJsonLine(record2), "utf8");
+    (0, import_fs13.appendFileSync)((0, import_path11.join)(runDir, "commands.ndjson"), safeJsonLine(record2), "utf8");
   } catch {
   }
 }
 function readCommandRecords(runDir) {
-  const commandLogPath = (0, import_path10.join)(runDir, "commands.ndjson");
-  if (!(0, import_fs12.existsSync)(commandLogPath)) return [];
-  return (0, import_fs12.readFileSync)(commandLogPath, "utf8").split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => JSON.parse(line));
+  const commandLogPath = (0, import_path11.join)(runDir, "commands.ndjson");
+  if (!(0, import_fs13.existsSync)(commandLogPath)) return [];
+  return (0, import_fs13.readFileSync)(commandLogPath, "utf8").split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => JSON.parse(line));
 }
 
 // src/lib/external-agent-executor.ts
-var import_fs13 = require("fs");
+var import_fs14 = require("fs");
 var import_os2 = require("os");
-var import_path11 = require("path");
+var import_path12 = require("path");
 var import_child_process4 = require("child_process");
 var CODEX_EXECUTOR_DENIED_ENV_PREFIXES = [
   "SUPABASE_",
@@ -38375,14 +38506,14 @@ function buildCodexExecutorEnv(input) {
   return env;
 }
 function normalizeForCompare(path2) {
-  const resolved = (0, import_path11.resolve)(path2);
+  const resolved = (0, import_path12.resolve)(path2);
   return process.platform === "win32" ? resolved.toLowerCase() : resolved;
 }
 function isPathInside(childPath, parentPath) {
   const child = normalizeForCompare(childPath);
   const parent = normalizeForCompare(parentPath);
-  const rel = (0, import_path11.relative)(parent, child);
-  return rel === "" || !!rel && !rel.startsWith("..") && !(0, import_path11.isAbsolute)(rel);
+  const rel = (0, import_path12.relative)(parent, child);
+  return rel === "" || !!rel && !rel.startsWith("..") && !(0, import_path12.isAbsolute)(rel);
 }
 function requireString(value, field) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -38391,10 +38522,10 @@ function requireString(value, field) {
   return value;
 }
 function readBatch(batchPath) {
-  if (!(0, import_fs13.existsSync)(batchPath)) {
+  if (!(0, import_fs14.existsSync)(batchPath)) {
     throw new ExternalAgentExecutorError("external_agent_batch_not_found", `Batch file not found: ${batchPath}`);
   }
-  const parsed = JSON.parse((0, import_fs13.readFileSync)(batchPath, "utf8"));
+  const parsed = JSON.parse((0, import_fs14.readFileSync)(batchPath, "utf8"));
   if (parsed.schema_version !== "external_agent_batch_plan.v1") {
     throw new ExternalAgentExecutorError("invalid_external_agent_batch", "Batch schema_version must be external_agent_batch_plan.v1.");
   }
@@ -38423,10 +38554,13 @@ function resolveCodexProbeCommand() {
   if (process.platform !== "win32") return "codex";
   const appData = process.env.APPDATA;
   if (appData) {
-    const appDataShim = (0, import_path11.join)(appData, "npm", "codex.cmd");
-    if ((0, import_fs13.existsSync)(appDataShim)) return appDataShim;
+    const appDataShim = (0, import_path12.join)(appData, "npm", "codex.cmd");
+    if ((0, import_fs14.existsSync)(appDataShim)) return appDataShim;
   }
   return "codex.cmd";
+}
+function resolveCodexExecutionCommand() {
+  return resolveCodexProbeCommand();
 }
 function validateCodexRunner(options) {
   if (options.skipRunnerProbe) {
@@ -38467,13 +38601,13 @@ function safeRunId(value) {
   return value.toLowerCase().replace(/[^a-z0-9_.-]+/g, "-").replace(/^-+|-+$/g, "") || "run";
 }
 function resolveWorkspaceRoot(input) {
-  if (input.workspaceRoot) return (0, import_path11.resolve)(input.workspaceRoot);
-  const batchStem = (0, import_path11.basename)((0, import_path11.resolve)(input.batchPath)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
-  const repoStem = (0, import_path11.basename)((0, import_path11.resolve)(input.privateRepoRoot)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
-  return (0, import_path11.resolve)((0, import_os2.tmpdir)(), "foh-external-agent-workspaces", repoStem, batchStem);
+  if (input.workspaceRoot) return (0, import_path12.resolve)(input.workspaceRoot);
+  const batchStem = (0, import_path12.basename)((0, import_path12.resolve)(input.batchPath)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
+  const repoStem = (0, import_path12.basename)((0, import_path12.resolve)(input.privateRepoRoot)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
+  return (0, import_path12.resolve)((0, import_os2.tmpdir)(), "foh-external-agent-workspaces", repoStem, batchStem);
 }
 function promptVersionFromPath(promptPath) {
-  const raw = (0, import_fs13.readFileSync)(promptPath, "utf8");
+  const raw = (0, import_fs14.readFileSync)(promptPath, "utf8");
   if (raw.includes("Do not assume access to the private source repository")) return "blank-setup.v1";
   return "unknown";
 }
@@ -38482,10 +38616,10 @@ function createExternalAgentExecutorPlan(options) {
   if (runner !== "codex") {
     throw new ExternalAgentExecutorError("unsupported_external_agent_runner", `Unsupported runner: ${runner}`);
   }
-  const batchPath = (0, import_path11.resolve)(options.batchPath);
+  const batchPath = (0, import_path12.resolve)(options.batchPath);
   const batch = readBatch(batchPath);
   const runnerProbe = validateCodexRunner(options);
-  const privateRepoRoot = (0, import_path11.resolve)(options.privateRepoRoot || options.cwd || process.cwd());
+  const privateRepoRoot = (0, import_path12.resolve)(options.privateRepoRoot || options.cwd || process.cwd());
   const workspaceRoot = resolveWorkspaceRoot({ batchPath, workspaceRoot: options.workspaceRoot, privateRepoRoot });
   if (isPathInside(workspaceRoot, privateRepoRoot)) {
     throw new ExternalAgentExecutorError(
@@ -38493,17 +38627,17 @@ function createExternalAgentExecutorPlan(options) {
       `Workspace root must be outside the private repository. workspace=${workspaceRoot} repo=${privateRepoRoot}`
     );
   }
-  (0, import_fs13.mkdirSync)(workspaceRoot, { recursive: true });
-  const batchDir = (0, import_path11.resolve)(String(batch.batch_dir || (0, import_path11.resolve)(batchPath, "..")));
+  (0, import_fs14.mkdirSync)(workspaceRoot, { recursive: true });
+  const batchDir = (0, import_path12.resolve)(String(batch.batch_dir || (0, import_path12.resolve)(batchPath, "..")));
   const timeoutMinutes = Number.isFinite(options.timeoutMinutes) && Number(options.timeoutMinutes) > 0 ? Number(options.timeoutMinutes) : 30;
   const runs = batch.runs.map((run) => {
     const runId = safeRunId(requireString(run.run_id, "runs[].run_id"));
-    const runDir = (0, import_path11.resolve)(requireString(run.run_dir, `runs[${runId}].run_dir`));
-    const promptPath = (0, import_path11.resolve)(requireString(run.prompt_path, `runs[${runId}].prompt_path`));
-    const workspaceDir = (0, import_path11.join)(workspaceRoot, runId);
-    (0, import_fs13.mkdirSync)(workspaceDir, { recursive: true });
-    (0, import_fs13.writeFileSync)(
-      (0, import_path11.join)(workspaceDir, "README.md"),
+    const runDir = (0, import_path12.resolve)(requireString(run.run_dir, `runs[${runId}].run_dir`));
+    const promptPath = (0, import_path12.resolve)(requireString(run.prompt_path, `runs[${runId}].prompt_path`));
+    const workspaceDir = (0, import_path12.join)(workspaceRoot, runId);
+    (0, import_fs14.mkdirSync)(workspaceDir, { recursive: true });
+    (0, import_fs14.writeFileSync)(
+      (0, import_path12.join)(workspaceDir, "README.md"),
       [
         "# FOH External-Agent Workspace",
         "",
@@ -38519,8 +38653,12 @@ function createExternalAgentExecutorPlan(options) {
       runDir,
       promptVersion: promptVersionFromPath(promptPath)
     });
-    const jsonlPath = (0, import_path11.join)(runDir, "codex-exec.jsonl");
-    const lastMessagePath = (0, import_path11.join)(runDir, "codex-last-message.md");
+    const promptVersion = String(env[EXTERNAL_AGENT_PROMPT_VERSION_ENV] || "unknown");
+    const jsonlPath = (0, import_path12.join)(runDir, "codex-exec.jsonl");
+    const lastMessagePath = (0, import_path12.join)(runDir, "codex-last-message.md");
+    const stderrPath = (0, import_path12.join)(runDir, "codex-stderr.txt");
+    const runPath = (0, import_path12.join)(runDir, "run.json");
+    const artifactSafetyPath = (0, import_path12.join)(runDir, "artifact-safety.json");
     const args = [
       "exec",
       "--cd",
@@ -38541,6 +38679,7 @@ function createExternalAgentExecutorPlan(options) {
       run_id: runId,
       model_provider: String(run.model_provider || "unknown"),
       model_name: String(run.model_name || "unknown-model"),
+      prompt_version: promptVersion,
       run_dir: runDir,
       prompt_path: promptPath,
       workspace_dir: workspaceDir,
@@ -38549,7 +38688,10 @@ function createExternalAgentExecutorPlan(options) {
       env_keys: Object.keys(env).sort(),
       outputs: {
         jsonl: jsonlPath,
-        last_message: lastMessagePath
+        last_message: lastMessagePath,
+        stderr: stderrPath,
+        run: runPath,
+        artifact_safety: artifactSafetyPath
       }
     };
   });
@@ -38578,11 +38720,215 @@ function createExternalAgentExecutorPlan(options) {
   };
 }
 function writeExternalAgentExecutorPlan(plan) {
-  const path2 = (0, import_path11.join)(plan.batch_dir, "executor-plan.json");
-  (0, import_fs13.mkdirSync)(plan.batch_dir, { recursive: true });
-  (0, import_fs13.writeFileSync)(path2, `${JSON.stringify(plan, null, 2)}
+  const path2 = (0, import_path12.join)(plan.batch_dir, "executor-plan.json");
+  (0, import_fs14.mkdirSync)(plan.batch_dir, { recursive: true });
+  (0, import_fs14.writeFileSync)(path2, `${JSON.stringify(plan, null, 2)}
 `, "utf8");
   return path2;
+}
+function proofArtifactPasses(runDir) {
+  const proofPath = (0, import_path12.join)(runDir, "proof.json");
+  if (!(0, import_fs14.existsSync)(proofPath)) return false;
+  try {
+    const parsed = JSON.parse((0, import_fs14.readFileSync)(proofPath, "utf8"));
+    return parsed.ok === true || parsed.status === "pass" || parsed.status === "passed";
+  } catch {
+    return false;
+  }
+}
+function readIfExists(path2) {
+  return (0, import_fs14.existsSync)(path2) ? (0, import_fs14.readFileSync)(path2, "utf8") : "";
+}
+function classifyRun(input) {
+  if (input.timedOut) return { status: "hold", reasonCode: "codex_runner_timeout" };
+  if (!input.artifactSafetyOk) return { status: "fail", reasonCode: "external_agent_artifact_safety_blocked" };
+  const lastMessage = readIfExists(input.run.outputs.last_message);
+  const stderr = readIfExists(input.run.outputs.stderr);
+  const combined = `${lastMessage}
+${stderr}`;
+  if (/need[^.\n]*(?:private|source)[^.\n]*repo|cannot[^.\n]*without[^.\n]*(?:private|source)[^.\n]*repo|clone[^.\n]*(?:private|source)[^.\n]*repo/i.test(combined)) {
+    return { status: "fail", reasonCode: "private_repo_assumption_detected" };
+  }
+  if (/browser|approve|approval|login|auth|sign in/i.test(combined) && !proofArtifactPasses(input.run.run_dir)) {
+    return { status: "hold", reasonCode: "auth_browser_approval_required" };
+  }
+  if (input.exitCode !== 0) return { status: "hold", reasonCode: "codex_runner_nonzero_exit" };
+  if (proofArtifactPasses(input.run.run_dir)) return { status: "pass", reasonCode: null };
+  return { status: "hold", reasonCode: "external_agent_proof_artifact_missing" };
+}
+function buildExecutedRunArtifact(input) {
+  const commands = readCommandRecords(input.run.run_dir);
+  return {
+    schema_version: "external_agent_run.v1",
+    run_id: input.run.run_id,
+    status: input.status,
+    failure_reason_code: input.reasonCode,
+    model_provider: input.run.model_provider,
+    model_name: input.run.model_name,
+    agent_shell: "codex-exec",
+    workspace_type: "clean-no-repo-programmatic",
+    prompt_version: input.run.prompt_version,
+    prompt_path: "prompt.txt",
+    started_at: input.startedAt,
+    ended_at: input.endedAt,
+    manual_intervention_count: 0,
+    manual_interventions: [],
+    environment: {
+      os: process.platform,
+      node_version: process.version,
+      npm_version: null,
+      foh_cli_version: CLI_VERSION,
+      runner_exit_code: input.exitCode,
+      runner_timed_out: input.timedOut,
+      duration_ms: input.durationMs
+    },
+    public_entrypoints: [
+      "https://frontofhouse.okii.uk",
+      "https://frontofhouse.okii.uk/llms.txt",
+      "https://frontofhouse.okii.uk/openapi.yaml",
+      "npx --yes @f-o-h/cli@latest"
+    ],
+    commands_run: commands.map((command) => command.command),
+    docs_pages_used: [],
+    artifacts: {
+      terminal_transcript: input.run.outputs.jsonl,
+      command_log: (0, import_fs14.existsSync)((0, import_path12.join)(input.run.run_dir, "commands.ndjson")) ? "commands.ndjson" : null,
+      proof_bundle: (0, import_fs14.existsSync)((0, import_path12.join)(input.run.run_dir, "proof.json")) ? "proof.json" : null,
+      replay_packet: (0, import_fs14.existsSync)((0, import_path12.join)(input.run.run_dir, "replay.json")) ? "replay.json" : null,
+      knowledge_packet: (0, import_fs14.existsSync)((0, import_path12.join)(input.run.run_dir, "knowledge.json")) ? "knowledge.json" : null,
+      improvement_packet: input.status === "pass" ? null : "improvement-packet.json",
+      notes: (0, import_fs14.existsSync)((0, import_path12.join)(input.run.run_dir, "notes.md")) ? "notes.md" : null,
+      codex_last_message: input.run.outputs.last_message,
+      codex_stderr: input.run.outputs.stderr,
+      artifact_safety: input.run.outputs.artifact_safety
+    },
+    summary: input.status === "pass" ? "Controlled Codex external-agent run produced passing proof evidence." : `Controlled Codex external-agent run ended as ${input.status} with reason ${input.reasonCode}.`,
+    next_commands: input.status === "pass" ? ["corepack pnpm eval:external-agent:runs:summary"] : [
+      `foh eval external-agent scan-artifacts --run-dir ${input.run.run_dir} --private-repo-root <private_repo_root> --write-redacted --json`,
+      `foh bug improve --from external-agent-run --file ${input.run.outputs.run} --out ${(0, import_path12.join)(input.run.run_dir, "improvement-packet.json")} --json`,
+      "corepack pnpm eval:external-agent:runs:summary"
+    ]
+  };
+}
+function spawnCodex(input) {
+  return new Promise((resolveRun) => {
+    const started = Date.now();
+    const useShell = process.platform === "win32" && input.command.toLowerCase().endsWith(".cmd");
+    const child = (0, import_child_process4.spawn)(input.command, input.args, {
+      cwd: input.cwd,
+      env: input.env,
+      shell: useShell,
+      stdio: ["pipe", "pipe", "pipe"],
+      windowsHide: true
+    });
+    const stdout = (0, import_fs14.createWriteStream)(input.stdoutPath, { flags: "w" });
+    const stderr = (0, import_fs14.createWriteStream)(input.stderrPath, { flags: "w" });
+    child.stdout.pipe(stdout);
+    child.stderr.pipe(stderr);
+    child.stdin.end(input.prompt);
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      if (child.pid && process.platform === "win32") {
+        (0, import_child_process4.spawnSync)("taskkill.exe", ["/pid", String(child.pid), "/t", "/f"], { stdio: "ignore" });
+      } else {
+        child.kill("SIGKILL");
+      }
+    }, input.timeoutMs);
+    child.on("close", (exitCode) => {
+      clearTimeout(timer);
+      stdout.end();
+      stderr.end();
+      resolveRun({
+        exitCode,
+        timedOut,
+        durationMs: Date.now() - started
+      });
+    });
+    child.on("error", () => {
+      clearTimeout(timer);
+      stdout.end();
+      stderr.end();
+      resolveRun({
+        exitCode: null,
+        timedOut,
+        durationMs: Date.now() - started
+      });
+    });
+  });
+}
+async function executeExternalAgentExecutorPlan(plan, options = {}) {
+  const startedAt = (/* @__PURE__ */ new Date()).toISOString();
+  const results = [];
+  const runnerCommand = options.runnerCommand || resolveCodexExecutionCommand();
+  for (const run of plan.runs) {
+    const runStartedAt = (/* @__PURE__ */ new Date()).toISOString();
+    const env = buildCodexExecutorEnv({
+      sourceEnv: options.env,
+      runDir: run.run_dir,
+      promptVersion: run.prompt_version
+    });
+    const spawned = await spawnCodex({
+      command: runnerCommand,
+      args: run.args,
+      cwd: run.workspace_dir,
+      env,
+      prompt: (0, import_fs14.readFileSync)(run.prompt_path, "utf8"),
+      stdoutPath: run.outputs.jsonl,
+      stderrPath: run.outputs.stderr,
+      timeoutMs: plan.timeout_minutes * 60 * 1e3
+    });
+    const artifactSafety = scanExternalAgentArtifacts({
+      runDir: run.run_dir,
+      privateRepoRoot: options.privateRepoRoot || plan.private_repo_root,
+      writeRedacted: true
+    });
+    (0, import_fs14.writeFileSync)(run.outputs.artifact_safety, `${JSON.stringify(artifactSafety, null, 2)}
+`, "utf8");
+    const runEndedAt = (/* @__PURE__ */ new Date()).toISOString();
+    const classification = classifyRun({
+      run,
+      exitCode: spawned.exitCode,
+      timedOut: spawned.timedOut,
+      artifactSafetyOk: artifactSafety.ok
+    });
+    const runArtifact = buildExecutedRunArtifact({
+      run,
+      startedAt: runStartedAt,
+      endedAt: runEndedAt,
+      status: classification.status,
+      reasonCode: classification.reasonCode,
+      exitCode: spawned.exitCode,
+      timedOut: spawned.timedOut,
+      durationMs: spawned.durationMs
+    });
+    (0, import_fs14.writeFileSync)(run.outputs.run, `${JSON.stringify(runArtifact, null, 2)}
+`, "utf8");
+    results.push({
+      run_id: run.run_id,
+      status: classification.status,
+      failure_reason_code: classification.reasonCode,
+      exit_code: spawned.exitCode,
+      timed_out: spawned.timedOut,
+      duration_ms: spawned.durationMs,
+      artifacts: run.outputs
+    });
+  }
+  const endedAt = (/* @__PURE__ */ new Date()).toISOString();
+  const failed = results.some((result) => result.status === "fail");
+  const held = results.some((result) => result.status === "hold");
+  const status = failed ? "fail" : held ? "hold" : "pass";
+  return {
+    schema_version: "external_agent_execution_batch_result.v1",
+    ok: status === "pass",
+    status,
+    reason_code: status === "pass" ? "external_agent_execution_passed" : "external_agent_execution_needs_review",
+    started_at: startedAt,
+    ended_at: endedAt,
+    runner: plan.runner,
+    run_count: results.length,
+    results
+  };
 }
 
 // src/commands/eval.ts
@@ -38604,13 +38950,13 @@ function defaultRunDir(modelName, promptVersion) {
   const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").replace("T", "-").slice(0, 23);
   const safeModel = String(modelName || "unknown-model").toLowerCase().replace(/[^a-z0-9_-]+/g, "-");
   const safePrompt = String(promptVersion || DEFAULT_PROMPT_VERSION).toLowerCase().replace(/[^a-z0-9_.-]+/g, "-");
-  return (0, import_path12.resolve)("test-results", "external-agent-runs", date4, `${safeModel}-${safePrompt}-${stamp}`);
+  return (0, import_path13.resolve)("test-results", "external-agent-runs", date4, `${safeModel}-${safePrompt}-${stamp}`);
 }
 function defaultBatchDir(promptVersion) {
   const date4 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
   const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").replace("T", "-").slice(0, 23);
   const safePrompt = String(promptVersion || DEFAULT_PROMPT_VERSION).toLowerCase().replace(/[^a-z0-9_.-]+/g, "-");
-  return (0, import_path12.resolve)("test-results", "external-agent-runs", date4, `batch-${safePrompt}-${stamp}`);
+  return (0, import_path13.resolve)("test-results", "external-agent-runs", date4, `batch-${safePrompt}-${stamp}`);
 }
 function safeSlug(value) {
   return String(value || "unknown").toLowerCase().replace(/[^a-z0-9_.-]+/g, "-").replace(/^-+|-+$/g, "") || "unknown";
@@ -38638,14 +38984,14 @@ function inferShell(raw) {
 }
 function writePrompt(runDir, promptVersion) {
   const prompt = PROMPTS[promptVersion] ?? PROMPTS[DEFAULT_PROMPT_VERSION];
-  const path2 = (0, import_path12.join)(runDir, "prompt.txt");
-  (0, import_fs14.writeFileSync)(path2, `${prompt}
+  const path2 = (0, import_path13.join)(runDir, "prompt.txt");
+  (0, import_fs15.writeFileSync)(path2, `${prompt}
 `, "utf8");
   return path2;
 }
 function writeSession(runDir, session) {
-  const path2 = (0, import_path12.join)(runDir, "session.json");
-  (0, import_fs14.writeFileSync)(path2, `${JSON.stringify(session, null, 2)}
+  const path2 = (0, import_path13.join)(runDir, "session.json");
+  (0, import_fs15.writeFileSync)(path2, `${JSON.stringify(session, null, 2)}
 `, "utf8");
   return path2;
 }
@@ -38696,7 +39042,7 @@ function buildRunArtifact(input) {
     },
     summary: status === "pass" ? "External-agent capture session completed and was marked pass." : `External-agent capture session completed with ${commands.length} captured FOH command(s); classify and improve reason ${reasonCode}.`,
     next_commands: status === "pass" ? ["corepack pnpm eval:external-agent:runs:summary"] : [
-      `foh bug improve --from external-agent-run --file ${(0, import_path12.join)(input.runDir, "run.json")} --out ${(0, import_path12.join)(input.runDir, "improvement-packet.json")} --json`,
+      `foh bug improve --from external-agent-run --file ${(0, import_path13.join)(input.runDir, "run.json")} --out ${(0, import_path13.join)(input.runDir, "improvement-packet.json")} --json`,
       "corepack pnpm eval:external-agent:runs:summary"
     ]
   };
@@ -38706,13 +39052,13 @@ function registerEval(program3) {
   const external = evalCommand.command("external-agent").description("Capture clean external coding-agent setup attempts");
   external.command("batch").description("Create a deterministic multi-model external-agent batch plan").option("--models <list>", "Comma-separated provider/model list", DEFAULT_BATCH_MODELS).option("--prompt-version <version>", "Prompt version", DEFAULT_PROMPT_VERSION).option("--workspace-type <type>", "Workspace type label", "clean-no-repo").option("--agent-shell <name>", "Agent shell label", "vscode-terminal").option("--out-dir <path>", "Batch output directory").option("--json", "Output as JSON").action(async (opts) => {
     const promptVersion = String(opts.promptVersion || DEFAULT_PROMPT_VERSION);
-    const batchDir = (0, import_path12.resolve)(String(opts.outDir || defaultBatchDir(promptVersion)));
+    const batchDir = (0, import_path13.resolve)(String(opts.outDir || defaultBatchDir(promptVersion)));
     const models = parseModelList(String(opts.models || DEFAULT_BATCH_MODELS));
-    (0, import_fs14.mkdirSync)(batchDir, { recursive: true });
+    (0, import_fs15.mkdirSync)(batchDir, { recursive: true });
     const runs = models.map((model, index) => {
       const runId = `${String(index + 1).padStart(2, "0")}-${safeSlug(model.provider)}-${safeSlug(model.name)}`;
-      const runDir = (0, import_path12.join)(batchDir, runId);
-      (0, import_fs14.mkdirSync)(runDir, { recursive: true });
+      const runDir = (0, import_path13.join)(batchDir, runId);
+      (0, import_fs15.mkdirSync)(runDir, { recursive: true });
       const promptPath = writePrompt(runDir, promptVersion);
       const commandArgs = [
         "eval",
@@ -38753,8 +39099,8 @@ function registerEval(program3) {
       runs,
       summary_command: `corepack pnpm eval:external-agent:runs:summary -- --root ${batchDir}`
     };
-    const batchPath = (0, import_path12.join)(batchDir, "batch.json");
-    (0, import_fs14.writeFileSync)(batchPath, `${JSON.stringify(batch, null, 2)}
+    const batchPath = (0, import_path13.join)(batchDir, "batch.json");
+    (0, import_fs15.writeFileSync)(batchPath, `${JSON.stringify(batch, null, 2)}
 `, "utf8");
     format(cliEnvelope({
       schemaVersion: "external_agent_batch_plan_result.v1",
@@ -38774,8 +39120,8 @@ function registerEval(program3) {
   external.command("run").description("Launch an instrumented shell and emit external_agent_run.v1 when it exits").option("--model-provider <name>", "Model provider label", "unknown").option("--model-name <name>", "Model name label", "unknown-model").option("--prompt-version <version>", "Prompt version", DEFAULT_PROMPT_VERSION).option("--workspace-type <type>", "Workspace type label", "clean-no-repo").option("--agent-shell <name>", "Agent shell label", "vscode-terminal").option("--out-dir <path>", "Run output directory").option("--status <status>", "Final status when not interactively classified: pass|hold|fail", "hold").option("--reason-code <code>", "Failure/hold reason code", "external_agent_run_needs_review").option("--shell <command>", "Shell command to launch for capture").option("--no-shell", "Do not launch a shell; create/finalize artifacts immediately").option("--json", "Output as JSON").action(async (opts) => {
     const status = normalizeStatus(opts.status);
     const promptVersion = String(opts.promptVersion || DEFAULT_PROMPT_VERSION);
-    const runDir = (0, import_path12.resolve)(String(opts.outDir || defaultRunDir(opts.modelName, promptVersion)));
-    (0, import_fs14.mkdirSync)(runDir, { recursive: true });
+    const runDir = (0, import_path13.resolve)(String(opts.outDir || defaultRunDir(opts.modelName, promptVersion)));
+    (0, import_fs15.mkdirSync)(runDir, { recursive: true });
     const runId = runDir.split(/[\\/]/).filter(Boolean).slice(-1)[0];
     const promptPath = writePrompt(runDir, promptVersion);
     const shell = inferShell(opts.shell);
@@ -38797,7 +39143,7 @@ function registerEval(program3) {
       }
     };
     writeSession(runDir, session);
-    (0, import_fs14.writeFileSync)((0, import_path12.join)(runDir, "notes.md"), "# External Agent Run Notes\n\n", "utf8");
+    (0, import_fs15.writeFileSync)((0, import_path13.join)(runDir, "notes.md"), "# External Agent Run Notes\n\n", "utf8");
     let shellExitCode = null;
     if (opts.shell !== false) {
       process.stdout.write(`
@@ -38819,8 +39165,8 @@ Exit the shell to finalize run.json.
       shellExitCode = typeof result.status === "number" ? result.status : null;
     }
     const artifact = buildRunArtifact({ runDir, session, status, reasonCode: opts.reasonCode, shellExitCode });
-    const runPath = (0, import_path12.join)(runDir, "run.json");
-    (0, import_fs14.writeFileSync)(runPath, `${JSON.stringify(artifact, null, 2)}
+    const runPath = (0, import_path13.join)(runDir, "run.json");
+    (0, import_fs15.writeFileSync)(runPath, `${JSON.stringify(artifact, null, 2)}
 `, "utf8");
     format(cliEnvelope({
       schemaVersion: "external_agent_capture_result.v1",
@@ -38830,26 +39176,32 @@ Exit the shell to finalize run.json.
       artifacts: {
         run: runPath,
         prompt: promptPath,
-        commands: (0, import_path12.join)(runDir, "commands.ndjson")
+        commands: (0, import_path13.join)(runDir, "commands.ndjson")
       },
       nextCommands: artifact.next_commands,
       extra: { run: artifact }
     }), { json: Boolean(opts.json) });
   });
-  external.command("execute").description("Create a guarded dry-run executor plan for programmable external-agent runners").requiredOption("--batch <path>", "Path to external_agent_batch_plan.v1 batch.json").option("--runner <runner>", "Runner implementation", "codex").option("--workspace-root <path>", "Clean executor workspace root; must be outside the private repo").option("--private-repo-root <path>", "Private repository root to guard against").option("--timeout-minutes <minutes>", "Per-run timeout planned for future execution", "30").option("--skip-runner-probe", "Skip local runner binary/help probing").option("--dry-run", "Write the executor plan without launching the runner", true).option("--json", "Output as JSON").action(async (opts) => {
-    if (opts.dryRun === false) {
-      format(cliEnvelope({
-        schemaVersion: "external_agent_executor_plan_result.v1",
-        status: "blocked",
-        reasonCode: "external_agent_executor_live_run_not_enabled",
-        summary: "Live external-agent execution is intentionally blocked until dry-run safety gates have passed.",
-        nextCommands: [
-          `foh eval external-agent execute --runner ${opts.runner || "codex"} --batch ${opts.batch} --dry-run --json`
-        ]
-      }), { json: Boolean(opts.json) });
-      process.exitCode = 1;
-      return;
-    }
+  external.command("scan-artifacts").description("Scan and redact external-agent run artifacts before they are promoted into improvement loops").requiredOption("--run-dir <path>", "External-agent run artifact directory").option("--private-repo-root <path>", "Private repository root that must not appear in artifacts").option("--write-redacted", "Write .redacted copies next to scanned artifacts").option("--json", "Output as JSON").action(async (opts) => {
+    const report = scanExternalAgentArtifacts({
+      runDir: String(opts.runDir),
+      privateRepoRoot: opts.privateRepoRoot ? String(opts.privateRepoRoot) : process.cwd(),
+      writeRedacted: Boolean(opts.writeRedacted)
+    });
+    format(cliEnvelope({
+      schemaVersion: "external_agent_artifact_safety_result.v1",
+      status: report.ok ? "pass" : "blocked",
+      reasonCode: report.reason_code,
+      summary: report.ok ? `External-agent artifacts are safe to promote (${report.files_scanned.length} file(s) scanned).` : `External-agent artifacts contain blocked content: ${report.blocked_reason_codes.join(", ")}`,
+      artifacts: {
+        report,
+        redacted_files: report.redacted_files
+      },
+      nextCommands: report.ok ? ["foh bug improve --from external-agent-run --file <run.json> --json"] : ["Do not share or promote raw artifacts. Inspect .redacted copies and fix capture redaction before live rollout."]
+    }), { json: Boolean(opts.json) });
+    if (!report.ok) process.exitCode = 1;
+  });
+  external.command("execute").description("Create a guarded dry-run executor plan for programmable external-agent runners").requiredOption("--batch <path>", "Path to external_agent_batch_plan.v1 batch.json").option("--runner <runner>", "Runner implementation", "codex").option("--workspace-root <path>", "Clean executor workspace root; must be outside the private repo").option("--private-repo-root <path>", "Private repository root to guard against").option("--timeout-minutes <minutes>", "Per-run timeout planned for future execution", "30").option("--skip-runner-probe", "Skip local runner binary/help probing").option("--dry-run", "Write the executor plan without launching the runner", true).option("--live", "Launch one controlled external-agent run after writing the guarded plan").option("--json", "Output as JSON").action(async (opts) => {
     try {
       const plan = createExternalAgentExecutorPlan({
         batchPath: String(opts.batch),
@@ -38861,6 +39213,46 @@ Exit the shell to finalize run.json.
         cwd: process.cwd()
       });
       const planPath = writeExternalAgentExecutorPlan(plan);
+      if (opts.live) {
+        if (plan.runs.length !== 1) {
+          format(cliEnvelope({
+            schemaVersion: "external_agent_execution_result.v1",
+            status: "blocked",
+            reasonCode: "external_agent_live_runner_single_run_only",
+            summary: "Live programmable runner rollout is limited to one run at a time until artifact safety is proven.",
+            artifacts: { plan: planPath },
+            nextCommands: [
+              "Create a one-model batch and rerun with --live."
+            ]
+          }), { json: Boolean(opts.json) });
+          process.exitCode = 1;
+          return;
+        }
+        const result = await executeExternalAgentExecutorPlan(plan, {
+          privateRepoRoot: plan.private_repo_root
+        });
+        const resultPath = (0, import_path13.join)(plan.batch_dir, "execution-result.json");
+        (0, import_fs15.writeFileSync)(resultPath, `${JSON.stringify(result, null, 2)}
+`, "utf8");
+        format(cliEnvelope({
+          schemaVersion: "external_agent_execution_result.v1",
+          status: result.status,
+          reasonCode: result.reason_code,
+          summary: `Controlled ${plan.runner} execution completed with ${result.status}.`,
+          artifacts: {
+            plan: planPath,
+            result: resultPath,
+            runs: result.results.map((run) => run.artifacts.run)
+          },
+          nextCommands: [
+            ...result.results.map((run) => `foh eval external-agent scan-artifacts --run-dir ${quoteArg(plan.runs.find((item) => item.run_id === run.run_id)?.run_dir || ".")} --private-repo-root ${quoteArg(plan.private_repo_root)} --write-redacted --json`),
+            "corepack pnpm eval:external-agent:runs:summary"
+          ],
+          extra: { result }
+        }), { json: Boolean(opts.json) });
+        if (!result.ok) process.exitCode = 1;
+        return;
+      }
       format(cliEnvelope({
         schemaVersion: "external_agent_executor_plan_result.v1",
         status: "exported",
