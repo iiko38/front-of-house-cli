@@ -32640,7 +32640,7 @@ var StdioServerTransport = class {
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.13";
+var CLI_VERSION = "0.1.14";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -36437,8 +36437,13 @@ function inferReasonCode(artifact) {
   }
   return nonEmpty2(getPath2(artifact, "status"));
 }
-function inferPromotionDecision(sourceType) {
-  if (sourceType === "external_agent_run") return "fix_docs";
+function inferPromotionDecision(sourceType, reasonCode) {
+  const reason = String(reasonCode || "").toLowerCase();
+  if (sourceType === "external_agent_run") {
+    if (reason.includes("exec_policy") || reason.includes("policy_blocked") || reason.includes("auth") || reason.includes("config")) return "fix_config";
+    if (reason.includes("cli") || reason.includes("command") || reason.includes("flag")) return "fix_cli";
+    return "fix_docs";
+  }
   if (sourceType === "knowledge_miss") return "fix_docs";
   if (sourceType === "setup_failure" || sourceType === "proof_failure" || sourceType === "live_proof_failure") return "fix_config";
   if (sourceType === "replay_failure" || sourceType === "runtime_miss") return "add_test";
@@ -36526,7 +36531,6 @@ function readSourceArtifact(path2) {
 function buildImprovementPacket(input) {
   const artifact = input.sourceArtifact ?? null;
   const sourceType = parseEnum(input.sourceType, IMPROVEMENT_SOURCE_TYPES, "--source-type") ?? inferSourceType(artifact);
-  const promotionDecision = parseEnum(input.promotionDecision, IMPROVEMENT_DECISIONS, "--recommendation") ?? inferPromotionDecision(sourceType);
   const ids = collectIds(artifact, input.ids);
   assertOrgBoundary(artifact, input.ids?.org_id);
   const reasonCode = nonEmpty2(input.reasonCode) ?? inferReasonCode(artifact);
@@ -36538,6 +36542,7 @@ function buildImprovementPacket(input) {
       statusCode: 400
     });
   }
+  const promotionDecision = parseEnum(input.promotionDecision, IMPROVEMENT_DECISIONS, "--recommendation") ?? inferPromotionDecision(sourceType, reasonCode);
   const evidenceSummary = redactString(
     nonEmpty2(input.evidenceSummary) ?? nonEmpty2(getPath2(artifact, "summary")) ?? `Improvement candidate generated from ${sourceType} with reason ${reasonCode}.`
   );
@@ -38751,6 +38756,9 @@ function classifyRun(input) {
 ${stderr}`;
   if (/need[^.\n]*(?:private|source)[^.\n]*repo|cannot[^.\n]*without[^.\n]*(?:private|source)[^.\n]*repo|clone[^.\n]*(?:private|source)[^.\n]*repo/i.test(combined)) {
     return { status: "fail", reasonCode: "private_repo_assumption_detected" };
+  }
+  if (/(?:blocked|rejected|declined) by policy|EXEC_POLICY_BLOCKED|command execution was rejected|shell commands were rejected/i.test(combined)) {
+    return { status: "hold", reasonCode: "codex_exec_policy_blocked" };
   }
   if (/browser|approve|approval|login|auth|sign in/i.test(combined) && !proofArtifactPasses(input.run.run_dir)) {
     return { status: "hold", reasonCode: "auth_browser_approval_required" };
