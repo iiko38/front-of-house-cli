@@ -1,0 +1,32 @@
+{
+  "schema_version": "foh_cli_envelope.v1",
+  "ok": true,
+  "status": "pass",
+  "reason_code": "proof_passed",
+  "summary": "Agent is ready for the selected mission.",
+  "ids": {
+    "agent_id": "agent_123",
+    "mission": "setup",
+    "mutation_mode": "read-only"
+  },
+  "checks": [
+    {
+      "name": "agent_validation",
+      "category": "setup",
+      "status": "pass",
+      "reason_code": "agent_valid"
+    },
+    {
+      "name": "widget_smoke",
+      "category": "runtime",
+      "status": "pass",
+      "reason_code": "widget_smoke_passed"
+    }
+  ],
+  "artifacts": {
+    "proof_report": "foh-proof.json"
+  },
+  "next_commands": [
+    "foh test run --suite ./scenario-suite.viewing.yml --agent agent_123 --json"
+  ]
+}

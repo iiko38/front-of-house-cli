@@ -1,0 +1,39 @@
+{
+  "schema_version": "foh_transcript_export.v2",
+  "redaction": {
+    "enabled": true,
+    "fields": ["email", "phone", "secret-like-token"]
+  },
+  "hydration": {
+    "enabled": true,
+    "include_traces": true
+  },
+  "conversations": [
+    {
+      "id": "conv_123",
+      "agent_id": "agent_123",
+      "terminal_state": "handoff_requested",
+      "transcript_text": "USER: Can I book a viewing?\\nASSISTANT: Yes, I can help with that.",
+      "traces": [
+        {
+          "id": "trace_123",
+          "trace_type": "agent_input",
+          "payload": {
+            "message": "Can I book a viewing?"
+          },
+          "created_at": "2026-04-30T00:00:00.000Z"
+        }
+      ],
+      "replay_command": "foh agent replay --agent agent_123 --conversation conv_123 --json",
+      "test_fixture": {
+        "schema_version": "foh_scenario_fixture.v1",
+        "conversation_id": "conv_123",
+        "turns": [
+          {
+            "user": "Can I book a viewing?"
+          }
+        ]
+      }
+    }
+  ]
+}

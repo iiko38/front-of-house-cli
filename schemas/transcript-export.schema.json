@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frontofhouse.okii.uk/schemas/transcript-export.schema.json",
+  "title": "FOH Transcript Export",
+  "type": "object",
+  "required": ["schema_version", "redaction", "hydration", "conversations"],
+  "properties": {
+    "schema_version": { "const": "foh_transcript_export.v2" },
+    "redaction": {
+      "type": "object",
+      "required": ["enabled", "fields"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "fields": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      },
+      "additionalProperties": true
+    },
+    "hydration": {
+      "type": "object",
+      "required": ["enabled", "include_traces"],
+      "properties": {
+        "enabled": { "type": "boolean" },
+        "include_traces": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "conversations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "replay_command", "test_fixture"],
+        "properties": {
+          "id": { "type": "string" },
+          "replay_command": { "type": ["string", "null"] },
+          "test_fixture": {
+            "type": "object",
+            "required": ["schema_version", "turns"],
+            "properties": {
+              "schema_version": { "const": "foh_scenario_fixture.v1" },
+              "conversation_id": { "type": ["string", "null"] },
+              "turns": { "type": "array" }
+            },
+            "additionalProperties": true
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

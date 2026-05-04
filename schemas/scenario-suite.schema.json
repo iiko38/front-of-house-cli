@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frontofhouse.okii.uk/schemas/scenario-suite.schema.json",
+  "title": "FOH Local Scenario Suite",
+  "type": "object",
+  "required": ["scenarios"],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "agent": { "type": "string" },
+    "scenarios": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "fixture": { "type": "string" },
+          "fixture_transcript": { "type": "string" },
+          "transcript_fixture": { "type": "string" },
+          "turns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "user": { "type": "string" },
+                "message": { "type": "string" },
+                "expect": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "additionalProperties": true
+            }
+          }
+        },
+        "additionalProperties": true
+      }
+    }
+  },
+  "additionalProperties": true
+}

@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frontofhouse.okii.uk/schemas/cli-envelope.schema.json",
+  "title": "FOH CLI Envelope",
+  "type": "object",
+  "required": ["schema_version", "ok", "status", "reason_code", "summary", "ids", "checks", "artifacts", "next_commands"],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "ok": { "type": "boolean" },
+    "status": { "type": "string" },
+    "reason_code": { "type": "string", "minLength": 1 },
+    "summary": { "type": "string" },
+    "ids": { "type": "object" },
+    "checks": { "type": "array" },
+    "artifacts": { "type": "object" },
+    "next_commands": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

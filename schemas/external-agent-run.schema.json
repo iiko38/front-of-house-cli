@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frontofhouse.okii.uk/schemas/external-agent-run.schema.json",
+  "title": "FOH External Agent Run",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "run_id",
+    "status",
+    "model_provider",
+    "model_name",
+    "prompt_version",
+    "started_at",
+    "manual_intervention_count",
+    "environment",
+    "public_entrypoints",
+    "commands_run",
+    "docs_pages_used",
+    "artifacts"
+  ],
+  "properties": {
+    "schema_version": { "const": "external_agent_run.v1" },
+    "run_id": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["pass", "hold", "fail"] },
+    "failure_reason_code": { "type": ["string", "null"] },
+    "model_provider": { "type": "string", "minLength": 1 },
+    "model_name": { "type": "string", "minLength": 1 },
+    "agent_shell": { "type": "string" },
+    "workspace_type": { "type": "string" },
+    "prompt_version": { "type": "string", "minLength": 1 },
+    "prompt_path": { "type": "string" },
+    "started_at": { "type": "string" },
+    "ended_at": { "type": ["string", "null"] },
+    "manual_intervention_count": { "type": "integer", "minimum": 0 },
+    "manual_interventions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "at": { "type": "string" },
+          "summary": { "type": "string" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "environment": {
+      "type": "object",
+      "required": ["os", "foh_cli_version"],
+      "properties": {
+        "os": { "type": "string", "minLength": 1 },
+        "node_version": { "type": ["string", "null"] },
+        "npm_version": { "type": ["string", "null"] },
+        "foh_cli_version": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": true
+    },
+    "public_entrypoints": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "commands_run": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "docs_pages_used": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "artifacts": {
+      "type": "object",
+      "properties": {
+        "terminal_transcript": { "type": ["string", "null"] },
+        "proof_bundle": { "type": ["string", "null"] },
+        "replay_packet": { "type": ["string", "null"] },
+        "knowledge_packet": { "type": ["string", "null"] },
+        "improvement_packet": { "type": ["string", "null"] },
+        "notes": { "type": ["string", "null"] }
+      },
+      "additionalProperties": true
+    },
+    "summary": { "type": "string" },
+    "next_commands": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true,
+  "allOf": [
+    {
+      "if": { "properties": { "status": { "enum": ["hold", "fail"] } }, "required": ["status"] },
+      "then": { "required": ["failure_reason_code"] }
+    }
+  ]
+}

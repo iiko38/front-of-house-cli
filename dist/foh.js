@@ -6046,7 +6046,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve7.call(this, root, ref);
+      let _sch = resolve11.call(this, root, ref);
       if (_sch === void 0) {
         const schema2 = (_a2 = root.localRefs) === null || _a2 === void 0 ? void 0 : _a2[ref];
         const { schemaId } = this.opts;
@@ -6073,7 +6073,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve7(root, ref) {
+    function resolve11(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -6648,55 +6648,55 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve7(baseURI, relativeURI, options) {
+    function resolve11(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const resolved = resolveComponent(parse3(baseURI, schemelessOptions), parse3(relativeURI, schemelessOptions), schemelessOptions, true);
       schemelessOptions.skipEscape = true;
       return serialize(resolved, schemelessOptions);
     }
-    function resolveComponent(base, relative, options, skipNormalization) {
+    function resolveComponent(base, relative2, options, skipNormalization) {
       const target = {};
       if (!skipNormalization) {
         base = parse3(serialize(base, options), options);
-        relative = parse3(serialize(relative, options), options);
+        relative2 = parse3(serialize(relative2, options), options);
       }
       options = options || {};
-      if (!options.tolerant && relative.scheme) {
-        target.scheme = relative.scheme;
-        target.userinfo = relative.userinfo;
-        target.host = relative.host;
-        target.port = relative.port;
-        target.path = removeDotSegments(relative.path || "");
-        target.query = relative.query;
+      if (!options.tolerant && relative2.scheme) {
+        target.scheme = relative2.scheme;
+        target.userinfo = relative2.userinfo;
+        target.host = relative2.host;
+        target.port = relative2.port;
+        target.path = removeDotSegments(relative2.path || "");
+        target.query = relative2.query;
       } else {
-        if (relative.userinfo !== void 0 || relative.host !== void 0 || relative.port !== void 0) {
-          target.userinfo = relative.userinfo;
-          target.host = relative.host;
-          target.port = relative.port;
-          target.path = removeDotSegments(relative.path || "");
-          target.query = relative.query;
+        if (relative2.userinfo !== void 0 || relative2.host !== void 0 || relative2.port !== void 0) {
+          target.userinfo = relative2.userinfo;
+          target.host = relative2.host;
+          target.port = relative2.port;
+          target.path = removeDotSegments(relative2.path || "");
+          target.query = relative2.query;
         } else {
-          if (!relative.path) {
+          if (!relative2.path) {
             target.path = base.path;
-            if (relative.query !== void 0) {
-              target.query = relative.query;
+            if (relative2.query !== void 0) {
+              target.query = relative2.query;
             } else {
               target.query = base.query;
             }
           } else {
-            if (relative.path[0] === "/") {
-              target.path = removeDotSegments(relative.path);
+            if (relative2.path[0] === "/") {
+              target.path = removeDotSegments(relative2.path);
             } else {
               if ((base.userinfo !== void 0 || base.host !== void 0 || base.port !== void 0) && !base.path) {
-                target.path = "/" + relative.path;
+                target.path = "/" + relative2.path;
               } else if (!base.path) {
-                target.path = relative.path;
+                target.path = relative2.path;
               } else {
-                target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative.path;
+                target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative2.path;
               }
               target.path = removeDotSegments(target.path);
             }
-            target.query = relative.query;
+            target.query = relative2.query;
           }
           target.userinfo = base.userinfo;
           target.host = base.host;
@@ -6704,7 +6704,7 @@ var require_fast_uri = __commonJS({
         }
         target.scheme = base.scheme;
       }
-      target.fragment = relative.fragment;
+      target.fragment = relative2.fragment;
       return target;
     }
     function equal(uriA, uriB, options) {
@@ -6875,7 +6875,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve7,
+      resolve: resolve11,
       resolveComponent,
       equal,
       serialize,
@@ -9889,6 +9889,8 @@ var FohError = class extends Error {
   remediation;
   statusCode;
   detail;
+  reasonCode;
+  nextCommands;
   constructor(opts) {
     super(opts.error);
     this.name = "FohError";
@@ -9898,6 +9900,8 @@ var FohError = class extends Error {
     this.remediation = opts.remediation;
     this.statusCode = opts.statusCode;
     this.detail = opts.detail;
+    this.reasonCode = opts.reasonCode;
+    this.nextCommands = opts.nextCommands;
   }
   toJSON() {
     return {
@@ -9905,6 +9909,8 @@ var FohError = class extends Error {
       status: this.status,
       error: this.error,
       remediation: this.remediation,
+      reason_code: this.reasonCode,
+      next_commands: this.nextCommands,
       status_code: this.statusCode,
       detail: this.detail
     };
@@ -9913,6 +9919,34 @@ var FohError = class extends Error {
 
 // src/lib/output.ts
 var import_picocolors = __toESM(require_picocolors());
+
+// src/lib/cli-envelope.ts
+function envelopeOk(status) {
+  return status === "pass" || status === "success" || status === "exported";
+}
+function dedupeCommands(commands = []) {
+  return Array.from(new Set(commands.map((command) => String(command || "").trim()).filter(Boolean)));
+}
+function cliEnvelope(input) {
+  return {
+    schema_version: input.schemaVersion ?? "foh_cli_envelope.v1",
+    ok: envelopeOk(input.status),
+    status: input.status,
+    reason_code: input.reasonCode,
+    summary: input.summary,
+    ids: input.ids ?? {},
+    checks: input.checks ?? [],
+    artifacts: input.artifacts ?? {},
+    next_commands: dedupeCommands(input.nextCommands),
+    ...input.extra ?? {}
+  };
+}
+function reasonCodeFromStep(step, fallback = "cli_command_failed") {
+  const normalized = step.trim().toLowerCase().replace(/^\/+/, "").replace(/[^a-z0-9]+/g, "_").replace(/^_+|_+$/g, "");
+  return normalized ? `${normalized}_failed` : fallback;
+}
+
+// src/lib/output.ts
 function resolveJsonMode(opts = {}) {
   return Boolean(opts.json || process.argv.includes("--json"));
 }
@@ -9927,13 +9961,21 @@ function formatError(e, opts = {}) {
   if (resolveJsonMode(opts)) {
     process.stderr.write(
       JSON.stringify(
-        {
-          error: {
-            step: e.step,
-            message: e.error,
-            remediation: e.remediation
+        cliEnvelope({
+          status: "fail",
+          reasonCode: e.reasonCode ?? reasonCodeFromStep(e.step),
+          summary: e.error,
+          nextCommands: e.nextCommands,
+          extra: {
+            error: {
+              step: e.step,
+              message: e.error,
+              remediation: e.remediation,
+              status_code: e.statusCode,
+              detail: e.detail
+            }
           }
-        },
+        }),
         null,
         2
       ) + "\n"
@@ -10063,21 +10105,21 @@ async function promptLine(label, {
   allowEmpty = false,
   defaultValue
 } = {}) {
-  return await new Promise((resolve7) => {
+  return await new Promise((resolve11) => {
     const suffix = defaultValue ? ` [${defaultValue}]` : "";
     const rl = (0, import_readline.createInterface)({ input: process.stdin, output: process.stdout, terminal: true });
     rl.question(`${label}${suffix}: `, (answer) => {
       rl.close();
       const value = String(answer ?? "").trim();
       if (!value && typeof defaultValue === "string") {
-        resolve7(defaultValue);
+        resolve11(defaultValue);
         return;
       }
       if (!value && !allowEmpty) {
-        resolve7("");
+        resolve11("");
         return;
       }
-      resolve7(value);
+      resolve11(value);
     });
   });
 }
@@ -10085,7 +10127,7 @@ async function promptSecret(label) {
   if (!process.stdin.isTTY || !process.stdout.isTTY || typeof process.stdin.setRawMode !== "function") {
     return await promptLine(label);
   }
-  return await new Promise((resolve7) => {
+  return await new Promise((resolve11) => {
     const stdin = process.stdin;
     const stdout = process.stdout;
     const wasRaw = Boolean(stdin.isRaw);
@@ -10099,7 +10141,7 @@ async function promptSecret(label) {
     const finish = () => {
       cleanup();
       stdout.write("\n");
-      resolve7(value);
+      resolve11(value);
     };
     const onData = (chunk) => {
       const text = typeof chunk === "string" ? chunk : chunk.toString("utf8");
@@ -10108,7 +10150,7 @@ async function promptSecret(label) {
           cleanup();
           process.exitCode = 130;
           stdout.write("\n");
-          return resolve7("");
+          return resolve11("");
         }
         if (char === "\r" || char === "\n") {
           finish();
@@ -10377,7 +10419,7 @@ async function storeAuthenticatedSession(params) {
   return output;
 }
 function sleep(ms) {
-  return new Promise((resolve7) => setTimeout(resolve7, ms));
+  return new Promise((resolve11) => setTimeout(resolve11, ms));
 }
 async function runDeviceLogin(opts) {
   const jsonMode = Boolean(opts.json);
@@ -10915,7 +10957,7 @@ async function pollUntil(check2, opts) {
   }
 }
 function sleep2(ms) {
-  return new Promise((resolve7) => setTimeout(resolve7, ms));
+  return new Promise((resolve11) => setTimeout(resolve11, ms));
 }
 
 // src/commands/compliance.ts
@@ -13718,6 +13760,176 @@ function agentDraftFromManifest(manifest) {
   return patch;
 }
 
+// src/lib/local-replay-packet.ts
+var import_fs2 = require("fs");
+
+// src/lib/transcript-export.ts
+var EMAIL_RE = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
+var PHONE_RE = /(?<!\w)(?:\+?\d[\d\s().-]{7,}\d)(?!\w)/g;
+var SECRET_RE = /\b(?:sk|pk|xai|whsec|EAAN)[A-Za-z0-9_\-]{16,}\b/g;
+function redactString(value) {
+  return value.replace(EMAIL_RE, "[redacted_email]").replace(SECRET_RE, "[redacted_secret]").replace(PHONE_RE, "[redacted_phone]");
+}
+function redactObject(value) {
+  if (typeof value === "string") return redactString(value);
+  if (Array.isArray(value)) return value.map((entry) => redactObject(entry));
+  if (!value || typeof value !== "object") return value;
+  const result = {};
+  for (const [key, entry] of Object.entries(value)) {
+    result[key] = redactObject(entry);
+  }
+  return result;
+}
+function extractUserTurns(transcriptText) {
+  const turns = [];
+  for (const line of transcriptText.split(/\r?\n/)) {
+    const match = line.match(/^\s*(?:user|customer|lead)\s*:\s*(.+)\s*$/i);
+    if (match?.[1]?.trim()) turns.push({ user: match[1].trim() });
+  }
+  if (turns.length === 0 && transcriptText.trim()) {
+    turns.push({ user: transcriptText.trim().slice(0, 500) });
+  }
+  return turns;
+}
+function buildReplayReadyConversation(input) {
+  const conversationId = String(input.conversation.id || "");
+  const transcriptText = String(input.conversation.transcript_text || "");
+  return {
+    ...input.conversation,
+    replay_command: conversationId ? `foh agent replay --agent ${input.agentId} --conversation ${conversationId} --json` : null,
+    test_fixture: {
+      schema_version: "foh_scenario_fixture.v1",
+      conversation_id: conversationId || null,
+      turns: extractUserTurns(transcriptText)
+    }
+  };
+}
+
+// src/lib/local-replay-packet.ts
+function asRecord(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : null;
+}
+function nonEmpty(value) {
+  const text = String(value ?? "").trim();
+  return text.length > 0 ? text : void 0;
+}
+function arrayOfRecords(value) {
+  return Array.isArray(value) ? value.map(asRecord).filter(Boolean) : [];
+}
+function collectStrings(value, keys) {
+  const found = /* @__PURE__ */ new Set();
+  const visit = (entry) => {
+    if (Array.isArray(entry)) {
+      for (const item of entry) visit(item);
+      return;
+    }
+    const record2 = asRecord(entry);
+    if (!record2) return;
+    for (const key of keys) {
+      const text = nonEmpty(record2[key]);
+      if (text) found.add(text);
+    }
+    for (const nested of Object.values(record2)) visit(nested);
+  };
+  visit(value);
+  return Array.from(found);
+}
+function selectConversation(artifact, agentId) {
+  const conversations = arrayOfRecords(artifact.conversations);
+  if (conversations.length > 0) {
+    if (agentId) {
+      const byAgent = conversations.find((conversation) => nonEmpty(conversation.agent_id) === agentId);
+      if (byAgent) return byAgent;
+    }
+    return conversations[0] ?? null;
+  }
+  if (artifact.transcript_text || artifact.test_fixture || artifact.traces) return artifact;
+  return null;
+}
+function buildDiff(conversation) {
+  const expectedTurns = arrayOfRecords(conversation.expected_turns);
+  const fixtureTurns = arrayOfRecords((asRecord(conversation.test_fixture) ?? {}).turns);
+  const actualTurns = fixtureTurns.length > 0 ? fixtureTurns : extractUserTurns(String(conversation.transcript_text ?? ""));
+  if (expectedTurns.length === 0) {
+    return {
+      status: "not_evaluated",
+      reason_code: "expected_turns_missing",
+      expected_turn_count: 0,
+      actual_turn_count: actualTurns.length,
+      differences: []
+    };
+  }
+  const differences = [];
+  const max = Math.max(expectedTurns.length, actualTurns.length);
+  for (let i = 0; i < max; i += 1) {
+    const expected = nonEmpty(expectedTurns[i]?.user);
+    const actual = nonEmpty(actualTurns[i]?.user);
+    if (expected !== actual) differences.push(`turn_${i + 1}: expected "${expected ?? ""}" got "${actual ?? ""}"`);
+  }
+  return {
+    status: differences.length === 0 ? "match" : "diff",
+    reason_code: differences.length === 0 ? "replay_diff_match" : "replay_diff_mismatch",
+    expected_turn_count: expectedTurns.length,
+    actual_turn_count: actualTurns.length,
+    differences
+  };
+}
+function buildLocalReplayPacket(input) {
+  const artifact = JSON.parse((0, import_fs2.readFileSync)(input.filePath, "utf-8"));
+  const conversation = selectConversation(artifact, input.agentId);
+  if (!conversation) {
+    return {
+      schema_version: "foh_agent_replay_packet.v1",
+      status: "local_artifact_not_replayable",
+      source: { type: "file", file: input.filePath, agent_id: input.agentId ?? null },
+      not_replayable_reason: "file_has_no_conversation_payload",
+      next_commands: ["foh transcripts export --agent <agent-id> --hydrate --include-traces --format json --out transcript-export.json --json"]
+    };
+  }
+  const traces = arrayOfRecords(conversation.traces ?? artifact.traces);
+  const traceIds = traces.map((trace) => nonEmpty(trace.id)).filter(Boolean);
+  const agentId = input.agentId ?? nonEmpty(conversation.agent_id) ?? nonEmpty(artifact.agent_id);
+  const conversationId = nonEmpty(conversation.id) ?? nonEmpty((asRecord(conversation.test_fixture) ?? {}).conversation_id);
+  const firstTraceId = traceIds[0];
+  return {
+    schema_version: "foh_agent_replay_packet.v1",
+    status: "local_replay_packet_created",
+    source: {
+      type: "file",
+      file: input.filePath,
+      agent_id: agentId ?? null,
+      conversation_id: conversationId ?? null
+    },
+    replay_runtime: {
+      mode: "local_artifact",
+      version: "foh_agent_replay_local_v1"
+    },
+    agent_reference: {
+      agent_id: agentId ?? null,
+      agent_version: conversation.agent_version ?? artifact.agent_version ?? null,
+      config_ref: conversation.config_ref ?? artifact.config_ref ?? null
+    },
+    trace_ids: traceIds,
+    correlation_ids: collectStrings([conversation, artifact], ["correlation_id", "correlationId"]),
+    tool_references: collectStrings(traces, ["tool_name", "toolName", "name"]),
+    knowledge_snapshot_refs: collectStrings([conversation, artifact], ["knowledge_snapshot_id", "knowledgeSnapshotId", "knowledge_ref"]),
+    conversation,
+    trace_count: traces.length,
+    traces,
+    diff: buildDiff(conversation),
+    not_replayable_reason: null,
+    next_commands: [
+      ...agentId && firstTraceId ? [
+        `foh agent replay --agent ${agentId} --trace ${firstTraceId} --json`,
+        `foh tests from-trace --agent ${agentId} --trace ${firstTraceId} --json`
+      ] : [],
+      ...agentId && conversationId ? [
+        `foh test run --suite <suite.yml> --agent ${agentId} --json`
+      ] : []
+    ]
+  };
+}
+
 // src/commands/agent-candidate-decision.ts
 function registerAgentCandidateDecisionCommands(agent) {
   const candidateDecision = agent.command("candidate-decision").description("Read/write candidate promotion decisions");
@@ -13783,8 +13995,8 @@ function registerAgentGuardrailCommands(agent) {
     try {
       rule = JSON.parse(opts.rule);
     } catch {
-      const { readFileSync: readFileSync7 } = await import("fs");
-      rule = JSON.parse(readFileSync7(opts.rule, "utf-8"));
+      const { readFileSync: readFileSync11 } = await import("fs");
+      rule = JSON.parse(readFileSync11(opts.rule, "utf-8"));
     }
     const data = await apiFetch(`/v1/console/agents/${opts.agent}/guardrails`, {
       method: "POST",
@@ -14190,22 +14402,38 @@ function registerAgent(program3) {
     const data = await apiFetch(`/v1/console/agents/${opts.agent}`, { apiUrlOverride: opts.apiUrl });
     format(data, { json: opts.json ?? false });
   }));
-  agent.command("replay").description("Create a replay/debug packet from a trace or conversation").option("--trace <id>", "Trace event ID to replay through the server trace replay endpoint").option("--conversation <id>", "Conversation ID to package with transcript and traces").requiredOption("--agent <id>", "Agent ID").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
-    if (!opts.trace && !opts.conversation) {
+  agent.command("replay").description("Create a replay/debug packet from a trace or conversation").option("--trace <id>", "Trace event ID to replay through the server trace replay endpoint").option("--conversation <id>", "Conversation ID to package with transcript and traces").option("--file <path>", "Local transcript/replay artifact JSON to package without API access").option("--agent <id>", "Agent ID").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+    const sourceCount = [opts.trace, opts.conversation, opts.file].filter(Boolean).length;
+    if (sourceCount === 0) {
       throw new FohError({
         step: "agent.replay",
         error: "Missing replay source",
-        remediation: "Pass --trace <id> or --conversation <id>.",
+        remediation: "Pass --trace <id>, --conversation <id>, or --file <transcript.json>.",
         statusCode: 400
       });
     }
-    if (opts.trace && opts.conversation) {
+    if (sourceCount > 1) {
       throw new FohError({
         step: "agent.replay",
         error: "Ambiguous replay source",
-        remediation: "Pass only one of --trace or --conversation.",
+        remediation: "Pass only one of --trace, --conversation, or --file.",
         statusCode: 400
       });
+    }
+    if ((opts.trace || opts.conversation) && !opts.agent) {
+      throw new FohError({
+        step: "agent.replay",
+        error: "Missing agent id for server replay source",
+        remediation: "Pass --agent <id>, or use --file with a local transcript artifact that includes agent_id.",
+        statusCode: 400
+      });
+    }
+    if (opts.file) {
+      format(buildLocalReplayPacket({
+        filePath: String(opts.file),
+        agentId: opts.agent ? String(opts.agent) : void 0
+      }), { json: opts.json ?? false });
+      return;
     }
     if (opts.trace) {
       const data2 = await apiFetch(`/v1/console/traces/${opts.trace}/replay`, {
@@ -14368,9 +14596,9 @@ function registerAgent(program3) {
       process.stdout.write(yaml);
       return;
     }
-    const { writeFileSync: writeFileSync6 } = await import("fs");
+    const { writeFileSync: writeFileSync8 } = await import("fs");
     const outputPath = opts.output ?? "tenant.yaml";
-    writeFileSync6(
+    writeFileSync8(
       outputPath,
       `# tenant.yaml - Front Of House agent manifest
 # Edit this file and run: foh plan tenant.yaml
@@ -15805,11 +16033,11 @@ function registerVoice(program3) {
     }
     const outputPath = String(opts.out || `foh-voice-preview-${provider}-${voiceId}.mp3`).trim();
     const audio = Buffer.from(await res.arrayBuffer());
-    const { mkdirSync: mkdirSync4, writeFileSync: writeFileSync6 } = await import("fs");
-    const { dirname: dirname5, resolve: resolve7 } = await import("path");
-    const absolutePath = resolve7(outputPath);
-    mkdirSync4(dirname5(absolutePath), { recursive: true });
-    writeFileSync6(absolutePath, audio);
+    const { mkdirSync: mkdirSync7, writeFileSync: writeFileSync8 } = await import("fs");
+    const { dirname: dirname5, resolve: resolve11 } = await import("path");
+    const absolutePath = resolve11(outputPath);
+    mkdirSync7(dirname5(absolutePath), { recursive: true });
+    writeFileSync8(absolutePath, audio);
     format({
       status: "ok",
       provider,
@@ -30290,7 +30518,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve7) => setTimeout(resolve7, pollInterval));
+        await new Promise((resolve11) => setTimeout(resolve11, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error2) {
@@ -30307,7 +30535,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve7, reject) => {
+    return new Promise((resolve11, reject) => {
       const earlyReject = (error2) => {
         reject(error2);
       };
@@ -30385,7 +30613,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve7(parseResult.data);
+            resolve11(parseResult.data);
           }
         } catch (error2) {
           reject(error2);
@@ -30646,12 +30874,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve7, reject) => {
+    return new Promise((resolve11, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve7, interval);
+      const timeoutId = setTimeout(resolve11, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -31751,7 +31979,7 @@ var McpServer = class {
     let task = createTaskResult.task;
     const pollInterval = task.pollInterval ?? 5e3;
     while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-      await new Promise((resolve7) => setTimeout(resolve7, pollInterval));
+      await new Promise((resolve11) => setTimeout(resolve11, pollInterval));
       const updatedTask = await extra.taskStore.getTask(taskId);
       if (!updatedTask) {
         throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -32400,19 +32628,19 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve7) => {
+    return new Promise((resolve11) => {
       const json3 = serializeMessage(message);
       if (this._stdout.write(json3)) {
-        resolve7();
+        resolve11();
       } else {
-        this._stdout.once("drain", resolve7);
+        this._stdout.once("drain", resolve11);
       }
     });
   }
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.5";
+var CLI_VERSION = "0.1.11";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -32597,7 +32825,7 @@ async function runFohCli(params) {
     effectiveArgv.push("--json");
   }
   const command = `foh ${effectiveArgv.join(" ")}`;
-  return await new Promise((resolve7) => {
+  return await new Promise((resolve11) => {
     const child = (0, import_node_child_process.spawn)(process.execPath, [cliEntry, ...effectiveArgv], {
       stdio: ["ignore", "pipe", "pipe"],
       env: {
@@ -32622,7 +32850,7 @@ async function runFohCli(params) {
     });
     child.once("error", (error2) => {
       clearTimeout(timeoutHandle);
-      resolve7({
+      resolve11({
         ok: false,
         command,
         argv: effectiveArgv,
@@ -32638,7 +32866,7 @@ async function runFohCli(params) {
       const stderrText = finalizeBoundedText(stderrBuffer);
       const exitCode = Number.isFinite(code ?? NaN) ? Number(code) : 1;
       const stdoutJson = tryParseJson(stdoutText);
-      resolve7({
+      resolve11({
         ok: !timedOut && exitCode === 0,
         command,
         argv: effectiveArgv,
@@ -33411,7 +33639,7 @@ function registerMcp(program3) {
 }
 
 // src/commands/knowledge.ts
-var import_fs2 = require("fs");
+var import_fs3 = require("fs");
 var import_path2 = require("path");
 
 // src/lib/query-options.ts
@@ -33473,6 +33701,11 @@ function registerKnowledge(program3) {
       source: "agent_draft_knowledge",
       citation: `agent:${opts.agent}:chunk:${chunk.index + 1}`,
       score: scoreChunk(queryTokens, chunk.text),
+      lineage: {
+        source: "agent_draft_direct",
+        agent_id: opts.agent,
+        chunk_index: chunk.index + 1
+      },
       text: chunk.text.slice(0, 1200)
     })).filter((chunk) => chunk.score > 0).sort((a, b) => b.score - a.score).slice(0, limit);
     const topScore = matches[0]?.score ?? 0;
@@ -33485,6 +33718,11 @@ function registerKnowledge(program3) {
       reason_code: reasonCode,
       top_score: topScore,
       chunk_count: chunks.length,
+      lineage: {
+        source: "agent_draft_direct",
+        agent_id: opts.agent,
+        candidate_chunk_count: chunks.length
+      },
       next_commands: [
         `foh knowledge ingest-file --agent ${opts.agent} --file <path> --json`,
         `foh knowledge query --agent ${opts.agent} --text "${query.replace(/"/g, '\\"')}" --explain --json`
@@ -33495,6 +33733,23 @@ function registerKnowledge(program3) {
       ok: status === "pass",
       status,
       reason_code: reasonCode,
+      summary: status === "pass" ? `Knowledge query matched ${matches.length} chunk(s).` : status === "low_confidence" ? `Knowledge query matched weakly; top score ${topScore}.` : "Knowledge query returned no usable matches.",
+      ids: {
+        agent_id: opts.agent
+      },
+      checks: [{
+        name: "knowledge_retrieval",
+        status,
+        reason_code: reasonCode,
+        top_score: topScore,
+        min_score: minScore,
+        match_count: matches.length
+      }],
+      artifacts: {},
+      next_commands: status === "pass" ? [] : [
+        `foh knowledge ingest-file --agent ${opts.agent} --file <path> --json`,
+        `foh knowledge query --agent ${opts.agent} --text "${query.replace(/"/g, '\\"')}" --explain --json`
+      ],
       agent_id: opts.agent,
       query,
       retrieval: {
@@ -33502,7 +33757,12 @@ function registerKnowledge(program3) {
         chunk_count: chunks.length,
         match_count: matches.length,
         top_score: topScore,
-        min_score: minScore
+        min_score: minScore,
+        lineage: {
+          agent_id: opts.agent,
+          source: "agent_draft_direct",
+          candidate_chunk_count: chunks.length
+        }
       },
       matches,
       failure_packet: packet,
@@ -33515,7 +33775,7 @@ function registerKnowledge(program3) {
     }, { json: opts.json ?? false });
   }));
   knowledge.command("ingest-file").description("Ingest a local file into the knowledge base").requiredOption("--file <path>", "Path to file to ingest").option("--agent <id>", "Scope to agent").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
-    const content = (0, import_fs2.readFileSync)(opts.file, "utf-8");
+    const content = (0, import_fs3.readFileSync)(opts.file, "utf-8");
     let data;
     if (opts.agent) {
       const draft = await apiFetch(`/v1/console/agents/${opts.agent}/draft`, {
@@ -33674,7 +33934,7 @@ var import_crypto3 = require("crypto");
 
 // src/lib/signed-report.ts
 var import_crypto2 = require("crypto");
-var import_fs3 = require("fs");
+var import_fs4 = require("fs");
 var import_path3 = require("path");
 function canonicalize(value) {
   if (value === null || value === void 0) return null;
@@ -33706,13 +33966,13 @@ function signReport(reportPayload) {
 }
 function writeSignedJsonArtifact(path2, value) {
   const absolutePath = (0, import_path3.resolve)(path2);
-  (0, import_fs3.mkdirSync)((0, import_path3.dirname)(absolutePath), { recursive: true });
-  (0, import_fs3.writeFileSync)(absolutePath, stableStringify(value), "utf-8");
+  (0, import_fs4.mkdirSync)((0, import_path3.dirname)(absolutePath), { recursive: true });
+  (0, import_fs4.writeFileSync)(absolutePath, stableStringify(value), "utf-8");
   return absolutePath;
 }
 
 // src/commands/manifest.ts
-var import_fs4 = require("fs");
+var import_fs5 = require("fs");
 var import_picocolors3 = __toESM(require_picocolors());
 function formatDiff(diffs) {
   if (diffs.length === 0) return "No changes";
@@ -33748,7 +34008,7 @@ function formatDiff(diffs) {
 function loadManifestFile(filePath) {
   let raw;
   try {
-    raw = (0, import_fs4.readFileSync)(filePath, "utf-8");
+    raw = (0, import_fs5.readFileSync)(filePath, "utf-8");
   } catch {
     throw new FohError({
       step: "manifest.load",
@@ -34016,27 +34276,32 @@ function optionNameToFlag(key) {
 function buildMissingOptionsPlan(missing, opts) {
   const missingFlags = missing.map(optionNameToFlag);
   const signInUrl = buildConsoleSignInUrl(resolveConsoleBaseUrl(opts.consoleUrl));
-  return {
+  return cliEnvelope({
     status: "blocked",
-    code: "setup_required_options_missing",
-    missing_options: missingFlags,
-    reason: "setup requires an authenticated org, an agent template, and an agent name before it can mutate customer resources",
-    sign_in_url: signInUrl,
-    next_commands: [
+    reasonCode: "setup_required_options_missing",
+    summary: "Setup requires an authenticated org, an agent template, and an agent name before it can mutate customer resources.",
+    ids: {},
+    nextCommands: [
       "foh auth signup --web --json",
       "foh auth login --web --json",
       ...buildCliAuthFallbackCommands(),
       "foh templates list --json",
       'foh setup --org <org-id> --agent-template <template-id> --agent-name "Demo Agent" --widget-domains <domain> --report-out setup-report.json --json'
     ],
-    text_fallback: buildCliAuthFallbackInstructions(signInUrl),
-    ai_agent_instruction: [
-      "Do not guess org IDs, template IDs, or customer domains.",
-      "If no browser is available, print sign_in_url and ask the user to sign in.",
-      "After auth, discover orgs and templates with the listed commands.",
-      "Rerun setup only after all missing_options are resolved."
-    ]
-  };
+    extra: {
+      code: "setup_required_options_missing",
+      missing_options: missingFlags,
+      reason: "setup requires an authenticated org, an agent template, and an agent name before it can mutate customer resources",
+      sign_in_url: signInUrl,
+      text_fallback: buildCliAuthFallbackInstructions(signInUrl),
+      ai_agent_instruction: [
+        "Do not guess org IDs, template IDs, or customer domains.",
+        "If no browser is available, print sign_in_url and ask the user to sign in.",
+        "After auth, discover orgs and templates with the listed commands.",
+        "Rerun setup only after all missing_options are resolved."
+      ]
+    }
+  });
 }
 function emitMissingOptionsPlan(missing, opts) {
   const plan = buildMissingOptionsPlan(missing, { consoleUrl: opts.consoleUrl });
@@ -34510,8 +34775,8 @@ function registerSetup(program3) {
         }
         try {
           const manifest = await agentExport(resolvedAgentId, { apiUrlOverride: opts.apiUrl });
-          const { writeFileSync: writeFileSync6 } = await import("fs");
-          writeFileSync6(
+          const { writeFileSync: writeFileSync8 } = await import("fs");
+          writeFileSync8(
             "tenant.yaml",
             `# tenant.yaml - Front Of House agent manifest
 # Edit this file and run: foh plan tenant.yaml
@@ -34527,7 +34792,15 @@ ${serialiseManifest(manifest)}`,
       });
       const reportMeta = emitSetupReport("success");
       const summary = {
+        schema_version: "foh_cli_setup_summary.v1",
+        ok: true,
         status: "success",
+        reason_code: "setup_completed",
+        summary: "Setup completed and produced a signed setup report.",
+        ids: {
+          org_id: opts.org,
+          agent_id: agentId ?? null
+        },
         org_id: opts.org,
         agent_id: agentId,
         phone_number: phoneNumber,
@@ -34539,7 +34812,15 @@ ${serialiseManifest(manifest)}`,
         manifest_written: manifestWritten ? "tenant.yaml" : null,
         resume_from: resumeState.resumeFrom,
         setup_report_hash: reportMeta.reportHash,
-        setup_report_path: reportMeta.reportPath
+        setup_report_path: reportMeta.reportPath,
+        artifacts: {
+          setup_report_path: reportMeta.reportPath,
+          tenant_manifest_path: manifestWritten ? "tenant.yaml" : null
+        },
+        next_commands: agentId ? [
+          `foh prove --agent ${agentId} --json --out test-results/foh-proof.latest.json`,
+          `foh agent publish --agent ${agentId} --json`
+        ] : []
       };
       format(summary, { json: opts.json ?? false });
     } catch (error2) {
@@ -34552,13 +34833,25 @@ ${serialiseManifest(manifest)}`,
         });
         format(
           {
+            schema_version: "foh_cli_setup_failure.v1",
+            ok: false,
             status: "failed",
+            reason_code: error2.reasonCode ?? "setup_failed",
+            summary: error2.error,
+            ids: {
+              org_id: opts.org,
+              agent_id: agentId ?? null
+            },
             step: error2.step,
             completed_steps: completed.map((stepResult) => stepResult.step),
             error: error2.error,
             remediation: error2.remediation,
             setup_report_hash: reportMeta.reportHash,
-            setup_report_path: reportMeta.reportPath
+            setup_report_path: reportMeta.reportPath,
+            artifacts: {
+              setup_report_path: reportMeta.reportPath
+            },
+            next_commands: error2.nextCommands ?? [error2.remediation.replace(/^Run:\s*/, "")].filter(Boolean)
           },
           { json: opts.json ?? false }
         );
@@ -34651,8 +34944,8 @@ function registerSim(program3) {
       }
       const cert = response.certificate;
       if (opts.out) {
-        const { writeFileSync: writeFileSync6 } = await import("fs");
-        writeFileSync6(opts.out, JSON.stringify(cert, null, 2) + "\n", "utf-8");
+        const { writeFileSync: writeFileSync8 } = await import("fs");
+        writeFileSync8(opts.out, JSON.stringify(cert, null, 2) + "\n", "utf-8");
         process.stderr.write(`  Certificate written to ${opts.out}
 `);
       }
@@ -34702,8 +34995,8 @@ function registerSim(program3) {
         });
       }
       if (opts.out) {
-        const { writeFileSync: writeFileSync6 } = await import("fs");
-        writeFileSync6(opts.out, JSON.stringify(response.certificate, null, 2) + "\n", "utf-8");
+        const { writeFileSync: writeFileSync8 } = await import("fs");
+        writeFileSync8(opts.out, JSON.stringify(response.certificate, null, 2) + "\n", "utf-8");
         process.stderr.write(`  Final certificate written to ${opts.out}
 `);
       }
@@ -34902,7 +35195,7 @@ function registerConversations(program3) {
 }
 
 // src/commands/transcripts.ts
-var import_fs5 = require("fs");
+var import_fs6 = require("fs");
 var import_path4 = require("path");
 function listPath(agentId, opts) {
   const params = new URLSearchParams();
@@ -34915,6 +35208,27 @@ function listPath(agentId, opts) {
 }
 function jsonl(rows) {
   return rows.map((row) => JSON.stringify(row)).join("\n") + (rows.length > 0 ? "\n" : "");
+}
+async function hydrateRows(input) {
+  const hydrated = [];
+  for (const row of input.rows) {
+    const conversationId = String(row.id || "").trim();
+    if (!conversationId) {
+      hydrated.push(row);
+      continue;
+    }
+    const params = new URLSearchParams();
+    if (input.includeTraces) params.set("include_traces", "true");
+    const detail = await apiFetch(
+      withQuery(`/v1/console/agents/${input.agentId}/conversations/${conversationId}`, params),
+      { orgId: input.orgId, apiUrlOverride: input.apiUrl }
+    );
+    hydrated.push({
+      ...detail.conversation || row,
+      ...input.includeTraces ? { traces: Array.isArray(detail.traces) ? detail.traces : [] } : {}
+    });
+  }
+  return hydrated;
 }
 function registerTranscripts(program3) {
   const transcripts = program3.command("transcripts").description("List, fetch, and export conversation transcripts");
@@ -34929,7 +35243,7 @@ function registerTranscripts(program3) {
     const data = await apiFetch(path2, { orgId: opts.org, apiUrlOverride: opts.apiUrl });
     format(data, { json: opts.json ?? false });
   }));
-  transcripts.command("export").description("Export recent transcripts as JSON or JSONL").requiredOption("--agent <id>", "Agent ID").option("--q <query>", "Full-text transcript query").option("--from <iso-date>", "Start datetime (ISO8601)").option("--to <iso-date>", "End datetime (ISO8601)").option("--limit <n>", "Rows to export (1-100)", "100").option("--format <value>", "Export format: jsonl or json", "jsonl").option("--out <path>", "Output file path").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+  transcripts.command("export").description("Export recent transcripts as JSON or JSONL").requiredOption("--agent <id>", "Agent ID").option("--q <query>", "Full-text transcript query").option("--from <iso-date>", "Start datetime (ISO8601)").option("--to <iso-date>", "End datetime (ISO8601)").option("--limit <n>", "Rows to export (1-100)", "100").option("--format <value>", "Export format: jsonl or json", "jsonl").option("--hydrate", "Fetch full conversation detail for every exported row").option("--include-traces", "Hydrate each conversation with ordered trace events").option("--no-redact", "Disable default redaction of emails, phone numbers, and obvious secrets").option("--out <path>", "Output file path").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
     const exportFormat = String(opts.format || "jsonl").trim().toLowerCase();
     if (!["jsonl", "json"].includes(exportFormat)) {
       throw new FohError({
@@ -34943,16 +35257,74 @@ function registerTranscripts(program3) {
       orgId: opts.org,
       apiUrlOverride: opts.apiUrl
     });
-    const rows = Array.isArray(data.conversations) ? data.conversations : [];
-    const content = exportFormat === "json" ? stableStringify({ schema_version: "foh_transcript_export.v1", conversations: rows }) : jsonl(rows);
+    const listRows = Array.isArray(data.conversations) ? data.conversations : [];
+    const shouldHydrate = Boolean(opts.hydrate || opts.includeTraces);
+    const includeTraces = Boolean(opts.includeTraces);
+    const rawRows = shouldHydrate ? await hydrateRows({
+      agentId: opts.agent,
+      rows: listRows,
+      includeTraces,
+      orgId: opts.org,
+      apiUrl: opts.apiUrl
+    }) : listRows;
+    const replayReadyRows = rawRows.map((conversation) => buildReplayReadyConversation({
+      agentId: opts.agent,
+      conversation
+    }));
+    const rows = opts.redact === false ? replayReadyRows : redactObject(replayReadyRows);
+    const exportPacket = {
+      schema_version: "foh_transcript_export.v2",
+      redaction: {
+        enabled: opts.redact !== false,
+        fields: opts.redact === false ? [] : ["email", "phone", "secret-like-token"]
+      },
+      hydration: {
+        enabled: shouldHydrate,
+        include_traces: includeTraces
+      },
+      conversations: rows
+    };
+    const content = exportFormat === "json" ? stableStringify(exportPacket) : jsonl(rows);
     if (opts.out) {
       const outputPath = (0, import_path4.resolve)(String(opts.out));
-      (0, import_fs5.writeFileSync)(outputPath, content, "utf-8");
-      format({ status: "exported", format: exportFormat, count: rows.length, output_path: outputPath }, { json: opts.json ?? false });
+      (0, import_fs6.writeFileSync)(outputPath, content, "utf-8");
+      format({
+        schema_version: "foh_transcript_export_result.v1",
+        ok: true,
+        status: "exported",
+        reason_code: "transcripts_exported",
+        summary: `Exported ${rows.length} transcript row(s).`,
+        ids: { agent_id: opts.agent },
+        artifacts: { output_path: outputPath },
+        next_commands: [
+          `foh agent replay --agent ${opts.agent} --conversation <conversation-id> --json`,
+          `foh test run --suite <suite.yml> --agent ${opts.agent} --json`
+        ],
+        format: exportFormat,
+        count: rows.length,
+        redaction: exportPacket.redaction,
+        hydration: exportPacket.hydration,
+        output_path: outputPath
+      }, { json: opts.json ?? false });
       return;
     }
     if (opts.json || exportFormat === "json") {
-      format({ schema_version: "foh_transcript_export.v1", conversations: rows }, { json: opts.json ?? false });
+      format({
+        schema_version: "foh_transcript_export.v1",
+        ok: true,
+        status: "pass",
+        reason_code: "transcripts_exported",
+        summary: `Prepared ${rows.length} transcript row(s).`,
+        ids: { agent_id: opts.agent },
+        artifacts: {},
+        next_commands: [
+          `foh agent replay --agent ${opts.agent} --conversation <conversation-id> --json`,
+          `foh test run --suite <suite.yml> --agent ${opts.agent} --json`
+        ],
+        redaction: exportPacket.redaction,
+        hydration: exportPacket.hydration,
+        conversations: exportPacket.conversations
+      }, { json: opts.json ?? false });
       return;
     }
     process.stdout.write(content);
@@ -35017,6 +35389,14 @@ function registerAnalytics(program3) {
     format({
       schema_version: "foh_analytics_fetch.v1",
       ok: true,
+      status: "pass",
+      reason_code: "analytics_fetch_completed",
+      summary: `Fetched analytics summary for preset ${preset}.`,
+      ids: {
+        agent_id: opts.agent
+      },
+      checks: [],
+      artifacts: {},
       agent_id: opts.agent,
       preset,
       window_days: windowDays,
@@ -35220,16 +35600,39 @@ function registerTests(program3) {
 }
 
 // src/commands/test.ts
-var import_fs6 = require("fs");
+var import_fs8 = require("fs");
+var import_path6 = require("path");
+
+// src/lib/scenario-suite.ts
+var import_fs7 = require("fs");
 var import_path5 = require("path");
 function asStringList(value) {
   if (typeof value === "string" && value.trim()) return [value.trim()];
   if (Array.isArray(value)) return value.map((entry) => String(entry || "").trim()).filter(Boolean);
   return [];
 }
+function getPath(source, path2) {
+  if (!source || typeof source !== "object") return void 0;
+  return path2.split(".").reduce((current, part) => {
+    if (!current || typeof current !== "object") return void 0;
+    return current[part];
+  }, source);
+}
+function valuesEqual(actual, expected) {
+  if (Array.isArray(expected)) {
+    return expected.some((entry) => valuesEqual(actual, entry));
+  }
+  if (expected && typeof expected === "object") {
+    return JSON.stringify(actual) === JSON.stringify(expected);
+  }
+  return String(actual ?? "") === String(expected ?? "");
+}
+function parseStructuredFile(path2) {
+  const raw = (0, import_fs7.readFileSync)(path2, "utf-8");
+  return path2.toLowerCase().endsWith(".json") ? JSON.parse(raw) : load(raw);
+}
 function parseSuiteFile(path2) {
-  const raw = (0, import_fs6.readFileSync)(path2, "utf-8");
-  const parsed = path2.toLowerCase().endsWith(".json") ? JSON.parse(raw) : load(raw);
+  const parsed = parseStructuredFile(path2);
   if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
     throw new FohError({
       step: "test.run",
@@ -35240,7 +35643,33 @@ function parseSuiteFile(path2) {
   }
   return parsed;
 }
-function validateSuite(suite) {
+function turnFromFixtureEntry(entry) {
+  if (typeof entry === "string" && entry.trim()) return { user: entry.trim() };
+  if (!entry || typeof entry !== "object" || Array.isArray(entry)) return null;
+  const row = entry;
+  const role = typeof row.role === "string" ? row.role.toLowerCase() : "";
+  if (role && role !== "user") return null;
+  const content = row.user ?? row.message ?? row.content ?? row.text;
+  if (typeof content !== "string" || !content.trim()) return null;
+  return {
+    user: content.trim(),
+    expect: row.expect && typeof row.expect === "object" && !Array.isArray(row.expect) ? row.expect : void 0
+  };
+}
+function loadFixtureTurns(path2) {
+  const parsed = parseStructuredFile(path2);
+  const entries = Array.isArray(parsed) ? parsed : parsed && typeof parsed === "object" && Array.isArray(parsed.turns) ? parsed.turns : parsed && typeof parsed === "object" && Array.isArray(parsed.messages) ? parsed.messages : [];
+  return entries.map(turnFromFixtureEntry).filter((entry) => !!entry);
+}
+function resolveScenarioTurns(scenario, suitePath) {
+  const inlineTurns = Array.isArray(scenario.turns) ? scenario.turns : [];
+  const fixture = scenario.transcript_fixture || scenario.fixture_transcript || scenario.fixture;
+  if (!fixture) return inlineTurns;
+  const fixturePath = (0, import_path5.resolve)(suitePath, "..", fixture);
+  const fixtureTurns = loadFixtureTurns(fixturePath);
+  return [...fixtureTurns, ...inlineTurns];
+}
+function validateSuite(suite, suitePath) {
   const scenarios = Array.isArray(suite.scenarios) ? suite.scenarios : [];
   if (scenarios.length === 0) {
     throw new FohError({
@@ -35250,17 +35679,18 @@ function validateSuite(suite) {
       statusCode: 400
     });
   }
-  for (const scenario of scenarios) {
-    if (!Array.isArray(scenario.turns) || scenario.turns.length === 0) {
+  return scenarios.map((scenario) => {
+    const turns = resolveScenarioTurns(scenario, suitePath);
+    if (turns.length === 0) {
       throw new FohError({
         step: "test.run",
         error: `Scenario "${scenario.id || scenario.name || "(unnamed)"}" has no turns`,
-        remediation: "Add turns with user/message and expect.contains assertions.",
+        remediation: "Add inline turns or a fixture_transcript file with user messages.",
         statusCode: 400
       });
     }
-  }
-  return scenarios;
+    return { ...scenario, turns };
+  });
 }
 function evaluateReply(reply, expect) {
   const lowerReply = reply.toLowerCase();
@@ -35279,10 +35709,128 @@ function evaluateReply(reply, expect) {
   }
   return failures;
 }
+function pickVariables(response) {
+  for (const key of ["variables", "context_variables", "lead_data", "extracted_variables"]) {
+    const value = response[key];
+    if (value && typeof value === "object" && !Array.isArray(value)) return value;
+  }
+  return null;
+}
+function pickToolCalls(response) {
+  for (const path2 of ["tool_calls", "toolCalls", "telemetry.tool_calls", "trace.tool_calls"]) {
+    const value = getPath(response, path2);
+    if (Array.isArray(value)) return value;
+  }
+  return [];
+}
+function toolCallName(call) {
+  if (typeof call === "string") return call;
+  if (!call || typeof call !== "object") return "";
+  const row = call;
+  return String(row.name ?? row.tool ?? row.tool_id ?? row.id ?? getPath(row, "function.name") ?? "");
+}
+function pickLeadCapture(response) {
+  for (const key of ["lead_capture", "lead", "lead_data"]) {
+    const value = response[key];
+    if (value && typeof value === "object" && !Array.isArray(value)) return value;
+  }
+  if (response.lead_id || response.leadId) {
+    return { id: response.lead_id ?? response.leadId };
+  }
+  return null;
+}
+function evaluateStructuredExpectations(response, expect, latencyMs) {
+  if (!expect) return [];
+  const failures = [];
+  if (typeof expect.trace_present === "boolean") {
+    const present = Boolean(response.trace_id);
+    if (present !== expect.trace_present) failures.push(`trace presence expected ${expect.trace_present} but got ${present}`);
+  }
+  if (typeof expect.correlation_present === "boolean") {
+    const present = Boolean(response.correlation_id);
+    if (present !== expect.correlation_present) failures.push(`correlation presence expected ${expect.correlation_present} but got ${present}`);
+  }
+  const expectedActions = asStringList(expect.action);
+  if (expectedActions.length > 0) {
+    const actual = String(response.action ?? "");
+    if (!expectedActions.includes(actual)) failures.push(`action expected ${expectedActions.join("|")} but got ${actual || "(empty)"}`);
+  }
+  const expectedTerminalStates = asStringList(expect.terminal_state);
+  if (expectedTerminalStates.length > 0) {
+    const actual = String(response.terminal_state ?? response.terminalState ?? response.action ?? "");
+    if (!expectedTerminalStates.includes(actual)) {
+      failures.push(`terminal_state expected ${expectedTerminalStates.join("|")} but got ${actual || "(empty)"}`);
+    }
+  }
+  const minLatency = expect.latency_ms?.min;
+  const maxLatency = expect.latency_ms?.max ?? expect.max_latency_ms;
+  if (typeof minLatency === "number" && latencyMs < minLatency) {
+    failures.push(`latency_ms expected >=${minLatency} but got ${latencyMs}`);
+  }
+  if (typeof maxLatency === "number" && latencyMs > maxLatency) {
+    failures.push(`latency_ms expected <=${maxLatency} but got ${latencyMs}`);
+  }
+  if (expect.variables && typeof expect.variables === "object") {
+    const variables = pickVariables(response);
+    if (!variables) failures.push("variables expected but response had none");
+    else {
+      for (const [path2, expected] of Object.entries(expect.variables)) {
+        const actual = getPath(variables, path2);
+        if (!valuesEqual(actual, expected)) failures.push(`variables.${path2} expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
+      }
+    }
+  }
+  if (expect.tool_calls) {
+    const calls = pickToolCalls(response);
+    const names = calls.map(toolCallName).filter(Boolean);
+    const includes = asStringList(expect.tool_calls.includes);
+    const excludes = asStringList(expect.tool_calls.excludes);
+    for (const name of includes) {
+      if (!names.includes(name)) failures.push(`tool_calls missing expected tool: ${name}`);
+    }
+    for (const name of excludes) {
+      if (names.includes(name)) failures.push(`tool_calls contained forbidden tool: ${name}`);
+    }
+    if (typeof expect.tool_calls.min_count === "number" && calls.length < expect.tool_calls.min_count) {
+      failures.push(`tool_calls expected >=${expect.tool_calls.min_count} but got ${calls.length}`);
+    }
+    if (typeof expect.tool_calls.max_count === "number" && calls.length > expect.tool_calls.max_count) {
+      failures.push(`tool_calls expected <=${expect.tool_calls.max_count} but got ${calls.length}`);
+    }
+  }
+  if (expect.escalation) {
+    const requested = Boolean(getPath(response, "escalation.requested") ?? response.handoff?.requested);
+    if (typeof expect.escalation.requested === "boolean" && requested !== expect.escalation.requested) {
+      failures.push(`escalation.requested expected ${expect.escalation.requested} but got ${requested}`);
+    }
+    const expectedReasons = asStringList(expect.escalation.reason);
+    if (expectedReasons.length > 0) {
+      const actual = String(getPath(response, "escalation.reason") ?? response.handoff?.reason ?? "");
+      if (!expectedReasons.includes(actual)) failures.push(`escalation.reason expected ${expectedReasons.join("|")} but got ${actual || "(empty)"}`);
+    }
+  }
+  if (expect.lead_capture) {
+    const lead = pickLeadCapture(response);
+    if (expect.lead_capture.required === true && !lead) failures.push("lead_capture expected but response had none");
+    for (const field of expect.lead_capture.fields || []) {
+      const actual = lead ? getPath(lead, field) : void 0;
+      if (actual == null || actual === "") failures.push(`lead_capture.${field} missing`);
+    }
+  }
+  if (expect.fields && typeof expect.fields === "object") {
+    for (const [path2, expected] of Object.entries(expect.fields)) {
+      const actual = getPath(response, path2);
+      if (!valuesEqual(actual, expected)) failures.push(`fields.${path2} expected ${JSON.stringify(expected)} but got ${JSON.stringify(actual)}`);
+    }
+  }
+  return failures;
+}
+
+// src/commands/test.ts
 function registerTest(program3) {
   const test = program3.command("test").description("Run local scenario suites against runtime channels");
   test.command("run").description("Run a local YAML/JSON scenario suite").requiredOption("--suite <path>", "Suite YAML/JSON path").option("--agent <id>", "Agent ID (defaults to suite.agent)").option("--out <path>", "Write report JSON to path").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
-    const suitePath = (0, import_path5.resolve)(String(opts.suite));
+    const suitePath = (0, import_path6.resolve)(String(opts.suite));
     const suite = parseSuiteFile(suitePath);
     const agentId = String(opts.agent || suite.agent || "").trim();
     if (!agentId) {
@@ -35293,7 +35841,7 @@ function registerTest(program3) {
         statusCode: 400
       });
     }
-    const scenarios = validateSuite(suite);
+    const scenarios = validateSuite(suite, suitePath);
     const ensure = await apiFetch("/v1/console/channels/widget/ensure", {
       method: "POST",
       body: JSON.stringify({ agentId }),
@@ -35316,7 +35864,7 @@ function registerTest(program3) {
       const scenario = scenarios[scenarioIndex];
       let conversationId;
       const turnResults = [];
-      for (let turnIndex = 0; turnIndex < (scenario.turns || []).length; turnIndex += 1) {
+      for (let turnIndex = 0; turnIndex < scenario.turns.length; turnIndex += 1) {
         const turn = scenario.turns[turnIndex];
         const message = String(turn.user || turn.message || "").trim();
         if (!message) {
@@ -35324,6 +35872,7 @@ function registerTest(program3) {
           turnResults.push({ turn: turnIndex + 1, ok: false, failures: ["missing user/message"] });
           continue;
         }
+        const start = Date.now();
         const response = await apiFetch("/v1/widget/inbound", {
           method: "POST",
           body: JSON.stringify({
@@ -35334,9 +35883,13 @@ function registerTest(program3) {
           }),
           apiUrlOverride: opts.apiUrl
         });
+        const latencyMs = Date.now() - start;
         conversationId = response.conversationId || conversationId;
         const reply = String(response.reply || "");
-        const failures = reply ? evaluateReply(reply, turn.expect) : ["empty reply"];
+        const failures = reply ? [
+          ...evaluateReply(reply, turn.expect),
+          ...evaluateStructuredExpectations(response, turn.expect, latencyMs)
+        ] : ["empty reply"];
         if (failures.length === 0) passed += 1;
         else failed += 1;
         turnResults.push({
@@ -35345,9 +35898,12 @@ function registerTest(program3) {
           message,
           reply,
           failures,
+          latency_ms: latencyMs,
           conversation_id: response.conversationId ?? null,
           trace_id: response.trace_id ?? null,
-          correlation_id: response.correlation_id ?? null
+          correlation_id: response.correlation_id ?? null,
+          action: response.action ?? null,
+          handoff: response.handoff ?? null
         });
       }
       scenarioResults.push({
@@ -35359,16 +35915,24 @@ function registerTest(program3) {
     }
     const report = {
       schema_version: "foh_local_scenario_suite_report.v1",
+      ok: failed === 0,
+      status: failed === 0 ? "pass" : "fail",
+      reason_code: failed === 0 ? "scenario_suite_passed" : "scenario_suite_failed",
+      summary: failed === 0 ? "All scenario-suite assertions passed." : `${failed} scenario-suite assertion(s) failed.`,
+      ids: {
+        agent_id: agentId
+      },
+      artifacts: {},
+      next_commands: failed === 0 ? [`foh prove --agent ${agentId} --json`] : [`foh transcripts list --agent ${agentId} --limit 10 --json`],
       suite_path: suitePath,
       agent_id: agentId,
-      ok: failed === 0,
       passed,
       failed,
       scenarios: scenarioResults
     };
     if (opts.out) {
-      const out = (0, import_path5.resolve)(String(opts.out));
-      (0, import_fs6.writeFileSync)(out, stableStringify(report), "utf-8");
+      const out = (0, import_path6.resolve)(String(opts.out));
+      (0, import_fs8.writeFileSync)(out, stableStringify(report), "utf-8");
       format({ ...report, output_path: out }, { json: opts.json ?? false });
     } else {
       format(report, { json: opts.json ?? false });
@@ -35791,8 +36355,220 @@ function registerDiag(program3) {
 }
 
 // src/commands/bug.ts
-var import_fs7 = require("fs");
-var import_path6 = require("path");
+var import_fs10 = require("fs");
+var import_path8 = require("path");
+
+// src/lib/improvement-packet.ts
+var import_fs9 = require("fs");
+var import_path7 = require("path");
+var IMPROVEMENT_SOURCE_TYPES = [
+  "external_agent_run",
+  "setup_failure",
+  "proof_failure",
+  "replay_failure",
+  "knowledge_miss",
+  "runtime_miss",
+  "live_proof_failure"
+];
+var IMPROVEMENT_DECISIONS = [
+  "ignore",
+  "fix_docs",
+  "fix_config",
+  "fix_cli",
+  "fix_api",
+  "fix_runtime",
+  "add_test"
+];
+var SECRET_LEAK_RE = /\b(?:sk|pk|xai|whsec|EAAN)[A-Za-z0-9_\-]{16,}\b/i;
+var MAX_REDACTED_SOURCE_BYTES = 4e3;
+function asRecord2(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : null;
+}
+function nonEmpty2(value) {
+  const text = String(value ?? "").trim();
+  return text.length > 0 ? text : void 0;
+}
+function getPath2(value, path2) {
+  let current = value;
+  for (const segment of path2.split(".")) {
+    const record2 = asRecord2(current);
+    if (!record2) return void 0;
+    current = record2[segment];
+  }
+  return current;
+}
+function parseEnum(raw, allowed, label) {
+  const value = nonEmpty2(raw);
+  if (!value) return void 0;
+  if (allowed.includes(value)) return value;
+  throw new FohError({
+    step: "bug.improve",
+    error: `Invalid ${label} "${value}"`,
+    remediation: `Use one of: ${allowed.join(", ")}.`,
+    statusCode: 400
+  });
+}
+function inferSourceType(artifact) {
+  const schema2 = nonEmpty2(getPath2(artifact, "schema_version")) || "";
+  const status = nonEmpty2(getPath2(artifact, "status")) || "";
+  if (schema2 === "external_agent_run.v1") return "external_agent_run";
+  if (schema2.includes("knowledge_query") || nonEmpty2(getPath2(artifact, "failure_packet.schema_version"))?.includes("knowledge_query")) {
+    return "knowledge_miss";
+  }
+  if (schema2.includes("agent_replay") || status.includes("replay")) return "replay_failure";
+  if (schema2.includes("proof") || schema2.includes("live_proof")) return schema2.includes("live") ? "live_proof_failure" : "proof_failure";
+  if (schema2.includes("setup")) return "setup_failure";
+  return "runtime_miss";
+}
+function inferReasonCode(artifact) {
+  const direct = nonEmpty2(getPath2(artifact, "reason_code"));
+  if (direct) return direct;
+  const failureReason = nonEmpty2(getPath2(artifact, "failure_reason_code"));
+  if (failureReason) return failureReason;
+  const nested = nonEmpty2(getPath2(artifact, "failure_packet.reason_code"));
+  if (nested) return nested;
+  const checks = getPath2(artifact, "checks");
+  if (Array.isArray(checks)) {
+    for (const check2 of checks) {
+      const reason = nonEmpty2(getPath2(check2, "reason_code"));
+      const status = nonEmpty2(getPath2(check2, "status"));
+      if (reason && status !== "pass" && status !== "success") return reason;
+    }
+  }
+  return nonEmpty2(getPath2(artifact, "status"));
+}
+function inferPromotionDecision(sourceType) {
+  if (sourceType === "external_agent_run") return "fix_docs";
+  if (sourceType === "knowledge_miss") return "fix_docs";
+  if (sourceType === "setup_failure" || sourceType === "proof_failure" || sourceType === "live_proof_failure") return "fix_config";
+  if (sourceType === "replay_failure" || sourceType === "runtime_miss") return "add_test";
+  return "fix_runtime";
+}
+function collectIds(artifact, explicit = {}) {
+  const source = getPath2(artifact, "source");
+  const ids = {
+    org_id: explicit.org_id ?? nonEmpty2(getPath2(artifact, "ids.org_id")) ?? nonEmpty2(getPath2(artifact, "org_id")),
+    agent_id: explicit.agent_id ?? nonEmpty2(getPath2(source, "agent_id")) ?? nonEmpty2(getPath2(artifact, "ids.agent_id")) ?? nonEmpty2(getPath2(artifact, "agent_id")),
+    conversation_id: explicit.conversation_id ?? nonEmpty2(getPath2(source, "conversation_id")) ?? nonEmpty2(getPath2(artifact, "ids.conversation_id")) ?? nonEmpty2(getPath2(artifact, "conversation_id")),
+    trace_id: explicit.trace_id ?? nonEmpty2(getPath2(source, "trace_id")) ?? nonEmpty2(getPath2(artifact, "ids.trace_id")) ?? nonEmpty2(getPath2(artifact, "trace_id")),
+    correlation_id: explicit.correlation_id ?? nonEmpty2(getPath2(artifact, "ids.correlation_id")) ?? nonEmpty2(getPath2(artifact, "correlation_id")),
+    proof_artifact: explicit.proof_artifact
+  };
+  return Object.fromEntries(Object.entries(ids).filter(([, value]) => value !== void 0));
+}
+function compactSourceArtifact(artifact) {
+  const redacted = redactObject(artifact);
+  const text = JSON.stringify(redacted);
+  if (text.length <= MAX_REDACTED_SOURCE_BYTES) {
+    return { truncated: false, value: redacted };
+  }
+  return {
+    truncated: true,
+    bytes_before_truncate: text.length,
+    value_preview: text.slice(0, MAX_REDACTED_SOURCE_BYTES)
+  };
+}
+function defaultNextCommands(input) {
+  const commands = [];
+  if (input.ids.trace_id && input.ids.agent_id) {
+    commands.push(`foh tests from-trace --agent ${input.ids.agent_id} --trace ${input.ids.trace_id} --json`);
+    commands.push(`foh agent replay --agent ${input.ids.agent_id} --trace ${input.ids.trace_id} --json`);
+  }
+  if (input.ids.conversation_id && input.ids.agent_id) {
+    commands.push(`foh agent replay --agent ${input.ids.agent_id} --conversation ${input.ids.conversation_id} --json`);
+  }
+  if (input.sourceType === "knowledge_miss" && input.ids.agent_id) {
+    commands.push(`foh knowledge query --agent ${input.ids.agent_id} --text "<question>" --explain --json`);
+  }
+  if (input.sourceType === "external_agent_run" && input.sourceArtifactPath) {
+    commands.push(`foh bug improve --from external-agent-run --file ${input.sourceArtifactPath} --json`);
+  }
+  if (input.sourceArtifactPath) {
+    commands.push(`foh bug report --out test-results/bug-report.from-improvement.json --command "investigate ${input.reasonCode}" --request-url https://front-of-house-api.stldocs.app/api --response-status 500 --next-check "Review ${(0, import_path7.basename)(input.sourceArtifactPath)}" --json`);
+  }
+  return commands;
+}
+function assertOrgBoundary(artifact, explicitOrgId) {
+  const artifactOrgId = nonEmpty2(getPath2(artifact, "ids.org_id")) ?? nonEmpty2(getPath2(artifact, "org_id"));
+  if (explicitOrgId && artifactOrgId && explicitOrgId !== artifactOrgId) {
+    throw new FohError({
+      step: "bug.improve",
+      error: "Org boundary check failed for improvement packet.",
+      remediation: "Use the org id from the source artifact, or omit --org when building a local redacted packet.",
+      statusCode: 403
+    });
+  }
+}
+function assertRedacted(value) {
+  const text = JSON.stringify(value);
+  if (SECRET_LEAK_RE.test(text)) {
+    throw new FohError({
+      step: "bug.improve",
+      error: "Improvement packet still contains a secret-like value after redaction.",
+      remediation: "Remove raw credentials from the source artifact and rebuild the packet.",
+      statusCode: 400
+    });
+  }
+}
+function readSourceArtifact(path2) {
+  if (!path2) return null;
+  try {
+    return JSON.parse((0, import_fs9.readFileSync)(path2, "utf-8"));
+  } catch (error2) {
+    throw new FohError({
+      step: "bug.improve",
+      error: `Failed to read source artifact: ${error2 instanceof Error ? error2.message : String(error2)}`,
+      remediation: "Pass --from-file with a readable JSON artifact.",
+      statusCode: 400
+    });
+  }
+}
+function buildImprovementPacket(input) {
+  const artifact = input.sourceArtifact ?? null;
+  const sourceType = parseEnum(input.sourceType, IMPROVEMENT_SOURCE_TYPES, "--source-type") ?? inferSourceType(artifact);
+  const promotionDecision = parseEnum(input.promotionDecision, IMPROVEMENT_DECISIONS, "--recommendation") ?? inferPromotionDecision(sourceType);
+  const ids = collectIds(artifact, input.ids);
+  assertOrgBoundary(artifact, input.ids?.org_id);
+  const reasonCode = nonEmpty2(input.reasonCode) ?? inferReasonCode(artifact);
+  if (!reasonCode) {
+    throw new FohError({
+      step: "bug.improve",
+      error: "Missing improvement reason code.",
+      remediation: "Pass --reason-code <code> or build from a source artifact that includes reason_code/status.",
+      statusCode: 400
+    });
+  }
+  const evidenceSummary = redactString(
+    nonEmpty2(input.evidenceSummary) ?? nonEmpty2(getPath2(artifact, "summary")) ?? `Improvement candidate generated from ${sourceType} with reason ${reasonCode}.`
+  );
+  const nextCommands = Array.from(new Set([
+    ...input.nextCommands ?? [],
+    ...defaultNextCommands({ sourceType, ids, sourceArtifactPath: input.sourceArtifactPath, reasonCode })
+  ].map((command) => command.trim()).filter(Boolean)));
+  const packet = {
+    schema_version: "foh_improvement_packet.v1",
+    created_at: input.createdAt ?? (/* @__PURE__ */ new Date()).toISOString(),
+    source_type: sourceType,
+    reason_code: reasonCode,
+    promotion_decision: promotionDecision,
+    ids,
+    evidence: {
+      summary: evidenceSummary,
+      source_artifact_path: input.sourceArtifactPath ?? null,
+      source_command: input.sourceCommand ?? null,
+      redaction: {
+        enabled: true,
+        fields: ["email", "phone", "secret-like-token"]
+      },
+      redacted_source: artifact ? compactSourceArtifact(artifact) : null
+    },
+    next_commands: nextCommands
+  };
+  assertRedacted(packet);
+  return packet;
+}
+
+// src/commands/bug.ts
 var ALLOWED_METHODS = /* @__PURE__ */ new Set(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"]);
 var MAX_BODY_PREVIEW_LENGTH = 200;
 function parseMethod(raw) {
@@ -35908,14 +36684,18 @@ function parseRequestBody(raw) {
   }
 }
 function writeJsonArtifact(path2, value) {
-  const absolutePath = (0, import_path6.resolve)(path2);
-  (0, import_fs7.mkdirSync)((0, import_path6.dirname)(absolutePath), { recursive: true });
-  (0, import_fs7.writeFileSync)(absolutePath, stableStringify(value), "utf-8");
+  const absolutePath = (0, import_path8.resolve)(path2);
+  (0, import_fs10.mkdirSync)((0, import_path8.dirname)(absolutePath), { recursive: true });
+  (0, import_fs10.writeFileSync)(absolutePath, stableStringify(value), "utf-8");
   return absolutePath;
 }
 function defaultArtifactPath() {
   const timestamp2 = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
-  return (0, import_path6.resolve)(`test-results/bug-report.${timestamp2}.json`);
+  return (0, import_path8.resolve)(`test-results/bug-report.${timestamp2}.json`);
+}
+function defaultImprovementArtifactPath() {
+  const timestamp2 = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-");
+  return (0, import_path8.resolve)(`test-results/improvement-packet.${timestamp2}.json`);
 }
 async function resolveBugReportWizardInputs(opts) {
   if (!opts.wizard) return opts;
@@ -36065,6 +36845,46 @@ function registerBug(program3) {
       throw e;
     }
   });
+  bug.command("improve").description("Write a redacted failure-to-improvement packet from an external-agent/setup/proof/replay/knowledge/runtime artifact").option("--from <type>", "Source artifact type alias, for example external-agent-run").option("--file <path>", "Source JSON artifact alias for --from-file").option("--from-file <path>", "Source JSON artifact to convert into an improvement packet").option("--out <path>", "Output JSON file path for improvement packet").option("--source-type <type>", "external_agent_run|setup_failure|proof_failure|replay_failure|knowledge_miss|runtime_miss|live_proof_failure").option("--reason-code <code>", "Deterministic failure reason code").option("--recommendation <decision>", "ignore|fix_docs|fix_config|fix_cli|fix_api|fix_runtime|add_test").option("--evidence-summary <text>", "Compact redacted evidence summary").option("--source-command <text>", "Command or operation that produced the source artifact").option("--org <id>", "Org ID for boundary check and packet IDs").option("--agent <id>", "Agent ID to attach").option("--conversation <id>", "Conversation ID to attach").option("--trace <id>", "Trace ID to attach").option("--correlation <id>", "Correlation ID to attach").option("--proof-artifact <path>", "Proof artifact path to attach").option(
+    "--next-command <text>",
+    "Deterministic next command (repeat this flag for multiple commands)",
+    (value, previous = []) => [...previous, value],
+    []
+  ).option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+    const sourcePath = opts.fromFile ?? opts.file;
+    const sourceType = opts.sourceType ?? (typeof opts.from === "string" ? opts.from.replaceAll("-", "_") : void 0);
+    const sourceArtifact = readSourceArtifact(sourcePath);
+    const outPath = String(opts.out || defaultImprovementArtifactPath());
+    const packet = buildImprovementPacket({
+      sourceArtifact,
+      sourceArtifactPath: sourcePath,
+      sourceType,
+      reasonCode: opts.reasonCode,
+      evidenceSummary: opts.evidenceSummary,
+      promotionDecision: opts.recommendation,
+      sourceCommand: opts.sourceCommand,
+      ids: {
+        org_id: opts.org,
+        agent_id: opts.agent,
+        conversation_id: opts.conversation,
+        trace_id: opts.trace,
+        correlation_id: opts.correlation,
+        proof_artifact: opts.proofArtifact
+      },
+      nextCommands: Array.isArray(opts.nextCommand) ? opts.nextCommand : []
+    });
+    const artifactPath = writeJsonArtifact(outPath, packet);
+    format(cliEnvelope({
+      schemaVersion: "foh_improvement_packet_result.v1",
+      status: "exported",
+      reasonCode: "improvement_packet_created",
+      summary: "Improvement packet created.",
+      ids: packet.ids,
+      artifacts: { improvement_packet: artifactPath },
+      nextCommands: packet.next_commands,
+      extra: { packet }
+    }), { json: opts.json ?? false });
+  }));
   bug.command("list").description("List bug reports from the FOH bug inbox").option("--state <state>", "Filter by state: open, triaged, closed").option("--severity <level>", "Filter by severity: low, medium, high, critical").option("--source <source>", "Filter by source: cli, eval, api").option("--request-id <id>", "Filter by request id").option("--search <text>", "Case-insensitive command search").option("--limit <n>", "Result limit (1-200)", "50").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "Internal API base URL override (operators only)").option("--json", "Output as JSON").action(async (opts) => {
     try {
       const params = new URLSearchParams();
@@ -36108,18 +36928,26 @@ function registerBug(program3) {
 }
 
 // src/commands/prove.ts
+function categoryForCheck(name) {
+  if (name === "auth") return "auth";
+  if (name === "contact_channel" || name === "voice_realtime_health") return "voice";
+  if (name.startsWith("widget_")) return "widget";
+  if (name === "simulation_certification") return "certification";
+  if (name === "agent_validation") return "publish_readiness";
+  return "setup";
+}
 function pass(name, summary, detail) {
-  return { name, status: "pass", reason_code: `${name}_ok`, summary, detail };
+  return { name, category: categoryForCheck(name), status: "pass", reason_code: `${name}_ok`, summary, detail };
 }
 function hold(name, reasonCode, summary, nextCommand, detail) {
-  return { name, status: "hold", reason_code: reasonCode, summary, next_command: nextCommand, detail };
+  return { name, category: categoryForCheck(name), status: "hold", reason_code: reasonCode, summary, next_command: nextCommand, detail };
 }
 function fail(name, reasonCode, error2, nextCommand) {
   const message = error2 instanceof Error ? error2.message : String(error2);
-  return { name, status: "fail", reason_code: reasonCode, summary: message, next_command: nextCommand };
+  return { name, category: categoryForCheck(name), status: "fail", reason_code: reasonCode, summary: message, next_command: nextCommand };
 }
 function skipped(name, reasonCode, summary, nextCommand) {
-  return { name, status: "skipped", reason_code: reasonCode, summary, next_command: nextCommand };
+  return { name, category: categoryForCheck(name), status: "skipped", reason_code: reasonCode, summary, next_command: nextCommand };
 }
 function hasBlockingChecks(checks) {
   return checks.some((check2) => check2.status === "hold" || check2.status === "fail");
@@ -36129,6 +36957,21 @@ function publicKeyFromEnsureResponse(response) {
   const channel = record2.channel && typeof record2.channel === "object" ? record2.channel : {};
   const publicKey = channel.public_key ?? record2.widget_public_key ?? record2.public_key;
   return typeof publicKey === "string" && publicKey.trim() ? publicKey.trim() : void 0;
+}
+function publicKeyFromEmbedResponse(response) {
+  const record2 = response && typeof response === "object" ? response : {};
+  const publicKey = record2.widget_public_key ?? record2.public_key;
+  return typeof publicKey === "string" && publicKey.trim() ? publicKey.trim() : void 0;
+}
+function normalizeMission(raw) {
+  const value = String(raw || "setup").trim().toLowerCase();
+  if (value === "setup" || value === "widget" || value === "voice" || value === "publish") return value;
+  return "setup";
+}
+function normalizeMutationMode(raw, repair) {
+  if (repair) return "ensure";
+  const value = String(raw || "read-only").trim().toLowerCase();
+  return value === "ensure" ? "ensure" : "read-only";
 }
 function agentIdFromList(response) {
   const agents = Array.isArray(response.agents) ? response.agents : [];
@@ -36144,8 +36987,10 @@ function firstUsableOrgId(response) {
   return { orgId: usable.length === 1 ? usable[0] : void 0, count: usable.length };
 }
 function registerProve(program3) {
-  program3.command("prove").description("Produce one setup/runtime proof bundle for an agent").option("--agent <id>", "Agent ID to prove").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--cert-mode <m>", "Simulation cert mode: quick, full, stress", "quick").option("--cert-adaptive-runs <n>", "Adaptive runs for full/stress certification", "30").option("--cert-max-improvement-rounds <n>", "Max prompt improvement rounds in cert loop (0-5)", "1").option("--require-phone", "Hold proof if no phone/contact number is provisioned").option("--skip-cert", "Skip simulation certification check").option("--skip-smoke", "Skip widget runtime smoke check").option("--skip-voice-health", "Skip realtime voice provider health check").option("--out <path>", "Write signed proof report JSON to this path").option("--strict", "Exit non-zero unless all non-skipped checks pass").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+  program3.command("prove").description("Produce one setup/runtime proof bundle for an agent").option("--agent <id>", "Agent ID to prove").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--cert-mode <m>", "Simulation cert mode: quick, full, stress", "quick").option("--cert-adaptive-runs <n>", "Adaptive runs for full/stress certification", "30").option("--cert-max-improvement-rounds <n>", "Max prompt improvement rounds in cert loop (0-5)", "1").option("--mission <mission>", "Proof mission: setup, widget, voice, publish", "setup").option("--mutation-mode <mode>", "Proof mutation mode: read-only or ensure", "read-only").option("--repair", "Alias for --mutation-mode ensure").option("--require-phone", "Hold proof if no phone/contact number is provisioned").option("--skip-cert", "Skip simulation certification check").option("--skip-smoke", "Skip widget runtime smoke check").option("--skip-voice-health", "Skip realtime voice provider health check").option("--out <path>", "Write signed proof report JSON to this path").option("--strict", "Exit non-zero unless all non-skipped checks pass").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
     const checks = [];
+    const mission = normalizeMission(opts.mission);
+    const mutationMode = normalizeMutationMode(opts.mutationMode, Boolean(opts.repair));
     const ctx = {
       tokenPresent: false,
       traceIds: [],
@@ -36247,9 +37092,10 @@ function registerProve(program3) {
               phone_number_present: true,
               provisioning_status: onboarding.provisioning_status ?? null
             }));
-          } else if (opts.requirePhone) {
+          } else if (opts.requirePhone || mission === "voice") {
             checks.push(hold("contact_channel", "contact_phone_missing", "No phone/contact number is provisioned for this org.", `foh provision buy --org ${ctx.orgId} --json`, {
-              provisioning_status: onboarding.provisioning_status ?? null
+              provisioning_status: onboarding.provisioning_status ?? null,
+              mission
             }));
           } else {
             checks.push(skipped("contact_channel", "contact_phone_not_required", "No phone/contact number is provisioned; pass --require-phone to make this a blocker.", `foh provision buy --org ${ctx.orgId} --json`));
@@ -36283,35 +37129,55 @@ function registerProve(program3) {
         }
       }
       try {
-        const ensure = await apiFetch("/v1/console/channels/widget/ensure", {
-          method: "POST",
-          body: JSON.stringify({ agentId: ctx.agentId }),
-          orgId: ctx.orgId,
-          apiUrlOverride: opts.apiUrl
-        });
-        const publicKey = publicKeyFromEnsureResponse(ensure);
-        if (!publicKey) {
-          checks.push(hold("widget_channel", "widget_public_key_missing", "Widget channel exists but no public key was returned.", `foh widget ensure --agent ${ctx.agentId} --json`, ensure));
-        } else {
-          ctx.widgetPublicKey = publicKey;
-          checks.push(pass("widget_channel", "Widget channel is available.", { public_key_present: true }));
-        }
-      } catch (error2) {
-        checks.push(fail("widget_channel", "widget_channel_failed", error2, `foh widget ensure --agent ${ctx.agentId} --json`));
-      }
-      try {
         const embed = await apiFetch("/v1/console/channels/widget/embed-snippet", {
           orgId: ctx.orgId,
           apiUrlOverride: opts.apiUrl,
           headers: { "x-agent-id": ctx.agentId }
         });
+        const publicKey = publicKeyFromEmbedResponse(embed);
+        if (publicKey) {
+          ctx.widgetPublicKey = publicKey;
+          checks.push(pass("widget_channel", "Widget channel is available in read-only proof mode.", {
+            public_key_present: true,
+            mutation_mode: mutationMode
+          }));
+        }
         if (typeof embed.snippet === "string" && embed.snippet.trim()) {
           checks.push(pass("widget_embed", "Widget embed snippet is available.", { snippet_present: true }));
         } else {
           checks.push(hold("widget_embed", "widget_embed_missing", "Widget embed snippet is missing.", `foh widget embed-snippet --agent ${ctx.agentId}`));
         }
       } catch (error2) {
-        checks.push(fail("widget_embed", "widget_embed_failed", error2, `foh widget embed-snippet --agent ${ctx.agentId}`));
+        if (mutationMode === "ensure") {
+          try {
+            const ensure = await apiFetch("/v1/console/channels/widget/ensure", {
+              method: "POST",
+              body: JSON.stringify({ agentId: ctx.agentId }),
+              orgId: ctx.orgId,
+              apiUrlOverride: opts.apiUrl
+            });
+            const publicKey = publicKeyFromEnsureResponse(ensure);
+            if (!publicKey) {
+              checks.push(hold("widget_channel", "widget_public_key_missing", "Widget channel ensure returned no public key.", `foh widget ensure --agent ${ctx.agentId} --json`, ensure));
+            } else {
+              ctx.widgetPublicKey = publicKey;
+              checks.push(pass("widget_channel", "Widget channel was ensured explicitly.", {
+                public_key_present: true,
+                mutation_mode: mutationMode
+              }));
+            }
+            checks.push(skipped("widget_embed", "widget_embed_recheck_required", "Widget channel was ensured; rerun read-only proof to verify embed snippet.", `foh prove --agent ${ctx.agentId} --mutation-mode read-only --json`));
+          } catch (ensureError) {
+            checks.push(fail("widget_channel", "widget_channel_ensure_failed", ensureError, `foh widget ensure --agent ${ctx.agentId} --json`));
+            checks.push(skipped("widget_embed", "widget_channel_required", "Skipped because widget channel could not be ensured.", `foh widget ensure --agent ${ctx.agentId} --json`));
+          }
+        } else {
+          checks.push(hold("widget_channel", "widget_channel_missing_read_only", "Widget channel/embed was not observable in read-only proof mode.", `foh prove --agent ${ctx.agentId} --mutation-mode ensure --json`, {
+            message: error2 instanceof Error ? error2.message : String(error2),
+            mutation_mode: mutationMode
+          }));
+          checks.push(skipped("widget_embed", "widget_channel_required", "Skipped because widget channel was not observable.", `foh widget ensure --agent ${ctx.agentId} --json`));
+        }
       }
       if (opts.skipSmoke) {
         checks.push(skipped("widget_smoke", "operator_skipped", "Skipped by --skip-smoke.", `foh widget smoke --agent ${ctx.agentId} --json`));
@@ -36372,22 +37238,27 @@ function registerProve(program3) {
     if (status === "pass" && ctx.agentId) {
       nextCommands.push(`foh agent publish --agent ${ctx.agentId} --json`);
     }
-    const report = signReport({
-      schema_version: "foh_cli_proof_report.v1",
-      generated_at: (/* @__PURE__ */ new Date()).toISOString(),
-      ok: status === "pass",
+    const report = signReport(cliEnvelope({
+      schemaVersion: "foh_cli_proof_report.v1",
       status,
+      reasonCode: status === "pass" ? "proof_passed" : "proof_held",
+      summary: status === "pass" ? "All non-skipped proof checks passed." : "One or more proof checks require operator action.",
       ids: {
         org_id: ctx.orgId ?? null,
         agent_id: ctx.agentId ?? null,
+        mission,
+        mutation_mode: mutationMode,
         widget_public_key_present: Boolean(ctx.widgetPublicKey),
         conversation_id: ctx.conversationId ?? null,
         trace_ids: ctx.traceIds,
         correlation_ids: ctx.correlationIds
       },
       checks,
-      next_commands: nextCommands
-    });
+      nextCommands,
+      extra: {
+        generated_at: (/* @__PURE__ */ new Date()).toISOString()
+      }
+    }));
     const artifactPath = opts.out ? writeSignedJsonArtifact(String(opts.out), report) : void 0;
     format(artifactPath ? { ...report, artifact_path: artifactPath } : report, { json: opts.json ?? false });
     if (opts.strict && status !== "pass") markCommandFailed(1);
@@ -36839,7 +37710,7 @@ async function runSelf(args, apiUrlOverride) {
   if (apiUrlOverride && !spawnArgs.includes("--api-url")) {
     spawnArgs.push("--api-url", apiUrlOverride);
   }
-  return await new Promise((resolve7, reject) => {
+  return await new Promise((resolve11, reject) => {
     const child = (0, import_child_process2.spawn)(process.execPath, [process.argv[1], ...spawnArgs], {
       stdio: "inherit",
       env: {
@@ -36849,7 +37720,7 @@ async function runSelf(args, apiUrlOverride) {
       }
     });
     child.once("error", reject);
-    child.once("close", (code) => resolve7(typeof code === "number" ? code : 1));
+    child.once("close", (code) => resolve11(typeof code === "number" ? code : 1));
   });
 }
 function shouldUseInteractiveHome(argv) {
@@ -37139,8 +38010,8 @@ function maybeDefaultToHome(argv = process.argv) {
 }
 
 // src/lib/update.ts
-var import_fs8 = require("fs");
-var import_path7 = require("path");
+var import_fs11 = require("fs");
+var import_path9 = require("path");
 var import_child_process3 = require("child_process");
 var import_crypto5 = require("crypto");
 function parseSemver(version2) {
@@ -37161,7 +38032,7 @@ function compareSemver(a, b) {
 }
 function readPackageJsonVersion(path2) {
   try {
-    const raw = (0, import_fs8.readFileSync)(path2, "utf-8");
+    const raw = (0, import_fs11.readFileSync)(path2, "utf-8");
     const parsed = JSON.parse(raw);
     const version2 = String(parsed.version ?? "").trim();
     return version2 || void 0;
@@ -37170,13 +38041,13 @@ function readPackageJsonVersion(path2) {
   }
 }
 function findRepoRoot(startCwd = process.cwd()) {
-  let current = (0, import_path7.resolve)(startCwd);
+  let current = (0, import_path9.resolve)(startCwd);
   while (true) {
-    const rootPackageJsonPath = (0, import_path7.join)(current, "package.json");
-    const cliPackageJsonPath = (0, import_path7.join)(current, "packages", "cli", "package.json");
-    if ((0, import_fs8.existsSync)(rootPackageJsonPath) && (0, import_fs8.existsSync)(cliPackageJsonPath)) {
+    const rootPackageJsonPath = (0, import_path9.join)(current, "package.json");
+    const cliPackageJsonPath = (0, import_path9.join)(current, "packages", "cli", "package.json");
+    if ((0, import_fs11.existsSync)(rootPackageJsonPath) && (0, import_fs11.existsSync)(cliPackageJsonPath)) {
       try {
-        const raw = (0, import_fs8.readFileSync)(rootPackageJsonPath, "utf-8");
+        const raw = (0, import_fs11.readFileSync)(rootPackageJsonPath, "utf-8");
         const parsed = JSON.parse(raw);
         if (String(parsed.name ?? "").trim() === "front-of-house") {
           return current;
@@ -37184,7 +38055,7 @@ function findRepoRoot(startCwd = process.cwd()) {
       } catch {
       }
     }
-    const parent = (0, import_path7.dirname)(current);
+    const parent = (0, import_path9.dirname)(current);
     if (parent === current) return void 0;
     current = parent;
   }
@@ -37198,7 +38069,7 @@ function detectUpdateAvailability(currentVersion, cwd = process.cwd()) {
       remediation: "Run this command from the Front Of House repo root to compare/install the latest CLI."
     };
   }
-  const cliPackageJsonPath = (0, import_path7.join)(repoRoot, "packages", "cli", "package.json");
+  const cliPackageJsonPath = (0, import_path9.join)(repoRoot, "packages", "cli", "package.json");
   const latestVersion = readPackageJsonVersion(cliPackageJsonPath);
   if (!latestVersion) {
     return {
@@ -37225,19 +38096,19 @@ function detectUpdateAvailability(currentVersion, cwd = process.cwd()) {
   };
 }
 async function applyRepoUpdate(repoRoot) {
-  const scriptPath = (0, import_path7.join)(repoRoot, "scripts", "Install-FohCli.ps1");
+  const scriptPath = (0, import_path9.join)(repoRoot, "scripts", "Install-FohCli.ps1");
   if (process.platform === "win32") {
-    return await new Promise((resolve7, reject) => {
+    return await new Promise((resolve11, reject) => {
       const child = (0, import_child_process3.spawn)(
         "powershell",
         ["-ExecutionPolicy", "Bypass", "-File", scriptPath],
         { stdio: "inherit" }
       );
       child.once("error", reject);
-      child.once("close", (code) => resolve7(typeof code === "number" ? code : 1));
+      child.once("close", (code) => resolve11(typeof code === "number" ? code : 1));
     });
   }
-  return await new Promise((resolve7, reject) => {
+  return await new Promise((resolve11, reject) => {
     const child = (0, import_child_process3.spawn)(
       "corepack",
       ["pnpm", "cli:install:global"],
@@ -37247,7 +38118,7 @@ async function applyRepoUpdate(repoRoot) {
       }
     );
     child.once("error", reject);
-    child.once("close", (code) => resolve7(typeof code === "number" ? code : 1));
+    child.once("close", (code) => resolve11(typeof code === "number" ? code : 1));
   });
 }
 function shouldShowUpdateNotice(argv = process.argv) {
@@ -37261,7 +38132,7 @@ function shouldShowUpdateNotice(argv = process.argv) {
 }
 function hashFileSha256(filePath) {
   try {
-    const bytes = (0, import_fs8.readFileSync)(filePath);
+    const bytes = (0, import_fs11.readFileSync)(filePath);
     return (0, import_crypto5.createHash)("sha256").update(bytes).digest("hex");
   } catch {
     return void 0;
@@ -37271,10 +38142,10 @@ function verifyCliArtifactIntegrity(params = {}) {
   const cwd = params.cwd ?? process.cwd();
   const argv = params.argv ?? process.argv;
   const expectedSha256 = String(params.expectedSha256 ?? "").trim().toLowerCase() || void 0;
-  const runtimePath = (0, import_path7.resolve)(String(argv[1] || ""));
+  const runtimePath = (0, import_path9.resolve)(String(argv[1] || ""));
   const runtimeHash = runtimePath ? hashFileSha256(runtimePath) : void 0;
   const warnings = [];
-  if (!runtimePath || !(0, import_fs8.existsSync)(runtimePath)) {
+  if (!runtimePath || !(0, import_fs11.existsSync)(runtimePath)) {
     warnings.push("runtime_path_unreadable");
   }
   if (!runtimeHash) {
@@ -37292,8 +38163,8 @@ function verifyCliArtifactIntegrity(params = {}) {
   let repoDistHash;
   let runtimeMatchesRepoDist;
   if (repoRoot) {
-    repoDistPath = (0, import_path7.join)(repoRoot, "packages", "cli", "dist", "foh.js");
-    if ((0, import_fs8.existsSync)(repoDistPath)) {
+    repoDistPath = (0, import_path9.join)(repoRoot, "packages", "cli", "dist", "foh.js");
+    if ((0, import_fs11.existsSync)(repoDistPath)) {
       repoDistHash = hashFileSha256(repoDistPath);
       if (runtimeHash && repoDistHash) {
         runtimeMatchesRepoDist = runtimeHash === repoDistHash;
@@ -37382,6 +38253,647 @@ function registerUpdate(program3) {
   });
 }
 
+// src/commands/eval.ts
+var import_fs14 = require("fs");
+var import_path12 = require("path");
+var import_child_process5 = require("child_process");
+
+// src/lib/external-agent-capture.ts
+var import_fs12 = require("fs");
+var import_path10 = require("path");
+var EXTERNAL_AGENT_RUN_DIR_ENV = "FOH_EXTERNAL_AGENT_RUN_DIR";
+var EXTERNAL_AGENT_PROMPT_VERSION_ENV = "FOH_EXTERNAL_AGENT_PROMPT_VERSION";
+var SECRET_RE2 = /\b(?:Bearer\s+)?(?:sk|pk|xai|whsec|EAAN|ghp|gho|github_pat|npm_)[A-Za-z0-9_\-.]{12,}\b/gi;
+function redactText(value) {
+  return value.replace(SECRET_RE2, "[redacted_secret]");
+}
+function redactPath(value) {
+  let redacted = redactText(value);
+  const home = process.env.USERPROFILE || process.env.HOME;
+  if (home) redacted = redacted.replace(home, "~");
+  return redacted;
+}
+function safeJsonLine(value) {
+  return JSON.stringify(value).replace(/\r?\n/g, " ") + "\n";
+}
+function getExternalAgentRunDir() {
+  const raw = process.env[EXTERNAL_AGENT_RUN_DIR_ENV];
+  if (!raw || !raw.trim()) return null;
+  return (0, import_path10.resolve)(raw);
+}
+function recordExternalAgentCliInvocation(input) {
+  const runDir = getExternalAgentRunDir();
+  if (!runDir) return;
+  try {
+    (0, import_fs12.mkdirSync)(runDir, { recursive: true });
+    const args = input.argv.slice(2).map((arg) => redactText(String(arg)));
+    const record2 = {
+      schema_version: "external_agent_cli_command.v1",
+      recorded_at: (/* @__PURE__ */ new Date()).toISOString(),
+      cli_version: input.cliVersion,
+      cwd: redactPath(process.cwd()),
+      argv: args,
+      command: args.join(" "),
+      json_requested: args.includes("--json"),
+      prompt_version: process.env[EXTERNAL_AGENT_PROMPT_VERSION_ENV] || null
+    };
+    (0, import_fs12.appendFileSync)((0, import_path10.join)(runDir, "commands.ndjson"), safeJsonLine(record2), "utf8");
+  } catch {
+  }
+}
+function readCommandRecords(runDir) {
+  const commandLogPath = (0, import_path10.join)(runDir, "commands.ndjson");
+  if (!(0, import_fs12.existsSync)(commandLogPath)) return [];
+  return (0, import_fs12.readFileSync)(commandLogPath, "utf8").split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => JSON.parse(line));
+}
+
+// src/lib/external-agent-executor.ts
+var import_fs13 = require("fs");
+var import_os2 = require("os");
+var import_path11 = require("path");
+var import_child_process4 = require("child_process");
+var CODEX_EXECUTOR_DENIED_ENV_PREFIXES = [
+  "SUPABASE_",
+  "DATABASE_",
+  "OPENAI_",
+  "XAI_",
+  "ANTHROPIC_",
+  "WHATSAPP_",
+  "TWILIO_",
+  "STRIPE_"
+];
+var CODEX_EXECUTOR_DENIED_ENV_NAMES = [
+  "DATABASE_URL",
+  "NPM_TOKEN",
+  "GITHUB_TOKEN",
+  "GH_TOKEN",
+  "META_APP_SECRET",
+  "FACEBOOK_APP_SECRET",
+  "GOOGLE_CLIENT_SECRET",
+  "JWT_SECRET",
+  "SESSION_SECRET"
+];
+var CHILD_ENV_ALLOWLIST = [
+  "APPDATA",
+  "CODEX_HOME",
+  "ComSpec",
+  "HOME",
+  "LOCALAPPDATA",
+  "PATH",
+  "Path",
+  "SystemRoot",
+  "TEMP",
+  "TMP",
+  "USERPROFILE",
+  "WINDIR"
+];
+var ExternalAgentExecutorError = class extends Error {
+  reasonCode;
+  constructor(reasonCode, message) {
+    super(message);
+    this.name = "ExternalAgentExecutorError";
+    this.reasonCode = reasonCode;
+  }
+};
+function isDeniedEnvKey(key) {
+  const upper = key.toUpperCase();
+  if (CODEX_EXECUTOR_DENIED_ENV_NAMES.some((name) => upper === name)) return true;
+  return CODEX_EXECUTOR_DENIED_ENV_PREFIXES.some((prefix) => upper.startsWith(prefix));
+}
+function buildCodexExecutorEnv(input) {
+  const source = input.sourceEnv ?? process.env;
+  const env = {};
+  for (const key of CHILD_ENV_ALLOWLIST) {
+    const value = source[key];
+    if (typeof value === "string" && value.length > 0 && !isDeniedEnvKey(key)) {
+      env[key] = value;
+    }
+  }
+  env[EXTERNAL_AGENT_RUN_DIR_ENV] = input.runDir;
+  env[EXTERNAL_AGENT_PROMPT_VERSION_ENV] = input.promptVersion;
+  env.FOH_CLI_SUPPRESS_BANNER = "1";
+  return env;
+}
+function normalizeForCompare(path2) {
+  const resolved = (0, import_path11.resolve)(path2);
+  return process.platform === "win32" ? resolved.toLowerCase() : resolved;
+}
+function isPathInside(childPath, parentPath) {
+  const child = normalizeForCompare(childPath);
+  const parent = normalizeForCompare(parentPath);
+  const rel = (0, import_path11.relative)(parent, child);
+  return rel === "" || !!rel && !rel.startsWith("..") && !(0, import_path11.isAbsolute)(rel);
+}
+function requireString(value, field) {
+  if (typeof value !== "string" || value.trim() === "") {
+    throw new ExternalAgentExecutorError("invalid_external_agent_batch", `Batch field ${field} must be a non-empty string.`);
+  }
+  return value;
+}
+function readBatch(batchPath) {
+  if (!(0, import_fs13.existsSync)(batchPath)) {
+    throw new ExternalAgentExecutorError("external_agent_batch_not_found", `Batch file not found: ${batchPath}`);
+  }
+  const parsed = JSON.parse((0, import_fs13.readFileSync)(batchPath, "utf8"));
+  if (parsed.schema_version !== "external_agent_batch_plan.v1") {
+    throw new ExternalAgentExecutorError("invalid_external_agent_batch", "Batch schema_version must be external_agent_batch_plan.v1.");
+  }
+  if (!Array.isArray(parsed.runs) || parsed.runs.length === 0) {
+    throw new ExternalAgentExecutorError("invalid_external_agent_batch", "Batch runs must be a non-empty array.");
+  }
+  return parsed;
+}
+function defaultRunnerProbe(command, args) {
+  const result = process.platform === "win32" && command.toLowerCase().endsWith(".cmd") ? (0, import_child_process4.spawnSync)(
+    "powershell.exe",
+    ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", `& ${[command, ...args].map(quotePowerShellArg).join(" ")}`],
+    { encoding: "utf8" }
+  ) : (0, import_child_process4.spawnSync)(command, args, { encoding: "utf8" });
+  return {
+    status: typeof result.status === "number" ? result.status : null,
+    stdout: String(result.stdout || ""),
+    stderr: String(result.stderr || ""),
+    error: result.error
+  };
+}
+function quotePowerShellArg(value) {
+  return `'${value.replace(/'/g, "''")}'`;
+}
+function resolveCodexProbeCommand() {
+  if (process.platform !== "win32") return "codex";
+  const appData = process.env.APPDATA;
+  if (appData) {
+    const appDataShim = (0, import_path11.join)(appData, "npm", "codex.cmd");
+    if ((0, import_fs13.existsSync)(appDataShim)) return appDataShim;
+  }
+  return "codex.cmd";
+}
+function validateCodexRunner(options) {
+  if (options.skipRunnerProbe) {
+    return { binaryChecked: false, requiredFlagsChecked: false };
+  }
+  const probe = options.runnerProbe ?? defaultRunnerProbe;
+  const probeCommand = resolveCodexProbeCommand();
+  const version2 = probe(probeCommand, ["--version"]);
+  if (version2.error || version2.status !== 0) {
+    throw new ExternalAgentExecutorError("external_agent_runner_binary_missing", "Codex runner probe failed: `codex --version` did not exit 0.");
+  }
+  const help = probe(probeCommand, ["exec", "--help"]);
+  if (help.error || help.status !== 0) {
+    throw new ExternalAgentExecutorError("external_agent_runner_help_unavailable", "Codex runner probe failed: `codex exec --help` did not exit 0.");
+  }
+  const helpText = `${help.stdout}
+${help.stderr}`;
+  const requiredFlags = [
+    "--cd",
+    "--skip-git-repo-check",
+    "--ephemeral",
+    "--ignore-rules",
+    "--sandbox",
+    "--full-auto",
+    "--json",
+    "--output-last-message"
+  ];
+  const missing = requiredFlags.filter((flag) => !helpText.includes(flag));
+  if (missing.length > 0) {
+    throw new ExternalAgentExecutorError(
+      "external_agent_runner_required_flags_missing",
+      `Codex runner is missing required exec flag(s): ${missing.join(", ")}`
+    );
+  }
+  return { binaryChecked: true, requiredFlagsChecked: true };
+}
+function safeRunId(value) {
+  return value.toLowerCase().replace(/[^a-z0-9_.-]+/g, "-").replace(/^-+|-+$/g, "") || "run";
+}
+function resolveWorkspaceRoot(input) {
+  if (input.workspaceRoot) return (0, import_path11.resolve)(input.workspaceRoot);
+  const batchStem = (0, import_path11.basename)((0, import_path11.resolve)(input.batchPath)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
+  const repoStem = (0, import_path11.basename)((0, import_path11.resolve)(input.privateRepoRoot)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
+  return (0, import_path11.resolve)((0, import_os2.tmpdir)(), "foh-external-agent-workspaces", repoStem, batchStem);
+}
+function promptVersionFromPath(promptPath) {
+  const raw = (0, import_fs13.readFileSync)(promptPath, "utf8");
+  if (raw.includes("Do not assume access to the private source repository")) return "blank-setup.v1";
+  return "unknown";
+}
+function createExternalAgentExecutorPlan(options) {
+  const runner = String(options.runner || "codex");
+  if (runner !== "codex") {
+    throw new ExternalAgentExecutorError("unsupported_external_agent_runner", `Unsupported runner: ${runner}`);
+  }
+  const batchPath = (0, import_path11.resolve)(options.batchPath);
+  const batch = readBatch(batchPath);
+  const runnerProbe = validateCodexRunner(options);
+  const privateRepoRoot = (0, import_path11.resolve)(options.privateRepoRoot || options.cwd || process.cwd());
+  const workspaceRoot = resolveWorkspaceRoot({ batchPath, workspaceRoot: options.workspaceRoot, privateRepoRoot });
+  if (isPathInside(workspaceRoot, privateRepoRoot)) {
+    throw new ExternalAgentExecutorError(
+      "external_agent_workspace_inside_private_repo",
+      `Workspace root must be outside the private repository. workspace=${workspaceRoot} repo=${privateRepoRoot}`
+    );
+  }
+  (0, import_fs13.mkdirSync)(workspaceRoot, { recursive: true });
+  const batchDir = (0, import_path11.resolve)(String(batch.batch_dir || (0, import_path11.resolve)(batchPath, "..")));
+  const timeoutMinutes = Number.isFinite(options.timeoutMinutes) && Number(options.timeoutMinutes) > 0 ? Number(options.timeoutMinutes) : 30;
+  const runs = batch.runs.map((run) => {
+    const runId = safeRunId(requireString(run.run_id, "runs[].run_id"));
+    const runDir = (0, import_path11.resolve)(requireString(run.run_dir, `runs[${runId}].run_dir`));
+    const promptPath = (0, import_path11.resolve)(requireString(run.prompt_path, `runs[${runId}].prompt_path`));
+    const workspaceDir = (0, import_path11.join)(workspaceRoot, runId);
+    (0, import_fs13.mkdirSync)(workspaceDir, { recursive: true });
+    (0, import_fs13.writeFileSync)(
+      (0, import_path11.join)(workspaceDir, "README.md"),
+      [
+        "# FOH External-Agent Workspace",
+        "",
+        "This directory is intentionally empty.",
+        "Use only public FOH docs, public API docs, and the public npm CLI package.",
+        "Do not assume access to the private source repository.",
+        ""
+      ].join("\n"),
+      "utf8"
+    );
+    const env = buildCodexExecutorEnv({
+      sourceEnv: options.env,
+      runDir,
+      promptVersion: promptVersionFromPath(promptPath)
+    });
+    const jsonlPath = (0, import_path11.join)(runDir, "codex-exec.jsonl");
+    const lastMessagePath = (0, import_path11.join)(runDir, "codex-last-message.md");
+    const args = [
+      "exec",
+      "--cd",
+      workspaceDir,
+      "--skip-git-repo-check",
+      "--ephemeral",
+      "--ignore-rules",
+      "--ignore-user-config",
+      "--sandbox",
+      "workspace-write",
+      "--full-auto",
+      "--json",
+      "--output-last-message",
+      lastMessagePath,
+      "-"
+    ];
+    return {
+      run_id: runId,
+      model_provider: String(run.model_provider || "unknown"),
+      model_name: String(run.model_name || "unknown-model"),
+      run_dir: runDir,
+      prompt_path: promptPath,
+      workspace_dir: workspaceDir,
+      command: "codex",
+      args,
+      env_keys: Object.keys(env).sort(),
+      outputs: {
+        jsonl: jsonlPath,
+        last_message: lastMessagePath
+      }
+    };
+  });
+  return {
+    schema_version: "external_agent_executor_plan.v1",
+    created_at: (/* @__PURE__ */ new Date()).toISOString(),
+    runner,
+    mode: "dry_run",
+    batch_path: batchPath,
+    batch_dir: batchDir,
+    private_repo_root: privateRepoRoot,
+    workspace_root: workspaceRoot,
+    timeout_minutes: timeoutMinutes,
+    safety: {
+      workspace_outside_private_repo: true,
+      repo_files_copied: false,
+      child_env_mode: "allowlist",
+      denied_env_prefixes: [...CODEX_EXECUTOR_DENIED_ENV_PREFIXES],
+      denied_env_names: [...CODEX_EXECUTOR_DENIED_ENV_NAMES],
+      runner_probe: {
+        binary_checked: runnerProbe.binaryChecked,
+        required_flags_checked: runnerProbe.requiredFlagsChecked
+      }
+    },
+    runs
+  };
+}
+function writeExternalAgentExecutorPlan(plan) {
+  const path2 = (0, import_path11.join)(plan.batch_dir, "executor-plan.json");
+  (0, import_fs13.mkdirSync)(plan.batch_dir, { recursive: true });
+  (0, import_fs13.writeFileSync)(path2, `${JSON.stringify(plan, null, 2)}
+`, "utf8");
+  return path2;
+}
+
+// src/commands/eval.ts
+var DEFAULT_PROMPT_VERSION = "blank-setup.v1";
+var DEFAULT_BATCH_MODELS = "openai/codex,anthropic/claude,cursor/agent";
+var PROMPTS = {
+  "blank-setup.v1": "Go to https://frontofhouse.okii.uk. Use only public docs, public API docs, and the public npm CLI package. Install the FOH CLI, authenticate or reach a deterministic auth blocker, create or configure a Front Of House voice agent and website widget, run proof/smoke/certification where available, and produce a final evidence summary with commands run, docs used, artifacts created, and any blocker reason codes. Do not assume access to the private source repository.",
+  "debug-proof-failure.v1": "You are given a FOH proof or debug artifact. Use public docs and FOH CLI/API behavior to classify whether the blocker is docs, auth, org setup, agent config, widget, channel, runtime, or product bug. Produce a redacted improvement packet or the exact command needed to produce one. Do not ask the human to interpret logs manually unless no machine-readable artifact exists.",
+  "knowledge-miss.v1": "A FOH agent failed to answer a business question. Use CLI/API/docs to determine whether this is a knowledge-ingestion issue, retrieval issue, config issue, prompt/behavior issue, or runtime issue. Prefer foh knowledge query, transcript export, replay, and foh bug improve artifacts over screenshots.",
+  "replay-failure.v1": "You are given a FOH transcript or replay artifact. Use CLI/API/docs to replay or inspect the failed interaction, identify expected vs actual behavior, and produce a scenario-test or improvement-packet candidate."
+};
+function normalizeStatus(raw) {
+  const value = String(raw ?? "hold").trim().toLowerCase();
+  if (value === "pass" || value === "hold" || value === "fail") return value;
+  throw new Error("Invalid --status. Use pass, hold, or fail.");
+}
+function defaultRunDir(modelName, promptVersion) {
+  const date4 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").replace("T", "-").slice(0, 23);
+  const safeModel = String(modelName || "unknown-model").toLowerCase().replace(/[^a-z0-9_-]+/g, "-");
+  const safePrompt = String(promptVersion || DEFAULT_PROMPT_VERSION).toLowerCase().replace(/[^a-z0-9_.-]+/g, "-");
+  return (0, import_path12.resolve)("test-results", "external-agent-runs", date4, `${safeModel}-${safePrompt}-${stamp}`);
+}
+function defaultBatchDir(promptVersion) {
+  const date4 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
+  const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").replace("T", "-").slice(0, 23);
+  const safePrompt = String(promptVersion || DEFAULT_PROMPT_VERSION).toLowerCase().replace(/[^a-z0-9_.-]+/g, "-");
+  return (0, import_path12.resolve)("test-results", "external-agent-runs", date4, `batch-${safePrompt}-${stamp}`);
+}
+function safeSlug(value) {
+  return String(value || "unknown").toLowerCase().replace(/[^a-z0-9_.-]+/g, "-").replace(/^-+|-+$/g, "") || "unknown";
+}
+function quoteArg(value) {
+  const text = String(value);
+  if (/^[A-Za-z0-9_./:=@-]+$/.test(text)) return text;
+  return `"${text.replace(/(["$`])/g, "\\$1")}"`;
+}
+function parseModelSpec(raw) {
+  const [provider, ...nameParts] = String(raw || "").split("/");
+  const name = nameParts.join("/");
+  return {
+    provider: provider?.trim() || "unknown",
+    name: name.trim() || "unknown-model"
+  };
+}
+function parseModelList(raw) {
+  return String(raw || DEFAULT_BATCH_MODELS).split(",").map((entry) => entry.trim()).filter(Boolean).map(parseModelSpec);
+}
+function inferShell(raw) {
+  if (raw && raw.trim()) return { command: raw, args: [], label: raw };
+  if (process.platform === "win32") return { command: "powershell.exe", args: ["-NoLogo", "-NoProfile"], label: "powershell" };
+  return { command: process.env.SHELL || "sh", args: [], label: process.env.SHELL || "sh" };
+}
+function writePrompt(runDir, promptVersion) {
+  const prompt = PROMPTS[promptVersion] ?? PROMPTS[DEFAULT_PROMPT_VERSION];
+  const path2 = (0, import_path12.join)(runDir, "prompt.txt");
+  (0, import_fs14.writeFileSync)(path2, `${prompt}
+`, "utf8");
+  return path2;
+}
+function writeSession(runDir, session) {
+  const path2 = (0, import_path12.join)(runDir, "session.json");
+  (0, import_fs14.writeFileSync)(path2, `${JSON.stringify(session, null, 2)}
+`, "utf8");
+  return path2;
+}
+function buildRunArtifact(input) {
+  const commands = readCommandRecords(input.runDir);
+  const startedAt = String(input.session.started_at);
+  const endedAt = (/* @__PURE__ */ new Date()).toISOString();
+  const status = input.status;
+  const reasonCode = status === "pass" ? null : String(input.reasonCode || "external_agent_run_needs_review");
+  return {
+    schema_version: "external_agent_run.v1",
+    run_id: input.session.run_id,
+    status,
+    failure_reason_code: reasonCode,
+    model_provider: input.session.model_provider,
+    model_name: input.session.model_name,
+    agent_shell: input.session.agent_shell,
+    workspace_type: input.session.workspace_type,
+    prompt_version: input.session.prompt_version,
+    prompt_path: "prompt.txt",
+    started_at: startedAt,
+    ended_at: endedAt,
+    manual_intervention_count: Number(input.session.manual_intervention_count || 0),
+    manual_interventions: [],
+    environment: {
+      os: process.platform,
+      node_version: process.version,
+      npm_version: null,
+      foh_cli_version: CLI_VERSION,
+      shell_exit_code: input.shellExitCode ?? null
+    },
+    public_entrypoints: [
+      "https://frontofhouse.okii.uk",
+      "https://frontofhouse.okii.uk/llms.txt",
+      "https://frontofhouse.okii.uk/openapi.yaml",
+      "npx --yes @f-o-h/cli@latest"
+    ],
+    commands_run: commands.map((command) => command.command),
+    docs_pages_used: [],
+    artifacts: {
+      terminal_transcript: null,
+      command_log: "commands.ndjson",
+      proof_bundle: null,
+      replay_packet: null,
+      knowledge_packet: null,
+      improvement_packet: status === "pass" ? null : "improvement-packet.json",
+      notes: "notes.md"
+    },
+    summary: status === "pass" ? "External-agent capture session completed and was marked pass." : `External-agent capture session completed with ${commands.length} captured FOH command(s); classify and improve reason ${reasonCode}.`,
+    next_commands: status === "pass" ? ["corepack pnpm eval:external-agent:runs:summary"] : [
+      `foh bug improve --from external-agent-run --file ${(0, import_path12.join)(input.runDir, "run.json")} --out ${(0, import_path12.join)(input.runDir, "improvement-packet.json")} --json`,
+      "corepack pnpm eval:external-agent:runs:summary"
+    ]
+  };
+}
+function registerEval(program3) {
+  const evalCommand = program3.command("eval").description("Run or summarize external-agent evaluation workflows");
+  const external = evalCommand.command("external-agent").description("Capture clean external coding-agent setup attempts");
+  external.command("batch").description("Create a deterministic multi-model external-agent batch plan").option("--models <list>", "Comma-separated provider/model list", DEFAULT_BATCH_MODELS).option("--prompt-version <version>", "Prompt version", DEFAULT_PROMPT_VERSION).option("--workspace-type <type>", "Workspace type label", "clean-no-repo").option("--agent-shell <name>", "Agent shell label", "vscode-terminal").option("--out-dir <path>", "Batch output directory").option("--json", "Output as JSON").action(async (opts) => {
+    const promptVersion = String(opts.promptVersion || DEFAULT_PROMPT_VERSION);
+    const batchDir = (0, import_path12.resolve)(String(opts.outDir || defaultBatchDir(promptVersion)));
+    const models = parseModelList(String(opts.models || DEFAULT_BATCH_MODELS));
+    (0, import_fs14.mkdirSync)(batchDir, { recursive: true });
+    const runs = models.map((model, index) => {
+      const runId = `${String(index + 1).padStart(2, "0")}-${safeSlug(model.provider)}-${safeSlug(model.name)}`;
+      const runDir = (0, import_path12.join)(batchDir, runId);
+      (0, import_fs14.mkdirSync)(runDir, { recursive: true });
+      const promptPath = writePrompt(runDir, promptVersion);
+      const commandArgs = [
+        "eval",
+        "external-agent",
+        "run",
+        "--model-provider",
+        model.provider,
+        "--model-name",
+        model.name,
+        "--prompt-version",
+        promptVersion,
+        "--workspace-type",
+        String(opts.workspaceType || "clean-no-repo"),
+        "--agent-shell",
+        String(opts.agentShell || "vscode-terminal"),
+        "--out-dir",
+        runDir
+      ];
+      return {
+        run_id: runId,
+        model_provider: model.provider,
+        model_name: model.name,
+        prompt_version: promptVersion,
+        run_dir: runDir,
+        prompt_path: promptPath,
+        launch_args: commandArgs,
+        launch_command: `npx --yes @f-o-h/cli@latest ${commandArgs.map(quoteArg).join(" ")}`
+      };
+    });
+    const batch = {
+      schema_version: "external_agent_batch_plan.v1",
+      created_at: (/* @__PURE__ */ new Date()).toISOString(),
+      batch_dir: batchDir,
+      prompt_version: promptVersion,
+      workspace_type: String(opts.workspaceType || "clean-no-repo"),
+      agent_shell: String(opts.agentShell || "vscode-terminal"),
+      run_count: runs.length,
+      runs,
+      summary_command: `corepack pnpm eval:external-agent:runs:summary -- --root ${batchDir}`
+    };
+    const batchPath = (0, import_path12.join)(batchDir, "batch.json");
+    (0, import_fs14.writeFileSync)(batchPath, `${JSON.stringify(batch, null, 2)}
+`, "utf8");
+    format(cliEnvelope({
+      schemaVersion: "external_agent_batch_plan_result.v1",
+      status: "exported",
+      reasonCode: "external_agent_batch_plan_created",
+      summary: `External-agent batch plan created for ${runs.length} model(s).`,
+      artifacts: {
+        batch: batchPath
+      },
+      nextCommands: [
+        ...runs.map((run) => run.launch_command),
+        batch.summary_command
+      ],
+      extra: { batch }
+    }), { json: Boolean(opts.json) });
+  });
+  external.command("run").description("Launch an instrumented shell and emit external_agent_run.v1 when it exits").option("--model-provider <name>", "Model provider label", "unknown").option("--model-name <name>", "Model name label", "unknown-model").option("--prompt-version <version>", "Prompt version", DEFAULT_PROMPT_VERSION).option("--workspace-type <type>", "Workspace type label", "clean-no-repo").option("--agent-shell <name>", "Agent shell label", "vscode-terminal").option("--out-dir <path>", "Run output directory").option("--status <status>", "Final status when not interactively classified: pass|hold|fail", "hold").option("--reason-code <code>", "Failure/hold reason code", "external_agent_run_needs_review").option("--shell <command>", "Shell command to launch for capture").option("--no-shell", "Do not launch a shell; create/finalize artifacts immediately").option("--json", "Output as JSON").action(async (opts) => {
+    const status = normalizeStatus(opts.status);
+    const promptVersion = String(opts.promptVersion || DEFAULT_PROMPT_VERSION);
+    const runDir = (0, import_path12.resolve)(String(opts.outDir || defaultRunDir(opts.modelName, promptVersion)));
+    (0, import_fs14.mkdirSync)(runDir, { recursive: true });
+    const runId = runDir.split(/[\\/]/).filter(Boolean).slice(-1)[0];
+    const promptPath = writePrompt(runDir, promptVersion);
+    const shell = inferShell(opts.shell);
+    const session = {
+      schema_version: "external_agent_capture_session.v1",
+      run_id: runId,
+      started_at: (/* @__PURE__ */ new Date()).toISOString(),
+      model_provider: String(opts.modelProvider || "unknown"),
+      model_name: String(opts.modelName || "unknown-model"),
+      prompt_version: promptVersion,
+      workspace_type: String(opts.workspaceType || "clean-no-repo"),
+      agent_shell: String(opts.agentShell || shell.label),
+      manual_intervention_count: 0,
+      run_dir: runDir,
+      prompt_path: promptPath,
+      capture_env: {
+        [EXTERNAL_AGENT_RUN_DIR_ENV]: runDir,
+        [EXTERNAL_AGENT_PROMPT_VERSION_ENV]: promptVersion
+      }
+    };
+    writeSession(runDir, session);
+    (0, import_fs14.writeFileSync)((0, import_path12.join)(runDir, "notes.md"), "# External Agent Run Notes\n\n", "utf8");
+    let shellExitCode = null;
+    if (opts.shell !== false) {
+      process.stdout.write(`
+External-agent capture is active.
+Run dir: ${runDir}
+Prompt: ${promptPath}
+Exit the shell to finalize run.json.
+
+`);
+      const result = (0, import_child_process5.spawnSync)(shell.command, shell.args, {
+        stdio: "inherit",
+        env: {
+          ...process.env,
+          [EXTERNAL_AGENT_RUN_DIR_ENV]: runDir,
+          [EXTERNAL_AGENT_PROMPT_VERSION_ENV]: promptVersion,
+          FOH_CLI_SUPPRESS_BANNER: process.env.FOH_CLI_SUPPRESS_BANNER ?? "1"
+        }
+      });
+      shellExitCode = typeof result.status === "number" ? result.status : null;
+    }
+    const artifact = buildRunArtifact({ runDir, session, status, reasonCode: opts.reasonCode, shellExitCode });
+    const runPath = (0, import_path12.join)(runDir, "run.json");
+    (0, import_fs14.writeFileSync)(runPath, `${JSON.stringify(artifact, null, 2)}
+`, "utf8");
+    format(cliEnvelope({
+      schemaVersion: "external_agent_capture_result.v1",
+      status: "exported",
+      reasonCode: "external_agent_run_created",
+      summary: "External-agent run artifact created.",
+      artifacts: {
+        run: runPath,
+        prompt: promptPath,
+        commands: (0, import_path12.join)(runDir, "commands.ndjson")
+      },
+      nextCommands: artifact.next_commands,
+      extra: { run: artifact }
+    }), { json: Boolean(opts.json) });
+  });
+  external.command("execute").description("Create a guarded dry-run executor plan for programmable external-agent runners").requiredOption("--batch <path>", "Path to external_agent_batch_plan.v1 batch.json").option("--runner <runner>", "Runner implementation", "codex").option("--workspace-root <path>", "Clean executor workspace root; must be outside the private repo").option("--private-repo-root <path>", "Private repository root to guard against").option("--timeout-minutes <minutes>", "Per-run timeout planned for future execution", "30").option("--skip-runner-probe", "Skip local runner binary/help probing").option("--dry-run", "Write the executor plan without launching the runner", true).option("--json", "Output as JSON").action(async (opts) => {
+    if (opts.dryRun === false) {
+      format(cliEnvelope({
+        schemaVersion: "external_agent_executor_plan_result.v1",
+        status: "blocked",
+        reasonCode: "external_agent_executor_live_run_not_enabled",
+        summary: "Live external-agent execution is intentionally blocked until dry-run safety gates have passed.",
+        nextCommands: [
+          `foh eval external-agent execute --runner ${opts.runner || "codex"} --batch ${opts.batch} --dry-run --json`
+        ]
+      }), { json: Boolean(opts.json) });
+      process.exitCode = 1;
+      return;
+    }
+    try {
+      const plan = createExternalAgentExecutorPlan({
+        batchPath: String(opts.batch),
+        runner: String(opts.runner || "codex"),
+        workspaceRoot: opts.workspaceRoot ? String(opts.workspaceRoot) : void 0,
+        privateRepoRoot: opts.privateRepoRoot ? String(opts.privateRepoRoot) : void 0,
+        timeoutMinutes: Number(opts.timeoutMinutes || 30),
+        skipRunnerProbe: Boolean(opts.skipRunnerProbe),
+        cwd: process.cwd()
+      });
+      const planPath = writeExternalAgentExecutorPlan(plan);
+      format(cliEnvelope({
+        schemaVersion: "external_agent_executor_plan_result.v1",
+        status: "exported",
+        reasonCode: "external_agent_executor_plan_created",
+        summary: `External-agent ${plan.runner} dry-run executor plan created for ${plan.runs.length} run(s).`,
+        artifacts: {
+          plan: planPath
+        },
+        nextCommands: [
+          "Review executor-plan.json for workspace/env isolation before enabling any live runner.",
+          ...plan.runs.map((run) => `${run.command} ${run.args.map(quoteArg).join(" ")} < ${quoteArg(run.prompt_path)} > ${quoteArg(run.outputs.jsonl)}`)
+        ],
+        extra: { plan }
+      }), { json: Boolean(opts.json) });
+    } catch (error2) {
+      if (error2 instanceof ExternalAgentExecutorError) {
+        format(cliEnvelope({
+          schemaVersion: "external_agent_executor_plan_result.v1",
+          status: "blocked",
+          reasonCode: error2.reasonCode,
+          summary: error2.message,
+          nextCommands: [
+            "Fix the executor plan input or workspace path and rerun with --dry-run."
+          ]
+        }), { json: Boolean(opts.json) });
+        process.exitCode = 1;
+        return;
+      }
+      throw error2;
+    }
+  });
+}
+
 // src/lib/banner.ts
 var import_picocolors6 = __toESM(require_picocolors());
 var BANNER_LINES = [
@@ -37452,6 +38964,7 @@ function installSoftExitTrap() {
 
 // src/index.ts
 installSoftExitTrap();
+recordExternalAgentCliInvocation({ argv: process.argv, cliVersion: CLI_VERSION });
 var program2 = new Command();
 var BUG_REPORT_URL = process.env.FOH_BUG_REPORT_URL ?? "https://github.com/iiko38/front-of-house/issues";
 function shouldRenderBanner2(argv) {
@@ -37481,13 +38994,19 @@ function writeKnownError(message, remediation) {
   if (jsonRequested()) {
     process.stderr.write(
       JSON.stringify(
-        {
-          error: {
-            step: "cli.run",
-            message,
-            remediation
+        cliEnvelope({
+          status: "fail",
+          reasonCode: reasonCodeFromStep(message, "cli_run_failed"),
+          summary: message,
+          nextCommands: remediation.startsWith("Run: ") ? [remediation.slice("Run: ".length)] : [],
+          extra: {
+            error: {
+              step: "cli.run",
+              message,
+              remediation
+            }
           }
-        },
+        }),
         null,
         2
       ) + "\n"
@@ -37527,6 +39046,7 @@ registerSim(program2);
 registerDiag(program2);
 registerBug(program2);
 registerProve(program2);
+registerEval(program2);
 registerUpdate(program2);
 registerHome(program2);
 hideInternalApiUrlOptions(program2);
@@ -37564,13 +39084,19 @@ program2.parseAsync(process.argv).catch((e) => {
   if (jsonRequested()) {
     process.stderr.write(
       JSON.stringify(
-        {
-          error: {
-            step: "cli.unhandled",
-            message: e instanceof Error ? e.message : String(e),
-            remediation: `Report this as a bug at ${BUG_REPORT_URL}`
+        cliEnvelope({
+          status: "fail",
+          reasonCode: "cli_unhandled_failed",
+          summary: e instanceof Error ? e.message : String(e),
+          nextCommands: [],
+          extra: {
+            error: {
+              step: "cli.unhandled",
+              message: e instanceof Error ? e.message : String(e),
+              remediation: `Report this as a bug at ${BUG_REPORT_URL}`
+            }
           }
-        },
+        }),
         null,
         2
       ) + "\n"

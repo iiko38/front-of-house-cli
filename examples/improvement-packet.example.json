@@ -1,0 +1,35 @@
+{
+  "schema_version": "foh_improvement_packet.v1",
+  "created_at": "2026-05-01T00:00:00.000Z",
+  "source_type": "knowledge_miss",
+  "reason_code": "knowledge_query_no_match",
+  "promotion_decision": "fix_docs",
+  "ids": {
+    "org_id": "org_example",
+    "agent_id": "agent_example",
+    "conversation_id": "conversation_example",
+    "trace_id": "trace_example",
+    "correlation_id": "correlation_example"
+  },
+  "evidence": {
+    "summary": "Customer asked about opening hours and the agent had no matching knowledge chunk.",
+    "source_artifact_path": "test-results/knowledge-miss.example.json",
+    "source_command": "foh knowledge query --agent agent_example --text \"What are your opening hours?\" --json",
+    "redaction": {
+      "enabled": true,
+      "fields": ["email", "phone", "secret-like-token"]
+    },
+    "redacted_source": {
+      "truncated": false,
+      "value": {
+        "schema_version": "foh_knowledge_query_failure_packet.v1",
+        "agent_id": "agent_example",
+        "query": "What are your opening hours?",
+        "reason_code": "knowledge_query_no_match"
+      }
+    }
+  },
+  "next_commands": [
+    "foh knowledge query --agent agent_example --text \"<question>\" --explain --json"
+  ]
+}

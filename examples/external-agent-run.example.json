@@ -1,0 +1,53 @@
+{
+  "schema_version": "external_agent_run.v1",
+  "run_id": "2026-05-04-codex-001",
+  "status": "fail",
+  "failure_reason_code": "docs_widget_proof_path_unclear",
+  "model_provider": "openai",
+  "model_name": "codex",
+  "agent_shell": "vscode-terminal",
+  "workspace_type": "clean-no-repo",
+  "prompt_version": "blank-setup.v1",
+  "prompt_path": "Docs/operations/external-agent-feedback-loop.md#blank-setupv1",
+  "started_at": "2026-05-04T09:00:00.000Z",
+  "ended_at": "2026-05-04T09:30:00.000Z",
+  "manual_intervention_count": 1,
+  "manual_interventions": [
+    {
+      "at": "2026-05-04T09:12:00.000Z",
+      "summary": "Human pointed the agent from generic docs to the CLI install guide."
+    }
+  ],
+  "environment": {
+    "os": "windows",
+    "node_version": "v24.11.1",
+    "npm_version": "10.x",
+    "foh_cli_version": "0.1.6"
+  },
+  "public_entrypoints": [
+    "https://frontofhouse.okii.uk",
+    "https://frontofhouse.okii.uk/llms.txt",
+    "npx --yes @f-o-h/cli@latest"
+  ],
+  "commands_run": [
+    "npx --yes @f-o-h/cli@latest --version",
+    "npx --yes @f-o-h/cli@latest setup --help",
+    "npx --yes @f-o-h/cli@latest prove --help"
+  ],
+  "docs_pages_used": [
+    "https://frontofhouse.okii.uk/guides/cli-install-and-upgrade",
+    "https://frontofhouse.okii.uk/guides/error-handling-and-debugging"
+  ],
+  "artifacts": {
+    "terminal_transcript": "terminal-transcript.txt",
+    "proof_bundle": null,
+    "replay_packet": null,
+    "knowledge_packet": null,
+    "improvement_packet": "improvement-packet.json",
+    "notes": "notes.md"
+  },
+  "summary": "Agent installed the CLI but could not identify the shortest widget proof path without human direction.",
+  "next_commands": [
+    "foh bug improve --from external-agent-run --file run.json --out improvement-packet.json --json"
+  ]
+}

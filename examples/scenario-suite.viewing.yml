@@ -1,0 +1,26 @@
+agent: agent_123
+scenarios:
+  - id: viewing-request
+    turns:
+      - user: Can I book a viewing this week?
+        expect:
+          contains: viewing
+          trace_present: true
+          correlation_present: true
+          action: text
+          latency_ms:
+            max: 3000
+
+  - id: human-handoff
+    turns:
+      - user: My budget is 500k and I want someone to call me back.
+        expect:
+          contains:
+            - call
+            - back
+          tool_calls:
+            min_count: 0
+          escalation:
+            requested: true
+          lead_capture:
+            required: false
