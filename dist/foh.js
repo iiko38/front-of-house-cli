@@ -32786,7 +32786,7 @@ var StdioServerTransport = class {
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.67";
+var CLI_VERSION = "0.1.68";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -35415,6 +35415,11 @@ function modeForProfile(profile) {
   if (profile === "stress") return "stress";
   return "full";
 }
+function defaultAdaptiveRuns(profile) {
+  if (profile === "smoke") return 1;
+  if (profile === "stress") return 30;
+  return 5;
+}
 function csv(raw) {
   if (!raw) return void 0;
   const values = String(raw).split(",").map((value) => value.trim()).filter(Boolean);
@@ -35427,11 +35432,11 @@ function channel(raw) {
 }
 function registerCertify(program3) {
   const certify = program3.command("certify").description("Produce release certification evidence for an agent");
-  certify.command("run").description("Run certification for an exact agent draft/profile and emit release evidence").requiredOption("--agent <id>", "Agent ID to certify").option("--profile <profile>", "Certification profile: smoke, release, or stress", "release").option("--adaptive-runs <n>", "Adaptive runs for release/stress profiles", "30").option("--journeys <list>", "Comma-separated journey allowlist").option("--scenario-ids <list>", "Comma-separated scenario ID allowlist").option("--channel <channel>", "Channel filter: chat, voice, or mixed", "mixed").option("--out <path>", "Write certification run JSON to this file path").option("--api-url <url>", "API base URL override").option("--json", "Output as machine-readable JSON").action(async (opts) => {
+  certify.command("run").description("Run certification for an exact agent draft/profile and emit release evidence").requiredOption("--agent <id>", "Agent ID to certify").option("--profile <profile>", "Certification profile: smoke, release, or stress", "release").option("--adaptive-runs <n>", "Adaptive runs override; release defaults to a budget-safe 5").option("--journeys <list>", "Comma-separated journey allowlist").option("--scenario-ids <list>", "Comma-separated scenario ID allowlist").option("--channel <channel>", "Channel filter: chat, voice, or mixed", "mixed").option("--out <path>", "Write certification run JSON to this file path").option("--api-url <url>", "API base URL override").option("--json", "Output as machine-readable JSON").action(async (opts) => {
     try {
       const profile = normalizeProfile(opts.profile);
       const mode = modeForProfile(profile);
-      const adaptiveRuns = Math.max(1, Math.min(120, Number(opts.adaptiveRuns ?? 30) || 30));
+      const adaptiveRuns = Math.max(1, Math.min(120, Number(opts.adaptiveRuns ?? defaultAdaptiveRuns(profile)) || defaultAdaptiveRuns(profile)));
       const response = await apiFetch(
         `/v1/console/agents/${opts.agent}/sim-certify`,
         {

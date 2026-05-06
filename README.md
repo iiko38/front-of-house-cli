@@ -89,7 +89,7 @@ returned short-lived token. Credential auth remains available as fallback.
 `foh prove` produces a compact signed proof report across auth, org context,
 agent validation, contact phone readiness, voice provider health, widget
 channel/embed readiness, and widget smoke. It does not run release
-certification by default; run `foh certify run --agent <id> --profile release`
+certification by default; run `foh certify run --agent <id> --profile release` (budget-safe default)
 before publish, or pass `--include-certification` only when you intentionally
 want the slower certification check inside proof. It is read-only by default;
 pass `--mutation-mode ensure` or `--repair` only when you explicitly want proof
