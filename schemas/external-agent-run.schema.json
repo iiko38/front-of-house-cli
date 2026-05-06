@@ -25,6 +25,7 @@
     "failure_reason_code": { "type": ["string", "null"] },
     "model_provider": { "type": "string", "minLength": 1 },
     "model_name": { "type": "string", "minLength": 1 },
+    "runner_model": { "type": ["string", "null"] },
     "agent_shell": { "type": "string" },
     "workspace_type": { "type": "string" },
     "prompt_version": { "type": "string", "minLength": 1 },
@@ -67,6 +68,26 @@
       "type": "array",
       "items": { "type": "string" }
     },
+    "eval_state": {
+      "type": "object",
+      "properties": {
+        "lifecycle_strategy": { "type": "string" },
+        "org_reuse_expected": { "type": "boolean" },
+        "agent_reuse_expected": { "type": "boolean" },
+        "widget_reuse_expected": { "type": "boolean" },
+        "fresh_org_expected": { "type": "boolean" },
+        "ephemeral_org_expected": { "type": "boolean" },
+        "fresh_agent_expected": { "type": "boolean" },
+        "phone_purchase_expected": { "type": "boolean" },
+        "paid_resource_creation_expected": { "type": "boolean" },
+        "spend_policy_expected": { "type": "string" },
+        "cleanup_expected": { "type": "boolean" },
+        "cleanup_strategy": { "type": "string" },
+        "paid_resource_strategy": { "type": "string" },
+        "rationale": { "type": "string" }
+      },
+      "additionalProperties": true
+    },
     "artifacts": {
       "type": "object",
       "properties": {
@@ -75,6 +96,7 @@
         "replay_packet": { "type": ["string", "null"] },
         "knowledge_packet": { "type": ["string", "null"] },
         "improvement_packet": { "type": ["string", "null"] },
+        "agent_metadata": { "type": ["string", "null"] },
         "notes": { "type": ["string", "null"] }
       },
       "additionalProperties": true

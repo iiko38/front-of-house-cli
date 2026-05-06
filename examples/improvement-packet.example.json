@@ -4,6 +4,12 @@
   "source_type": "knowledge_miss",
   "reason_code": "knowledge_query_no_match",
   "promotion_decision": "fix_docs",
+  "owner_subsystem": "docs",
+  "routing": {
+    "owner_subsystem": "docs",
+    "promotion_decision": "fix_docs",
+    "reason_family": "docs"
+  },
   "ids": {
     "org_id": "org_example",
     "agent_id": "agent_example",

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://frontofhouse.okii.uk/schemas/external-agent-metadata.schema.json",
+  "title": "FOH External Agent Metadata",
+  "type": "object",
+  "required": ["schema_version", "docs_pages_used"],
+  "properties": {
+    "schema_version": { "const": "external_agent_metadata.v1" },
+    "docs_pages_used": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^https://frontofhouse\\.okii\\.uk(?:/.*)?$"
+      }
+    },
+    "decisions": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "blocker_reason_codes": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "artifacts_created": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "additionalProperties": true
+}

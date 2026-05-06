@@ -3,7 +3,7 @@
   "$id": "https://frontofhouse.okii.uk/schemas/cli-envelope.schema.json",
   "title": "FOH CLI Envelope",
   "type": "object",
-  "required": ["schema_version", "ok", "status", "reason_code", "summary", "ids", "checks", "artifacts", "next_commands"],
+  "required": ["schema_version", "ok", "status", "reason_code", "summary", "ids", "checks", "artifacts", "spend_class", "safe_to_retry", "proof_artifacts", "operator_note", "next_commands"],
   "properties": {
     "schema_version": { "type": "string" },
     "ok": { "type": "boolean" },
@@ -13,6 +13,10 @@
     "ids": { "type": "object" },
     "checks": { "type": "array" },
     "artifacts": { "type": "object" },
+    "spend_class": { "type": ["string", "null"] },
+    "safe_to_retry": { "type": "boolean" },
+    "proof_artifacts": { "type": ["object", "string", "null"] },
+    "operator_note": { "type": ["string", "null"] },
     "next_commands": {
       "type": "array",
       "items": { "type": "string" }

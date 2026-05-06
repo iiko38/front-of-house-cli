@@ -5,6 +5,7 @@
   "failure_reason_code": "docs_widget_proof_path_unclear",
   "model_provider": "openai",
   "model_name": "codex",
+  "runner_model": "gpt-5.4-mini",
   "agent_shell": "vscode-terminal",
   "workspace_type": "clean-no-repo",
   "prompt_version": "blank-setup.v1",
@@ -38,12 +39,29 @@
     "https://frontofhouse.okii.uk/guides/cli-install-and-upgrade",
     "https://frontofhouse.okii.uk/guides/error-handling-and-debugging"
   ],
+  "eval_state": {
+    "lifecycle_strategy": "reuse_existing_eval_state",
+    "org_reuse_expected": true,
+    "agent_reuse_expected": true,
+    "widget_reuse_expected": true,
+    "fresh_org_expected": false,
+    "ephemeral_org_expected": false,
+    "fresh_agent_expected": false,
+    "phone_purchase_expected": false,
+    "paid_resource_creation_expected": false,
+    "spend_policy_expected": "no_spend",
+    "cleanup_expected": false,
+    "cleanup_strategy": "no_cleanup_for_reused_eval_state",
+    "paid_resource_strategy": "blocked_unless_explicit_byon_or_operator_approved",
+    "rationale": "Mass external-agent evals benchmark public docs/CLI/API clarity; reuse avoids paid phone and Twilio inventory churn."
+  },
   "artifacts": {
     "terminal_transcript": "terminal-transcript.txt",
     "proof_bundle": null,
     "replay_packet": null,
     "knowledge_packet": null,
     "improvement_packet": "improvement-packet.json",
+    "agent_metadata": "external-agent-metadata.json",
     "notes": "notes.md"
   },
   "summary": "Agent installed the CLI but could not identify the shortest widget proof path without human direction.",

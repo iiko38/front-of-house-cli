@@ -9,6 +9,8 @@
     "source_type",
     "reason_code",
     "promotion_decision",
+    "owner_subsystem",
+    "routing",
     "ids",
     "evidence",
     "next_commands"
@@ -32,6 +34,26 @@
     "promotion_decision": {
       "type": "string",
       "enum": ["ignore", "fix_docs", "fix_config", "fix_cli", "fix_api", "fix_runtime", "add_test"]
+    },
+    "owner_subsystem": {
+      "type": "string",
+      "enum": ["docs", "cli", "api_contract", "runtime", "voice_contact", "dojo_certification", "infra_runner", "product_ux"]
+    },
+    "routing": {
+      "type": "object",
+      "required": ["owner_subsystem", "promotion_decision", "reason_family"],
+      "properties": {
+        "owner_subsystem": {
+          "type": "string",
+          "enum": ["docs", "cli", "api_contract", "runtime", "voice_contact", "dojo_certification", "infra_runner", "product_ux"]
+        },
+        "promotion_decision": {
+          "type": "string",
+          "enum": ["ignore", "fix_docs", "fix_config", "fix_cli", "fix_api", "fix_runtime", "add_test"]
+        },
+        "reason_family": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
     },
     "ids": {
       "type": "object",

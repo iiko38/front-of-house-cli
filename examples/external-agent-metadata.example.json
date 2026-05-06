@@ -1,0 +1,19 @@
+{
+  "schema_version": "external_agent_metadata.v1",
+  "docs_pages_used": [
+    "https://frontofhouse.okii.uk/llms.txt",
+    "https://frontofhouse.okii.uk/guides/cli-install-and-upgrade"
+  ],
+  "decisions": [
+    "Used setup --phone-mode observe because FOH_CLI_SPEND_POLICY=no_spend was active.",
+    "Used UK Buyer Qualification template because proof/certification requires decision-rich scenarios."
+  ],
+  "blocker_reason_codes": [
+    "simulation_certification_failed"
+  ],
+  "artifacts_created": [
+    "run.json",
+    "commands.ndjson",
+    "external-agent-metadata.json"
+  ]
+}

@@ -6046,7 +6046,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve12.call(this, root, ref);
+      let _sch = resolve13.call(this, root, ref);
       if (_sch === void 0) {
         const schema2 = (_a2 = root.localRefs) === null || _a2 === void 0 ? void 0 : _a2[ref];
         const { schemaId } = this.opts;
@@ -6073,7 +6073,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve12(root, ref) {
+    function resolve13(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -6648,55 +6648,55 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve12(baseURI, relativeURI, options) {
+    function resolve13(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const resolved = resolveComponent(parse3(baseURI, schemelessOptions), parse3(relativeURI, schemelessOptions), schemelessOptions, true);
       schemelessOptions.skipEscape = true;
       return serialize(resolved, schemelessOptions);
     }
-    function resolveComponent(base, relative2, options, skipNormalization) {
+    function resolveComponent(base, relative3, options, skipNormalization) {
       const target = {};
       if (!skipNormalization) {
         base = parse3(serialize(base, options), options);
-        relative2 = parse3(serialize(relative2, options), options);
+        relative3 = parse3(serialize(relative3, options), options);
       }
       options = options || {};
-      if (!options.tolerant && relative2.scheme) {
-        target.scheme = relative2.scheme;
-        target.userinfo = relative2.userinfo;
-        target.host = relative2.host;
-        target.port = relative2.port;
-        target.path = removeDotSegments(relative2.path || "");
-        target.query = relative2.query;
+      if (!options.tolerant && relative3.scheme) {
+        target.scheme = relative3.scheme;
+        target.userinfo = relative3.userinfo;
+        target.host = relative3.host;
+        target.port = relative3.port;
+        target.path = removeDotSegments(relative3.path || "");
+        target.query = relative3.query;
       } else {
-        if (relative2.userinfo !== void 0 || relative2.host !== void 0 || relative2.port !== void 0) {
-          target.userinfo = relative2.userinfo;
-          target.host = relative2.host;
-          target.port = relative2.port;
-          target.path = removeDotSegments(relative2.path || "");
-          target.query = relative2.query;
+        if (relative3.userinfo !== void 0 || relative3.host !== void 0 || relative3.port !== void 0) {
+          target.userinfo = relative3.userinfo;
+          target.host = relative3.host;
+          target.port = relative3.port;
+          target.path = removeDotSegments(relative3.path || "");
+          target.query = relative3.query;
         } else {
-          if (!relative2.path) {
+          if (!relative3.path) {
             target.path = base.path;
-            if (relative2.query !== void 0) {
-              target.query = relative2.query;
+            if (relative3.query !== void 0) {
+              target.query = relative3.query;
             } else {
               target.query = base.query;
             }
           } else {
-            if (relative2.path[0] === "/") {
-              target.path = removeDotSegments(relative2.path);
+            if (relative3.path[0] === "/") {
+              target.path = removeDotSegments(relative3.path);
             } else {
               if ((base.userinfo !== void 0 || base.host !== void 0 || base.port !== void 0) && !base.path) {
-                target.path = "/" + relative2.path;
+                target.path = "/" + relative3.path;
               } else if (!base.path) {
-                target.path = relative2.path;
+                target.path = relative3.path;
               } else {
-                target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative2.path;
+                target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative3.path;
               }
               target.path = removeDotSegments(target.path);
             }
-            target.query = relative2.query;
+            target.query = relative3.query;
           }
           target.userinfo = base.userinfo;
           target.host = base.host;
@@ -6704,7 +6704,7 @@ var require_fast_uri = __commonJS({
         }
         target.scheme = base.scheme;
       }
-      target.fragment = relative2.fragment;
+      target.fragment = relative3.fragment;
       return target;
     }
     function equal(uriA, uriB, options) {
@@ -6875,7 +6875,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve12,
+      resolve: resolve13,
       resolveComponent,
       equal,
       serialize,
@@ -7213,8 +7213,8 @@ var require_core = __commonJS({
             return this;
           }
           case "object": {
-            const cacheKey2 = schemaKeyRef;
-            this._cache.delete(cacheKey2);
+            const cacheKey3 = schemaKeyRef;
+            this._cache.delete(cacheKey3);
             let id = schemaKeyRef[this.opts.schemaId];
             if (id) {
               id = (0, resolve_1.normalizeId)(id);
@@ -9927,7 +9927,12 @@ function envelopeOk(status) {
 function dedupeCommands(commands = []) {
   return Array.from(new Set(commands.map((command) => String(command || "").trim()).filter(Boolean)));
 }
+function defaultSafeToRetry(status) {
+  return !(status === "fail" || status === "blocked" || status === "hold");
+}
 function cliEnvelope(input) {
+  const extra = input.extra ?? {};
+  const artifacts = input.artifacts ?? {};
   return {
     schema_version: input.schemaVersion ?? "foh_cli_envelope.v1",
     ok: envelopeOk(input.status),
@@ -9936,9 +9941,13 @@ function cliEnvelope(input) {
     summary: input.summary,
     ids: input.ids ?? {},
     checks: input.checks ?? [],
-    artifacts: input.artifacts ?? {},
+    artifacts,
+    spend_class: input.spendClass ?? extra.spend_class ?? null,
+    safe_to_retry: input.safeToRetry ?? extra.safe_to_retry ?? defaultSafeToRetry(input.status),
+    proof_artifacts: input.proofArtifacts ?? extra.proof_artifacts ?? artifacts.proof_bundle ?? artifacts.proof_report ?? null,
+    operator_note: input.operatorNote ?? extra.operator_note ?? null,
     next_commands: dedupeCommands(input.nextCommands),
-    ...input.extra ?? {}
+    ...extra
   };
 }
 function reasonCodeFromStep(step, fallback = "cli_command_failed") {
@@ -10029,9 +10038,73 @@ function resolveApiBaseUrl(cliOverride) {
   return resolveApiUrlOverride(cliOverride) ?? DEFAULT_FOH_API_URL;
 }
 
+// src/lib/org-id.ts
+function isUsableOrgId(value) {
+  const orgId = String(value ?? "").trim();
+  return Boolean(orgId);
+}
+
 // src/lib/credentials.ts
 var CONFIG_PATH = (0, import_path.join)((0, import_os.homedir)(), ".config", "foh", "credentials.json");
+var SERVICE_TOKEN_ENV = "FOH_SERVICE_TOKEN";
+var ORG_ID_ENV = "FOH_ORG_ID";
+var API_URL_ENV = "FOH_API_URL";
+var TOKEN_EXPIRES_AT_ENV = "FOH_TOKEN_EXPIRES_AT";
+function normalizeEnv(value) {
+  const normalized = String(value ?? "").trim();
+  return normalized ? normalized : void 0;
+}
+function decodeBase64UrlJson(value) {
+  try {
+    const padded = value.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(value.length / 4) * 4, "=");
+    return JSON.parse(Buffer.from(padded, "base64").toString("utf8"));
+  } catch {
+    return void 0;
+  }
+}
+function expiryFromJwt(token) {
+  const [, payload] = token.split(".");
+  if (!payload) return void 0;
+  const decoded = decodeBase64UrlJson(payload);
+  const exp = Number(decoded?.exp);
+  if (!Number.isFinite(exp) || exp <= 0) return void 0;
+  return new Date(exp * 1e3).toISOString();
+}
+function fallbackExpiry() {
+  return new Date(Date.now() + 60 * 60 * 1e3).toISOString();
+}
+function credentialMillisecondsUntilExpiry(expiresAt, now = Date.now()) {
+  const expiresMs = Date.parse(expiresAt);
+  if (!Number.isFinite(expiresMs)) return null;
+  return expiresMs - now;
+}
+function credentialExpiresSoon(expiresAt, minimumTtlMs = 0, now = Date.now()) {
+  const remainingMs = credentialMillisecondsUntilExpiry(expiresAt, now);
+  return remainingMs !== null && remainingMs <= minimumTtlMs;
+}
+function credentialsFromEnv(apiUrlOverride, env = process.env) {
+  const token = normalizeEnv(env[SERVICE_TOKEN_ENV]);
+  if (!token) return void 0;
+  const apiUrl = resolveApiUrlOverride(apiUrlOverride) ?? normalizeEnv(env[API_URL_ENV]) ?? DEFAULT_FOH_API_URL;
+  const orgId = normalizeEnv(env[ORG_ID_ENV]);
+  return {
+    apiUrl,
+    token,
+    expiresAt: normalizeEnv(env[TOKEN_EXPIRES_AT_ENV]) ?? expiryFromJwt(token) ?? fallbackExpiry(),
+    ...isUsableOrgId(orgId) ? { orgId } : {}
+  };
+}
+function hasEnvCredentials(env = process.env) {
+  return Boolean(normalizeEnv(env[SERVICE_TOKEN_ENV]));
+}
 function loadCredentials(apiUrlOverride) {
+  const envCreds = credentialsFromEnv(apiUrlOverride);
+  if (envCreds) {
+    if (credentialExpiresSoon(envCreds.expiresAt)) {
+      throw new Error("Token expired. Refresh FOH_SERVICE_TOKEN/FOH_TOKEN_EXPIRES_AT or run: foh auth login");
+    }
+    return envCreds;
+  }
   let creds;
   try {
     const raw = (0, import_fs.readFileSync)(CONFIG_PATH, "utf-8");
@@ -10039,7 +10112,7 @@ function loadCredentials(apiUrlOverride) {
   } catch {
     throw new Error("Not authenticated. Run: foh auth login");
   }
-  if (creds.expiresAt && new Date(creds.expiresAt) < /* @__PURE__ */ new Date()) {
+  if (creds.expiresAt && credentialExpiresSoon(creds.expiresAt)) {
     throw new Error("Token expired. Run: foh auth login");
   }
   const resolvedApiUrl = resolveApiUrlOverride(apiUrlOverride);
@@ -10057,12 +10130,6 @@ function clearCredentials() {
     (0, import_fs.rmSync)(CONFIG_PATH);
   } catch {
   }
-}
-
-// src/lib/org-id.ts
-function isUsableOrgId(value) {
-  const orgId = String(value ?? "").trim();
-  return Boolean(orgId);
 }
 
 // src/lib/command-runtime.ts
@@ -10105,21 +10172,21 @@ async function promptLine(label, {
   allowEmpty = false,
   defaultValue
 } = {}) {
-  return await new Promise((resolve12) => {
+  return await new Promise((resolve13) => {
     const suffix = defaultValue ? ` [${defaultValue}]` : "";
     const rl = (0, import_readline.createInterface)({ input: process.stdin, output: process.stdout, terminal: true });
     rl.question(`${label}${suffix}: `, (answer) => {
       rl.close();
       const value = String(answer ?? "").trim();
       if (!value && typeof defaultValue === "string") {
-        resolve12(defaultValue);
+        resolve13(defaultValue);
         return;
       }
       if (!value && !allowEmpty) {
-        resolve12("");
+        resolve13("");
         return;
       }
-      resolve12(value);
+      resolve13(value);
     });
   });
 }
@@ -10127,7 +10194,7 @@ async function promptSecret(label) {
   if (!process.stdin.isTTY || !process.stdout.isTTY || typeof process.stdin.setRawMode !== "function") {
     return await promptLine(label);
   }
-  return await new Promise((resolve12) => {
+  return await new Promise((resolve13) => {
     const stdin = process.stdin;
     const stdout = process.stdout;
     const wasRaw = Boolean(stdin.isRaw);
@@ -10141,7 +10208,7 @@ async function promptSecret(label) {
     const finish = () => {
       cleanup();
       stdout.write("\n");
-      resolve12(value);
+      resolve13(value);
     };
     const onData = (chunk) => {
       const text = typeof chunk === "string" ? chunk : chunk.toString("utf8");
@@ -10150,7 +10217,7 @@ async function promptSecret(label) {
           cleanup();
           process.exitCode = 130;
           stdout.write("\n");
-          return resolve12("");
+          return resolve13("");
         }
         if (char === "\r" || char === "\n") {
           finish();
@@ -10404,7 +10471,11 @@ async function storeAuthenticatedSession(params) {
   const output = {
     status: "authenticated",
     apiUrl: params.apiUrl,
-    expires_at: params.expiresAt
+    expires_at: params.expiresAt,
+    token_ttl_seconds: (() => {
+      const ttlMs = credentialMillisecondsUntilExpiry(params.expiresAt);
+      return ttlMs === null ? null : Math.max(0, Math.floor(ttlMs / 1e3));
+    })()
   };
   if (autoOrgId) {
     output["default_org_id"] = autoOrgId;
@@ -10419,10 +10490,13 @@ async function storeAuthenticatedSession(params) {
   return output;
 }
 function sleep(ms) {
-  return new Promise((resolve12) => setTimeout(resolve12, ms));
+  return new Promise((resolve13) => setTimeout(resolve13, ms));
+}
+function hasExplicitTimeoutFlag(argv = process.argv) {
+  return argv.some((arg) => arg === "--timeout-seconds" || arg.startsWith("--timeout-seconds="));
 }
 async function runDeviceLogin(opts) {
-  const jsonMode = Boolean(opts.json);
+  const jsonMode = resolveJsonMode({ json: opts.json });
   let startRes;
   try {
     startRes = await fetch(`${opts.apiUrl}/v1/console/auth/device/start`, {
@@ -10458,12 +10532,14 @@ async function runDeviceLogin(opts) {
     expires_in: start.expires_in,
     poll_interval_seconds: start.interval
   };
-  if (opts.wait === false) {
+  const hasExplicitTimeout = Boolean(opts.timeoutSeconds) || hasExplicitTimeoutFlag();
+  const shouldWait = opts.wait !== false && !(jsonMode && !hasExplicitTimeout);
+  if (!shouldWait) {
     format({
       ...startedPacket,
       next_commands: [
         "Complete approval in the opened browser window.",
-        "Then rerun: foh auth login --web --json"
+        "Then rerun: foh auth login --web --json --timeout-seconds 60, or use FOH_SERVICE_TOKEN/FOH_ORG_ID for non-interactive automation."
       ]
     }, { json: jsonMode });
     return;
@@ -10573,11 +10649,17 @@ function registerAuth(program3) {
     try {
       const creds = loadCredentials(opts.apiUrl);
       const orgId = opts.org ?? creds.orgId;
+      const ttlMs = credentialMillisecondsUntilExpiry(creds.expiresAt);
+      const authMetadata = {
+        apiUrl: creds.apiUrl,
+        expires_at: creds.expiresAt,
+        token_ttl_seconds: ttlMs === null ? null : Math.max(0, Math.floor(ttlMs / 1e3)),
+        default_org_id: creds.orgId ?? null,
+        auth_source: process.env.FOH_SERVICE_TOKEN ? "env_service_token" : "stored_credentials"
+      };
       if (!orgId) {
         format({
-          apiUrl: creds.apiUrl,
-          expires_at: creds.expiresAt,
-          default_org_id: creds.orgId ?? null,
+          ...authMetadata,
           note: creds.orgId ? void 0 : "No default org set. Run: foh org list then: foh org use --org <id>"
         }, { json: opts.json ?? false });
         return;
@@ -10593,7 +10675,7 @@ function registerAuth(program3) {
         });
       }
       const data = await res.json();
-      format(data, { json: opts.json ?? false });
+      format({ ...data, auth: authMetadata }, { json: opts.json ?? false });
     } catch (e) {
       if (e instanceof Error && (e.message.includes("Not authenticated") || e.message.includes("Token expired"))) {
         throw new FohError({
@@ -10818,6 +10900,15 @@ function registerOrg(program3) {
       apiUrlOverride: opts.apiUrl
     });
     const creds = loadCredentials(opts.apiUrl);
+    if (hasEnvCredentials()) {
+      format({
+        status: "ok",
+        default_org_id: opts.org,
+        persisted: false,
+        note: "FOH_SERVICE_TOKEN is active; pass --org or set FOH_ORG_ID to persist default org for this environment."
+      }, { json: opts.json ?? false });
+      return;
+    }
     saveCredentials({ ...creds, orgId: opts.org });
     format({ status: "ok", default_org_id: opts.org, note: "--org flag is now optional" }, { json: opts.json ?? false });
   }));
@@ -10957,7 +11048,7 @@ async function pollUntil(check2, opts) {
   }
 }
 function sleep2(ms) {
-  return new Promise((resolve12) => setTimeout(resolve12, ms));
+  return new Promise((resolve13) => setTimeout(resolve13, ms));
 }
 
 // src/commands/compliance.ts
@@ -10997,6 +11088,47 @@ function registerCompliance(program3) {
 
 // src/commands/provision.ts
 var import_crypto = require("crypto");
+
+// src/lib/spend-policy.ts
+var FOH_CLI_SPEND_POLICY_ENV = "FOH_CLI_SPEND_POLICY";
+var NO_SPEND_POLICY = "no_spend";
+var PAID_RESOURCE_BLOCKED_REASON_CODE = "paid_resource_blocked_by_spend_policy";
+function resolveCliSpendPolicy(env = process.env) {
+  const value = String(env[FOH_CLI_SPEND_POLICY_ENV] || "").trim().toLowerCase();
+  return value === NO_SPEND_POLICY ? NO_SPEND_POLICY : "default";
+}
+function isNoSpendPolicy(env = process.env) {
+  return resolveCliSpendPolicy(env) === NO_SPEND_POLICY;
+}
+function buildPaidResourceBlockedEnvelope(input) {
+  return cliEnvelope({
+    status: "blocked",
+    reasonCode: PAID_RESOURCE_BLOCKED_REASON_CODE,
+    summary: "Paid or scarce resource mutation blocked by the active no-spend CLI policy.",
+    ids: { org_id: input.orgId ?? null },
+    checks: [
+      {
+        name: "spend_policy",
+        status: "blocked",
+        reason_code: PAID_RESOURCE_BLOCKED_REASON_CODE,
+        spend_policy: NO_SPEND_POLICY,
+        spend_class: "paid_foh",
+        resource: input.resource
+      }
+    ],
+    nextCommands: input.nextCommands,
+    extra: {
+      spend_policy: NO_SPEND_POLICY,
+      spend_class: "paid_foh",
+      safe_to_retry: false,
+      resource: input.resource,
+      command: input.command,
+      operator_note: "No-spend eval mode allows setup and proof work, but blocks FOH-owned phone-number purchasing. Use an existing/BYON phone path or rerun outside no-spend eval mode with explicit operator approval."
+    }
+  });
+}
+
+// src/commands/provision.ts
 function requiredOrg2(opts, step) {
   return resolveRequiredOrgId(opts.org, {
     apiUrl: opts.apiUrl,
@@ -11031,10 +11163,55 @@ function registerProvision(program3) {
       format({ status: "skipped", reason: "already_provisioned", phone_number: onboarding.phone_number }, { json: opts.json ?? false });
       return;
     }
+    if (isNoSpendPolicy()) {
+      format(
+        buildPaidResourceBlockedEnvelope({
+          resource: "foh_twilio_phone_number",
+          command: "foh provision buy",
+          orgId: resolvedOrg,
+          nextCommands: [
+            `foh provision status --org ${resolvedOrg} --json`,
+            `foh prove --mission voice --require-phone --org ${resolvedOrg} --json`
+          ]
+        }),
+        { json: opts.json ?? false }
+      );
+      markCommandFailed(1);
+      return;
+    }
     const data = await apiFetch("/v1/console/org/twilio/provision", {
       method: "POST",
       body: JSON.stringify({ country: opts.country, area_code: opts.areaCode }),
       headers: { "Idempotency-Key": `foh-cli-provision:${(0, import_crypto.randomUUID)()}` },
+      orgId: resolvedOrg,
+      apiUrlOverride: opts.apiUrl
+    });
+    format(data, { json: opts.json ?? false });
+  }));
+  const byon = provision.command("byon").description("Attach a customer-owned voice number without FOH number purchase");
+  byon.command("attach").description("Attach a customer-owned Twilio/voice number to the current org").requiredOption("--phone-number <e164>", "Customer-owned E.164 phone number, for example +447700900000").option("--twilio-sid <sid>", "Optional Twilio phone number SID reference").option("--twilio-account-sid <sid>", "Optional customer Twilio account SID reference; only a suffix is stored in metadata").option("--label <label>", "Optional human label for this BYON contact path").option("--confirm-owned", "Confirm the customer controls this number and authorizes attachment").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+    const resolvedOrg = requiredOrg2(opts, "provision.byon.attach");
+    if (!opts.confirmOwned) {
+      format({
+        ok: false,
+        status: "blocked",
+        reason_code: "ownership_confirmation_required",
+        safe_to_retry: false,
+        remediation: "Retry only after the customer confirms ownership: foh provision byon attach --phone-number <e164> --confirm-owned --org <org> --json"
+      }, { json: opts.json ?? false });
+      markCommandFailed(1);
+      return;
+    }
+    const data = await apiFetch("/v1/console/org/twilio/byon/attach", {
+      method: "POST",
+      body: JSON.stringify({
+        phone_number: opts.phoneNumber,
+        twilio_sid: opts.twilioSid,
+        twilio_account_sid: opts.twilioAccountSid,
+        label: opts.label,
+        ownership_confirmed: true
+      }),
+      headers: { "Idempotency-Key": `foh-cli-byon-attach:${(0, import_crypto.randomUUID)()}` },
       orgId: resolvedOrg,
       apiUrlOverride: opts.apiUrl
     });
@@ -13995,8 +14172,8 @@ function registerAgentGuardrailCommands(agent) {
     try {
       rule = JSON.parse(opts.rule);
     } catch {
-      const { readFileSync: readFileSync12 } = await import("fs");
-      rule = JSON.parse(readFileSync12(opts.rule, "utf-8"));
+      const { readFileSync: readFileSync14 } = await import("fs");
+      rule = JSON.parse(readFileSync14(opts.rule, "utf-8"));
     }
     const data = await apiFetch(`/v1/console/agents/${opts.agent}/guardrails`, {
       method: "POST",
@@ -14134,12 +14311,6 @@ function registerAgentPreviewCommands(agent) {
   }));
 }
 
-// src/lib/cert-mode.ts
-var agentCertModeValues = ["quick", "full", "stress"];
-function normalizeAgentCertMode(value) {
-  return agentCertModeValues.includes(value) ? value : "quick";
-}
-
 // src/lib/setup-api.ts
 function resolvePublishOptions(options) {
   if (typeof options === "string") return { apiUrlOverride: options };
@@ -14170,7 +14341,7 @@ async function publishAgentFromCurrentDraft(agentId, options) {
       throw new FohError({
         step: "publish_agent",
         error: `Publish blocked by simulation certification (${blockers ?? 0} blocker(s)); top blocker: ${blockerLabel}`,
-        remediation: suggestedFix ? `${suggestedFix} Re-run: foh sim certify --agent ${agentId} --full` : `Re-run: foh sim certify --agent ${agentId} --full, then retry publish.`,
+        remediation: suggestedFix ? `${suggestedFix} Re-run: foh certify run --agent ${agentId} --profile release` : `Re-run: foh certify run --agent ${agentId} --profile release, then retry publish.`,
         statusCode: error2.statusCode,
         detail
       });
@@ -14212,36 +14383,7 @@ async function runSetupCertifyLoop(agentId, params) {
 }
 
 // src/lib/agent-publish-gate.ts
-function boundedInt(value, params) {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return params.fallback;
-  return Math.max(params.min, Math.min(params.max, Math.trunc(parsed)));
-}
-function resolveCertifiedPublishOptions(opts) {
-  const rawMode = String(opts.certMode || "quick").toLowerCase();
-  const certMode = normalizeAgentCertMode(rawMode);
-  if (certMode !== rawMode) {
-    throw new FohError({
-      step: "agent.publish",
-      error: `Invalid cert mode: ${opts.certMode}`,
-      remediation: "Use --cert-mode quick, full, or stress.",
-      statusCode: 400
-    });
-  }
-  return {
-    certMode,
-    adaptiveRuns: boundedInt(opts.adaptiveRuns, { min: 1, max: 120, fallback: 30 }),
-    maxImprovementRounds: boundedInt(opts.maxImprovementRounds, { min: 0, max: 5, fallback: 1 }),
-    scenarioIds: Array.isArray(opts.scenarioIds) ? opts.scenarioIds.map((item) => String(item).trim()).filter(Boolean) : String(opts.scenarioIds || "").split(",").map((item) => item.trim()).filter(Boolean)
-  };
-}
 async function validateCertifyAndPublishAgent(opts) {
-  const { certMode, adaptiveRuns, maxImprovementRounds, scenarioIds } = resolveCertifiedPublishOptions({
-    certMode: opts.certMode,
-    adaptiveRuns: opts.adaptiveRuns,
-    maxImprovementRounds: opts.maxImprovementRounds,
-    scenarioIds: opts.scenarioIds
-  });
   const validation = await apiFetch(
     `/v1/console/agents/${opts.agentId}/validate`,
     {
@@ -14257,32 +14399,18 @@ async function validateCertifyAndPublishAgent(opts) {
       remediation: `Run: foh agent validate --agent ${opts.agentId}  to see details.`
     });
   }
-  const certification = await runSetupCertifyLoop(opts.agentId, {
-    mode: certMode,
-    adaptiveRuns,
-    maxImprovementRounds,
-    scenarioIds,
-    orgId: opts.orgId,
-    apiUrlOverride: opts.apiUrlOverride
-  });
-  const certificate = certification.certificate;
-  if (!certification.ok || !certification.overall_pass || !certificate) {
-    const topBlocker = certificate?.blockers?.[0];
-    throw new FohError({
-      step: "agent.publish",
-      error: `Simulation certification failed before publish: ${certificate?.scenario_summary?.failed ?? "unknown"}/${certificate?.scenario_summary?.total ?? "unknown"} scenario(s) failed.`,
-      remediation: topBlocker?.suggested_fix ?? certificate?.recommendations?.[0] ?? `Run: foh sim certify-loop --agent ${opts.agentId} --${certMode === "quick" ? "full" : certMode}  for detailed output.`,
-      detail: {
-        certification,
-        top_blocker: topBlocker ?? null
-      }
-    });
-  }
   await publishAgentFromCurrentDraft(opts.agentId, {
     apiUrlOverride: opts.apiUrlOverride,
     orgId: opts.orgId
   });
-  return { validation, certification, publish: { ok: true } };
+  return {
+    validation,
+    certification: {
+      status: "not_run",
+      reason_code: "publish_consumes_existing_certification_evidence"
+    },
+    publish: { ok: true }
+  };
 }
 
 // src/commands/agent-validation.ts
@@ -14331,7 +14459,7 @@ function registerAgentValidationCommands(agent) {
     format(data, { json: opts.json ?? false });
     if (Array.isArray(data.issues) && data.issues.length > 0) markCommandFailed(1);
   }));
-  agent.command("publish").description("Validate, simulation-certify, then publish an agent").requiredOption("--agent <id>", "Agent ID").option("--cert-mode <m>", "Simulation cert mode before publish: quick, full, stress", "quick").option("--cert-scenario-ids <csv>", "Comma-separated scenario IDs to certify before publish").option("--cert-adaptive-runs <n>", "Adaptive runs for full/stress certification (default: 30)", "30").option("--cert-max-improvement-rounds <n>", "Max prompt improvement rounds before publish (0-5)", "1").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--break-glass-reason <reason>", "Break-glass reason for publish override").option("--break-glass-incident <id>", "Break-glass incident ID for publish override").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+  agent.command("publish").description("Validate and publish an agent using existing certification evidence").requiredOption("--agent <id>", "Agent ID").option("--cert-mode <m>", "Deprecated compatibility flag; publish consumes existing certification evidence", "quick").option("--cert-scenario-ids <csv>", "Deprecated compatibility flag; run foh sim certify before publish").option("--cert-adaptive-runs <n>", "Deprecated compatibility flag; run foh sim certify before publish", "30").option("--cert-max-improvement-rounds <n>", "Deprecated compatibility flag; run foh sim certify before publish", "1").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--break-glass-reason <reason>", "Break-glass reason for publish override").option("--break-glass-incident <id>", "Break-glass incident ID for publish override").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
     if (opts.breakGlassReason || opts.breakGlassIncident) {
       if (!opts.breakGlassReason || !opts.breakGlassIncident) {
         throw new FohError({
@@ -14354,7 +14482,7 @@ function registerAgentValidationCommands(agent) {
       });
       format({
         status: "published_with_break_glass",
-        warning: "break-glass bypassed the normal validate -> sim-certify/loop -> publish CLI sequence",
+        warning: "break-glass bypassed the normal validate -> publish evidence gate CLI sequence",
         publish: data2
       }, { json: opts.json ?? false });
       return;
@@ -14369,13 +14497,8 @@ function registerAgentValidationCommands(agent) {
       maxImprovementRounds: Number(opts.certMaxImprovementRounds)
     });
     format({
-      status: "validated_certified_published",
-      certification: {
-        mode: data.certification.mode,
-        overall_pass: data.certification.overall_pass,
-        attempts: data.certification.attempts?.length ?? 0,
-        improvement_runs: data.certification.improvement_runs
-      },
+      status: "validated_published",
+      certification: data.certification,
       publish: data.publish
     }, { json: opts.json ?? false });
   }));
@@ -14596,9 +14719,9 @@ function registerAgent(program3) {
       process.stdout.write(yaml);
       return;
     }
-    const { writeFileSync: writeFileSync9 } = await import("fs");
+    const { writeFileSync: writeFileSync12 } = await import("fs");
     const outputPath = opts.output ?? "tenant.yaml";
-    writeFileSync9(
+    writeFileSync12(
       outputPath,
       `# tenant.yaml - Front Of House agent manifest
 # Edit this file and run: foh plan tenant.yaml
@@ -14740,7 +14863,7 @@ function registerTemplates(program3) {
     const data = await apiFetch(`/v1/console/templates/${opts.template}`, { apiUrlOverride: opts.apiUrl });
     format(data, { json: opts.json ?? false });
   }));
-  templates.command("apply").description("Create a new agent in your org from a template (clones draft config, leaves unpublished unless --publish)").requiredOption("--template <id>", "Template ID").requiredOption("--name <name>", "Name for the new agent").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--publish", "Validate, simulation-certify, then publish the agent after creating").option("--cert-mode <m>", "Simulation cert mode before publish: quick, full, stress", "full").option("--cert-adaptive-runs <n>", "Adaptive runs for full/stress certification (default: 30)", "30").option("--cert-max-improvement-rounds <n>", "Max prompt improvement rounds before publish (0-5)", "1").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+  templates.command("apply").description("Create a new agent in your org from a template (clones draft config, leaves unpublished unless --publish)").requiredOption("--template <id>", "Template ID").requiredOption("--name <name>", "Name for the new agent").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--publish", "Validate and publish using existing certification evidence after creating").option("--cert-mode <m>", "Deprecated compatibility flag; run foh sim certify before publish", "full").option("--cert-adaptive-runs <n>", "Deprecated compatibility flag; run foh sim certify before publish", "30").option("--cert-max-improvement-rounds <n>", "Deprecated compatibility flag; run foh sim certify before publish", "1").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
     const result = await apiFetch(`/v1/console/templates/${opts.template}/apply`, {
       method: "POST",
       body: JSON.stringify({ name: opts.name }),
@@ -14872,7 +14995,7 @@ function registerWidget(program3) {
       apiUrlOverride: opts.apiUrl,
       headers: { "x-agent-id": opts.agent }
     });
-    if (opts.json) {
+    if (resolveJsonMode({ json: opts.json })) {
       format(data, { json: true });
     } else {
       process.stdout.write(data.snippet + "\n");
@@ -15811,9 +15934,9 @@ function buildCommonOptions(command) {
   return command.option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON");
 }
 function registerChannel(program3) {
-  const channel = program3.command("channel").description("Manage external channel onboarding and readiness");
-  const whatsapp = channel.command("whatsapp").description("Manage WhatsApp channel onboarding");
-  const instagram = channel.command("instagram").description("Manage Instagram channel onboarding");
+  const channel2 = program3.command("channel").description("Manage external channel onboarding and readiness");
+  const whatsapp = channel2.command("whatsapp").description("Manage WhatsApp channel onboarding");
+  const instagram = channel2.command("instagram").description("Manage Instagram channel onboarding");
   registerWhatsAppChannelCommands(whatsapp, buildCommonOptions);
   registerInstagramChannelCommands(instagram, buildCommonOptions);
 }
@@ -15830,6 +15953,19 @@ function getTtsProviders(catalog) {
   if (fromRows.length > 0) return [...new Set(fromRows)].sort();
   const fromProviders = Array.isArray(catalog.providers?.tts) ? catalog.providers?.tts : [];
   return fromProviders.map((provider) => String(provider || "").trim().toLowerCase()).filter((provider) => provider.length > 0).sort();
+}
+function getSttProviders(catalog) {
+  const providerRows = Array.isArray(catalog.voice_catalog?.providers) ? catalog.voice_catalog?.providers : [];
+  const fromRows = providerRows.filter((provider) => provider?.kind === "stt").map((provider) => String(provider.id || "").trim().toLowerCase()).filter((provider) => provider.length > 0);
+  if (fromRows.length > 0) return [...new Set(fromRows)].sort();
+  const fromProviders = Array.isArray(catalog.providers?.stt) ? catalog.providers?.stt : [];
+  return fromProviders.map((provider) => String(provider || "").trim().toLowerCase()).filter((provider) => provider.length > 0).sort();
+}
+function resolveDefaultSttProvider(providers) {
+  for (const preferred of ["deepgram", "azure", "twilio", "none"]) {
+    if (providers.includes(preferred)) return preferred;
+  }
+  return providers[0] || "deepgram";
 }
 function registerVoice(program3) {
   const voice = program3.command("voice").description("Manage voice provider configuration");
@@ -16033,11 +16169,11 @@ function registerVoice(program3) {
     }
     const outputPath = String(opts.out || `foh-voice-preview-${provider}-${voiceId}.mp3`).trim();
     const audio = Buffer.from(await res.arrayBuffer());
-    const { mkdirSync: mkdirSync7, writeFileSync: writeFileSync9 } = await import("fs");
-    const { dirname: dirname5, resolve: resolve12 } = await import("path");
-    const absolutePath = resolve12(outputPath);
-    mkdirSync7(dirname5(absolutePath), { recursive: true });
-    writeFileSync9(absolutePath, audio);
+    const { mkdirSync: mkdirSync8, writeFileSync: writeFileSync12 } = await import("fs");
+    const { dirname: dirname8, resolve: resolve13 } = await import("path");
+    const absolutePath = resolve13(outputPath);
+    mkdirSync8(dirname8(absolutePath), { recursive: true });
+    writeFileSync12(absolutePath, audio);
     format({
       status: "ok",
       provider,
@@ -16058,11 +16194,12 @@ function registerVoice(program3) {
     const allReady = providers.length > 0 && providers.every((provider) => provider?.ready === true);
     if (!allReady) markCommandFailed(1);
   }));
-  voice.command("configure").description("Configure voice settings for an agent (does not publish unless --publish)").requiredOption("--agent <id>", "Agent ID").requiredOption("--provider <p>", "TTS provider: openai, azure, twilio").requiredOption("--voice <id>", "Voice ID").option("--stt-provider <p>", "STT provider (default: openai)").option("--publish", "Validate, simulation-certify, then publish after configuring").option("--cert-mode <m>", "Simulation cert mode before publish: quick, full, stress", "full").option("--cert-adaptive-runs <n>", "Adaptive runs for full/stress certification (default: 30)", "30").option("--cert-max-improvement-rounds <n>", "Max prompt improvement rounds before publish (0-5)", "1").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+  voice.command("configure").description("Configure voice settings for an agent (does not publish unless --publish)").requiredOption("--agent <id>", "Agent ID").requiredOption("--provider <p>", "TTS provider: openai, azure, twilio").requiredOption("--voice <id>", "Voice ID").option("--stt-provider <p>", "STT provider (default: best available, preferring deepgram)").option("--publish", "Validate and publish using existing certification evidence after configuring").option("--cert-mode <m>", "Deprecated compatibility flag; run foh sim certify before publish", "full").option("--cert-adaptive-runs <n>", "Deprecated compatibility flag; run foh sim certify before publish", "30").option("--cert-max-improvement-rounds <n>", "Deprecated compatibility flag; run foh sim certify before publish", "1").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
     const provider = String(opts.provider || "").trim().toLowerCase();
     const voiceId = String(opts.voice || "").trim();
     const catalog = await getSpeechCatalog(opts.apiUrl);
     const supportedProviders = getTtsProviders(catalog);
+    const supportedSttProviders = getSttProviders(catalog);
     if (!supportedProviders.includes(provider)) {
       throw new FohError({
         step: "voice.configure",
@@ -16081,10 +16218,19 @@ function registerVoice(program3) {
         statusCode: 400
       });
     }
+    const sttProvider = String(opts.sttProvider || resolveDefaultSttProvider(supportedSttProviders)).trim().toLowerCase();
+    if (supportedSttProviders.length > 0 && !supportedSttProviders.includes(sttProvider)) {
+      throw new FohError({
+        step: "voice.configure",
+        error: `STT provider "${sttProvider}" is not available in speech catalog`,
+        remediation: `Use --stt-provider ${resolveDefaultSttProvider(supportedSttProviders)} or run: foh voice list-providers${opts.apiUrl ? ` --api-url ${opts.apiUrl}` : ""}`,
+        statusCode: 400
+      });
+    }
     const voiceConfig = {
       tts_provider: provider,
       tts_voice_id: voiceId,
-      stt_provider: opts.sttProvider ?? "openai"
+      stt_provider: sttProvider
     };
     const draft = await apiFetch(`/v1/console/agents/${opts.agent}/draft`, {
       method: "PATCH",
@@ -16093,7 +16239,7 @@ function registerVoice(program3) {
       apiUrlOverride: opts.apiUrl
     });
     if (!opts.publish) {
-      format({ status: "configured", note: "Run: foh agent publish --agent " + opts.agent + "  to validate, certify, and make live." }, { json: opts.json ?? false });
+      format({ status: "configured", note: "Run: foh certify run --agent " + opts.agent + " --profile release, then foh agent publish --agent " + opts.agent + " to make live." }, { json: opts.json ?? false });
       return;
     }
     const pub = await validateCertifyAndPublishAgent({
@@ -30518,7 +30664,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve12) => setTimeout(resolve12, pollInterval));
+        await new Promise((resolve13) => setTimeout(resolve13, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error2) {
@@ -30535,7 +30681,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve12, reject) => {
+    return new Promise((resolve13, reject) => {
       const earlyReject = (error2) => {
         reject(error2);
       };
@@ -30613,7 +30759,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve12(parseResult.data);
+            resolve13(parseResult.data);
           }
         } catch (error2) {
           reject(error2);
@@ -30874,12 +31020,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve12, reject) => {
+    return new Promise((resolve13, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve12, interval);
+      const timeoutId = setTimeout(resolve13, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -31979,7 +32125,7 @@ var McpServer = class {
     let task = createTaskResult.task;
     const pollInterval = task.pollInterval ?? 5e3;
     while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-      await new Promise((resolve12) => setTimeout(resolve12, pollInterval));
+      await new Promise((resolve13) => setTimeout(resolve13, pollInterval));
       const updatedTask = await extra.taskStore.getTask(taskId);
       if (!updatedTask) {
         throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -32628,19 +32774,19 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve12) => {
+    return new Promise((resolve13) => {
       const json3 = serializeMessage(message);
       if (this._stdout.write(json3)) {
-        resolve12();
+        resolve13();
       } else {
-        this._stdout.once("drain", resolve12);
+        this._stdout.once("drain", resolve13);
       }
     });
   }
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.14";
+var CLI_VERSION = "0.1.67";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -32825,7 +32971,7 @@ async function runFohCli(params) {
     effectiveArgv.push("--json");
   }
   const command = `foh ${effectiveArgv.join(" ")}`;
-  return await new Promise((resolve12) => {
+  return await new Promise((resolve13) => {
     const child = (0, import_node_child_process.spawn)(process.execPath, [cliEntry, ...effectiveArgv], {
       stdio: ["ignore", "pipe", "pipe"],
       env: {
@@ -32850,7 +32996,7 @@ async function runFohCli(params) {
     });
     child.once("error", (error2) => {
       clearTimeout(timeoutHandle);
-      resolve12({
+      resolve13({
         ok: false,
         command,
         argv: effectiveArgv,
@@ -32866,7 +33012,7 @@ async function runFohCli(params) {
       const stderrText = finalizeBoundedText(stderrBuffer);
       const exitCode = Number.isFinite(code ?? NaN) ? Number(code) : 1;
       const stdoutJson = tryParseJson(stdoutText);
-      resolve12({
+      resolve13({
         ok: !timedOut && exitCode === 0,
         command,
         argv: effectiveArgv,
@@ -33029,7 +33175,7 @@ var TYPED_TOOL_SPECS = [
   {
     name: "foh_agent_publish",
     title: "FOH Agent Publish",
-    description: "Publish validated agent draft.",
+    description: "Validate and publish an agent draft using existing certification evidence.",
     commandKey: "agent publish",
     risk: "write",
     inputSchema: {
@@ -34127,7 +34273,7 @@ function registerManifest(program3) {
       throw e;
     }
   });
-  program3.command("apply").description("Apply a tenant.yaml manifest to an agent").argument("[file]", "Path to manifest file", "tenant.yaml").option("--agent <id>", "Agent ID (overrides agent_id in manifest)").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--publish", "Validate, simulation-certify, and publish after applying").option("--cert-mode <m>", "Simulation cert mode before publish: quick, full, stress", "full").option("--cert-adaptive-runs <n>", "Adaptive runs for full/stress certification (default: 30)", "30").option("--cert-max-improvement-rounds <n>", "Max prompt improvement rounds before publish (0-5)", "1").option("--dry-run", "Show diff without making any changes (same as: foh plan)").option("--api-url <url>", "API base URL override").option("--json", "Output result as JSON").action(async (file2, opts) => {
+  program3.command("apply").description("Apply a tenant.yaml manifest to an agent").argument("[file]", "Path to manifest file", "tenant.yaml").option("--agent <id>", "Agent ID (overrides agent_id in manifest)").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--publish", "Validate and publish using existing certification evidence after applying").option("--cert-mode <m>", "Deprecated compatibility flag; run foh sim certify before publish", "full").option("--cert-adaptive-runs <n>", "Deprecated compatibility flag; run foh sim certify before publish", "30").option("--cert-max-improvement-rounds <n>", "Deprecated compatibility flag; run foh sim certify before publish", "1").option("--dry-run", "Show diff without making any changes (same as: foh plan)").option("--api-url <url>", "API base URL override").option("--json", "Output result as JSON").action(async (file2, opts) => {
     try {
       const manifest = loadManifestFile(file2);
       const agentId = resolveAgentId(manifest, opts.agent);
@@ -34226,6 +34372,14 @@ function registerManifest(program3) {
 
 // src/commands/setup.ts
 var import_picocolors4 = __toESM(require_picocolors());
+
+// src/lib/cert-mode.ts
+var agentCertModeValues = ["quick", "full", "stress"];
+function normalizeAgentCertMode(value) {
+  return agentCertModeValues.includes(value) ? value : "quick";
+}
+
+// src/commands/setup.ts
 var SETUP_STEP_ORDER = [
   "check_credentials",
   "check_org_access",
@@ -34244,6 +34398,12 @@ var SETUP_STEP_ORDER = [
   "publish_agent",
   "emit_summary"
 ];
+function extractGuardrailsList(response) {
+  if (Array.isArray(response)) return response;
+  if (Array.isArray(response.guardrails)) return response.guardrails;
+  if (Array.isArray(response.rules)) return response.rules;
+  return [];
+}
 function resolveResumeIndex(resumeFromRaw) {
   if (!resumeFromRaw) {
     return { resumeFrom: null, resumeIndex: 0 };
@@ -34273,6 +34433,83 @@ function timedStepResult(result, startedAtIso, startedAtMs) {
 function optionNameToFlag(key) {
   return "--" + key.replace(/([A-Z])/g, "-$1").toLowerCase();
 }
+function normalizeSetupPhoneMode(raw) {
+  const value = String(raw || "purchase").trim().toLowerCase();
+  if (value === "observe" || value === "skip" || value === "purchase") return value;
+  throw new FohError({
+    step: "setup.phone_mode",
+    error: `Invalid --phone-mode "${String(raw)}"`,
+    remediation: "Use one of: observe, skip, purchase.",
+    reasonCode: "setup_invalid_phone_mode"
+  });
+}
+function complianceSkipDetail(phoneMode) {
+  return {
+    reason_code: `compliance_skipped_phone_mode_${phoneMode}`,
+    phone_mode: phoneMode,
+    spend_policy: resolveCliSpendPolicy(),
+    spend_class: "free",
+    safe_to_retry: true,
+    operator_note: "Compliance is only required before paid FOH-owned phone purchase."
+  };
+}
+function isMissingAgentTestsError(error2) {
+  if (!(error2 instanceof FohError)) return false;
+  if (error2.statusCode !== 404) return false;
+  const text = [
+    error2.error,
+    error2.reasonCode,
+    error2.detail?.error,
+    error2.detail?.message,
+    error2.detail?.reason_code
+  ].filter((value) => value !== void 0 && value !== null).join(" ").toLowerCase();
+  return text.includes("no tests found") || text.includes("tests_not_found") || text.includes("agent_tests_not_configured");
+}
+function errorReasonCode(error2) {
+  const detail = error2.detail;
+  const code = detail && typeof detail.code === "string" ? detail.code : void 0;
+  const reasonCode = detail && typeof detail.reason_code === "string" ? detail.reason_code : void 0;
+  return error2.reasonCode ?? reasonCode ?? code;
+}
+function isAgentLimitReachedError(error2) {
+  const reasonCode = errorReasonCode(error2);
+  const text = [
+    reasonCode,
+    error2.error,
+    error2.detail?.error,
+    error2.detail?.message
+  ].filter((value) => value !== void 0 && value !== null).join(" ").toLowerCase();
+  return text.includes("agent_limit_reached") || text.includes("agent limit reached");
+}
+function shouldReuseSingleAgentForEval() {
+  return Boolean(process.env.FOH_EXTERNAL_AGENT_RUN_DIR) && isNoSpendPolicy();
+}
+async function rebaseEvalAgentDraftFromTemplate(params) {
+  const preview = await apiFetch(`/v1/console/templates/${params.templateId}`, {
+    orgId: params.orgId,
+    apiUrlOverride: params.apiUrlOverride
+  });
+  const draft = preview.template?.draft_config;
+  if (!draft || typeof draft !== "object" || Array.isArray(draft)) {
+    throw new FohError({
+      step: "create_agent",
+      error: "Template preview did not return a draft_config for eval reuse.",
+      remediation: `Run: foh templates show --template ${params.templateId} --json, then retry setup.`,
+      reasonCode: "eval_agent_template_rebase_failed"
+    });
+  }
+  await apiFetch(`/v1/console/agents/${params.agentId}/draft`, {
+    method: "PATCH",
+    body: JSON.stringify({ ...draft, name: params.agentName }),
+    orgId: params.orgId,
+    apiUrlOverride: params.apiUrlOverride
+  });
+  return {
+    template_rebased: true,
+    template_id: params.templateId,
+    draft_keys: Object.keys(draft).sort()
+  };
+}
 function buildMissingOptionsPlan(missing, opts) {
   const missingFlags = missing.map(optionNameToFlag);
   const signInUrl = buildConsoleSignInUrl(resolveConsoleBaseUrl(opts.consoleUrl));
@@ -34285,8 +34522,8 @@ function buildMissingOptionsPlan(missing, opts) {
       "foh auth signup --web --json",
       "foh auth login --web --json",
       ...buildCliAuthFallbackCommands(),
-      "foh templates list --json",
-      'foh setup --org <org-id> --agent-template <template-id> --agent-name "Demo Agent" --widget-domains <domain> --report-out setup-report.json --json'
+      "npx --yes @f-o-h/cli@latest templates list --category buyer --json",
+      'npx --yes @f-o-h/cli@latest setup --org <org-id> --agent-template <buyer-template-id> --agent-name "Demo Buyer Agent" --widget-domains <domain> --voice-provider openai --voice-id alloy --report-out setup-report.json --json'
     ],
     extra: {
       code: "setup_required_options_missing",
@@ -34297,7 +34534,9 @@ function buildMissingOptionsPlan(missing, opts) {
       ai_agent_instruction: [
         "Do not guess org IDs, template IDs, or customer domains.",
         "If no browser is available, print sign_in_url and ask the user to sign in.",
-        "After auth, discover orgs and templates with the listed commands.",
+        "Use npx --yes @f-o-h/cli@latest for every CLI command; do not use unpinned npx @f-o-h/cli.",
+        "After auth, discover orgs and certification-oriented buyer templates with the listed commands.",
+        "Prefer UK Buyer Qualification or Viewing Booking; do not use greeting-only templates for proof/certification.",
         "Rerun setup only after all missing_options are resolved."
       ]
     }
@@ -34321,7 +34560,7 @@ function emitMissingOptionsPlan(missing, opts) {
   }
 }
 function registerSetup(program3) {
-  program3.command("setup").description("Fully provision a new agency customer in one command").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--agent-template <id>", "Agent template ID (e.g. viewing-request)").option("--agent-name <name>", "Name for the new agent").option("--phone-country <cc>", "Phone number country code", "GB").option("--phone-area-code <code>", "Phone area code preference").option("--widget-domains <domains>", "Comma-separated widget domain allowlist").option("--voice-provider <p>", "TTS provider: openai, azure, twilio").option("--voice-id <id>", "Voice ID").option("--skip-compliance", "Skip compliance submission and wait").option("--skip-voice", "Skip voice configuration").option("--skip-tests", "Skip smoke tests").option("--cert-mode <m>", "Simulation cert mode: quick, full, stress", "quick").option("--cert-adaptive-runs <n>", "Adaptive run count for certification loop", "30").option("--cert-max-improvement-rounds <n>", "Max instruction improvement rounds in cert loop (0-5)", "1").option("--resume-from <step>", `Resume from a setup step (${SETUP_STEP_ORDER.join(", ")})`).option("--report-out <path>", "Optional path to write signed setup run report JSON").option("--dry-run", "Print all steps that would run without making any API calls").option("--api-url <url>", "API base URL override").option("--console-url <url>", "Console sign-in URL override").option("--json", "Output as JSON").action(async (opts) => {
+  program3.command("setup").description("Fully provision a new agency customer in one command").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--agent-template <id>", "Agent template ID (e.g. viewing-request)").option("--agent-name <name>", "Name for the new agent").option("--phone-country <cc>", "Phone number country code", "GB").option("--phone-area-code <code>", "Phone area code preference").option("--phone-mode <mode>", "Phone path: observe, skip, or purchase", "purchase").option("--widget-domains <domains>", "Comma-separated widget domain allowlist").option("--voice-provider <p>", "TTS provider: openai, azure, twilio").option("--voice-id <id>", "Voice ID").option("--skip-compliance", "Skip compliance submission and wait").option("--skip-voice", "Skip voice configuration").option("--skip-tests", "Skip smoke tests").option("--cert-mode <m>", "Simulation cert mode: quick, full, stress", "quick").option("--cert-adaptive-runs <n>", "Adaptive run count for certification loop", "30").option("--cert-max-improvement-rounds <n>", "Max instruction improvement rounds in cert loop (0-5)", "1").option("--resume-from <step>", `Resume from a setup step (${SETUP_STEP_ORDER.join(", ")})`).option("--report-out <path>", "Optional path to write signed setup run report JSON").option("--dry-run", "Print all steps that would run without making any API calls").option("--api-url <url>", "API base URL override").option("--console-url <url>", "Console sign-in URL override").option("--json", "Output as JSON").action(async (opts) => {
     if (!opts.org) {
       try {
         opts.org = loadCredentials(opts.apiUrl).orgId;
@@ -34365,6 +34604,17 @@ function registerSetup(program3) {
     }
     const certAdaptiveRuns = Math.max(1, Math.min(120, Number(opts.certAdaptiveRuns ?? 30) || 30));
     const certMaxImprovementRounds = Math.max(0, Math.min(5, Number(opts.certMaxImprovementRounds ?? 1) || 1));
+    let phoneMode;
+    try {
+      phoneMode = normalizeSetupPhoneMode(opts.phoneMode);
+    } catch (error2) {
+      if (error2 instanceof FohError) {
+        formatError(error2);
+        markCommandFailed(1);
+        return;
+      }
+      throw error2;
+    }
     const emitSetupReport = (status, failure) => {
       const reportPayload = {
         schema_version: "foh_cli_setup_run.v1",
@@ -34375,6 +34625,8 @@ function registerSetup(program3) {
         completed_at: nowIso(),
         dry_run: Boolean(opts.dryRun),
         resume_from: resumeState.resumeFrom,
+        phone_mode: phoneMode,
+        spend_policy: resolveCliSpendPolicy(),
         org_id: opts.org,
         agent_template: opts.agentTemplate,
         agent_name: opts.agentName,
@@ -34501,6 +34753,9 @@ function registerSetup(program3) {
       });
       await step("submit_compliance", "Submit standard compliance", async () => {
         if (opts.skipCompliance) return { step: "submit_compliance", status: "skipped", detail: "--skip-compliance" };
+        if (phoneMode !== "purchase") {
+          return { step: "submit_compliance", status: "skipped", detail: complianceSkipDetail(phoneMode) };
+        }
         const status = await apiFetch("/v1/console/org/compliance/status", {
           orgId: opts.org,
           apiUrlOverride: opts.apiUrl
@@ -34510,7 +34765,10 @@ function registerSetup(program3) {
         }
         await apiFetch("/v1/console/org/compliance/submit", {
           method: "POST",
-          body: JSON.stringify({ type: "standard" }),
+          body: JSON.stringify({
+            type: "standard",
+            friendlyName: opts.agentName
+          }),
           orgId: opts.org,
           apiUrlOverride: opts.apiUrl
         });
@@ -34518,6 +34776,9 @@ function registerSetup(program3) {
       });
       await step("wait_compliance", "Poll until compliance approved", async () => {
         if (opts.skipCompliance) return { step: "wait_compliance", status: "skipped", detail: "--skip-compliance" };
+        if (phoneMode !== "purchase") {
+          return { step: "wait_compliance", status: "skipped", detail: complianceSkipDetail(phoneMode) };
+        }
         await pollUntil(
           async () => {
             const status = await apiFetch("/v1/console/org/compliance/status", {
@@ -34531,6 +34792,20 @@ function registerSetup(program3) {
         return { step: "wait_compliance", status: "done" };
       });
       await step("provision_phone", "Buy a Twilio phone number", async () => {
+        if (phoneMode === "skip") {
+          return {
+            step: "provision_phone",
+            status: "skipped",
+            detail: {
+              reason_code: "phone_mode_skip",
+              phone_mode: phoneMode,
+              spend_policy: resolveCliSpendPolicy(),
+              spend_class: "free",
+              safe_to_retry: true,
+              operator_note: "Phone provisioning was skipped by explicit setup phone mode."
+            }
+          };
+        }
         const onboarding = await apiFetch(`/v1/console/org/${opts.org}/onboarding`, {
           orgId: opts.org,
           apiUrlOverride: opts.apiUrl
@@ -34538,6 +34813,42 @@ function registerSetup(program3) {
         if (onboarding.phone_number) {
           phoneNumber = onboarding.phone_number;
           return { step: "provision_phone", status: "skipped", detail: "already provisioned" };
+        }
+        if (phoneMode === "observe") {
+          return {
+            step: "provision_phone",
+            status: "skipped",
+            detail: {
+              reason_code: isNoSpendPolicy() ? "voice_contact_expected_no_spend_hold" : "contact_phone_missing",
+              phone_mode: phoneMode,
+              spend_policy: resolveCliSpendPolicy(),
+              spend_class: "free",
+              safe_to_retry: true,
+              next_commands: [
+                `foh provision status --org ${opts.org} --json`,
+                `foh prove --mission voice --require-phone --org ${opts.org} --json`
+              ],
+              operator_note: "Setup observed phone readiness only; no phone number was purchased."
+            }
+          };
+        }
+        if (isNoSpendPolicy()) {
+          return {
+            step: "provision_phone",
+            status: "skipped",
+            detail: {
+              reason_code: PAID_RESOURCE_BLOCKED_REASON_CODE,
+              spend_policy: NO_SPEND_POLICY,
+              spend_class: "paid_foh",
+              safe_to_retry: false,
+              resource: "foh_twilio_phone_number",
+              next_commands: [
+                `foh provision status --org ${opts.org} --json`,
+                `foh prove --mission voice --require-phone --org ${opts.org} --json`
+              ],
+              operator_note: "Setup continued without buying a FOH-owned phone number because no-spend eval mode is active."
+            }
+          };
         }
         const result = await apiFetch("/v1/console/org/twilio/provision", {
           method: "POST",
@@ -34554,7 +34865,8 @@ function registerSetup(program3) {
           orgId: opts.org,
           apiUrlOverride: opts.apiUrl
         });
-        const existing = agents.agents?.find((agent) => agent.name === opts.agentName);
+        const existingAgents = Array.isArray(agents.agents) ? agents.agents : [];
+        const existing = existingAgents.find((agent) => agent.name === opts.agentName);
         if (existing) {
           agentId = existing.id;
           return { step: "create_agent", status: "skipped", detail: "name already exists" };
@@ -34577,12 +34889,39 @@ function registerSetup(program3) {
           return { step: "create_agent", status: "done", detail: { agent_id: agentId, path: "template_apply" } };
         } catch (error2) {
           if (!(error2 instanceof FohError)) throw error2;
+          if (isAgentLimitReachedError(error2) && shouldReuseSingleAgentForEval() && existingAgents.length === 1) {
+            const reusable = existingAgents[0];
+            const rebase = await rebaseEvalAgentDraftFromTemplate({
+              agentId: reusable.id,
+              agentName: opts.agentName,
+              templateId: opts.agentTemplate,
+              orgId: opts.org,
+              apiUrlOverride: opts.apiUrl
+            });
+            agentId = reusable.id;
+            return {
+              step: "create_agent",
+              status: "skipped",
+              detail: {
+                reason_code: "eval_agent_limit_reuse_existing_agent",
+                original_reason_code: errorReasonCode(error2) ?? "agent_limit_reached",
+                lifecycle_strategy: "reuse_existing_eval_state",
+                desired_agent_name: opts.agentName,
+                reused_agent_id: reusable.id,
+                reused_agent_name: reusable.name,
+                ...rebase,
+                operator_note: "External-agent no-spend eval reused the single existing agent and rebased its draft onto the requested template instead of creating a second bronze-tier agent."
+              }
+            };
+          }
           throw new FohError({
             step: "create_agent",
             error: `Template apply failed: ${error2.error}`,
             remediation: error2.remediation,
             statusCode: error2.statusCode,
-            detail: error2.detail
+            detail: error2.detail,
+            reasonCode: errorReasonCode(error2),
+            nextCommands: error2.nextCommands
           });
         }
       });
@@ -34606,12 +34945,18 @@ function registerSetup(program3) {
         const existing = await apiFetch(`/v1/console/agents/${resolvedAgentId}/guardrails`, {
           apiUrlOverride: opts.apiUrl
         });
-        if (Array.isArray(existing.rules) && existing.rules.length > 0) {
+        if (extractGuardrailsList(existing).length > 0) {
           return { step: "seed_guardrails", status: "skipped", detail: "guardrails already set" };
         }
         await apiFetch(`/v1/console/agents/${resolvedAgentId}/guardrails`, {
           method: "POST",
-          body: JSON.stringify({ name: "NoSilentDrop", mode: "log", condition: "always" }),
+          body: JSON.stringify({
+            rule_id: "no-silent-drop",
+            type: "focus",
+            name: "NoSilentDrop",
+            mode: "log",
+            topics: ["property", "real estate", "viewing", "valuation", "buyer", "seller", "landlord", "tenant"]
+          }),
           apiUrlOverride: opts.apiUrl
         });
         return { step: "seed_guardrails", status: "done" };
@@ -34650,7 +34995,7 @@ function registerSetup(program3) {
             voice: {
               tts_provider: opts.voiceProvider,
               tts_voice_id: opts.voiceId,
-              stt_provider: "openai"
+              stt_provider: "deepgram"
             }
           }),
           apiUrlOverride: opts.apiUrl
@@ -34660,10 +35005,30 @@ function registerSetup(program3) {
       await step("run_smoke_test", "Run all agent tests", async () => {
         if (opts.skipTests) return { step: "run_smoke_test", status: "skipped", detail: "--skip-tests" };
         const resolvedAgentId = requireAgentId("run_smoke_test");
-        const batch = await apiFetch(`/v1/console/agents/${resolvedAgentId}/tests/run-all`, {
-          method: "POST",
-          apiUrlOverride: opts.apiUrl
-        });
+        let batch;
+        try {
+          batch = await apiFetch(`/v1/console/agents/${resolvedAgentId}/tests/run-all`, {
+            method: "POST",
+            apiUrlOverride: opts.apiUrl
+          });
+        } catch (error2) {
+          if (isMissingAgentTestsError(error2)) {
+            return {
+              step: "run_smoke_test",
+              status: "skipped",
+              detail: {
+                reason_code: "agent_tests_not_configured",
+                safe_to_retry: true,
+                next_commands: [
+                  `foh test run --agent ${resolvedAgentId} --json`,
+                  `foh prove --agent ${resolvedAgentId} --mission widget --json`
+                ],
+                operator_note: "No saved agent tests exist yet; setup continues to simulation certification and widget proof."
+              }
+            };
+          }
+          throw error2;
+        }
         if (!batch.batch_id) return { step: "run_smoke_test", status: "done" };
         const result = await pollUntil(
           async () => {
@@ -34775,8 +35140,8 @@ function registerSetup(program3) {
         }
         try {
           const manifest = await agentExport(resolvedAgentId, { apiUrlOverride: opts.apiUrl });
-          const { writeFileSync: writeFileSync9 } = await import("fs");
-          writeFileSync9(
+          const { writeFileSync: writeFileSync12 } = await import("fs");
+          writeFileSync12(
             "tenant.yaml",
             `# tenant.yaml - Front Of House agent manifest
 # Edit this file and run: foh plan tenant.yaml
@@ -34801,6 +35166,8 @@ ${serialiseManifest(manifest)}`,
           org_id: opts.org,
           agent_id: agentId ?? null
         },
+        phone_mode: phoneMode,
+        spend_policy: resolveCliSpendPolicy(),
         org_id: opts.org,
         agent_id: agentId,
         phone_number: phoneNumber,
@@ -34924,14 +35291,14 @@ function registerSim(program3) {
       const adaptiveRuns = Math.max(1, Math.min(120, Number(opts.adaptiveRuns ?? 30)));
       const journeys = opts.journeys ? String(opts.journeys).split(",").map((j) => j.trim()).filter(Boolean) : void 0;
       const scenarioIds = opts.scenarioIds ? String(opts.scenarioIds).split(",").map((id) => id.trim()).filter(Boolean) : void 0;
-      const channel = ["chat", "voice", "mixed"].includes(String(opts.channel ?? "")) ? opts.channel : "mixed";
+      const channel2 = ["chat", "voice", "mixed"].includes(String(opts.channel ?? "")) ? opts.channel : "mixed";
       process.stderr.write(`  Running ${mode} simulation certification for agent ${opts.agent}...
 `);
       const response = await apiFetch(
         `/v1/console/agents/${opts.agent}/sim-certify`,
         {
           method: "POST",
-          body: JSON.stringify({ mode, adaptive_runs: adaptiveRuns, journeys, scenario_ids: scenarioIds, channel }),
+          body: JSON.stringify({ mode, adaptive_runs: adaptiveRuns, journeys, scenario_ids: scenarioIds, channel: channel2 }),
           apiUrlOverride: opts.apiUrl
         }
       );
@@ -34944,8 +35311,8 @@ function registerSim(program3) {
       }
       const cert = response.certificate;
       if (opts.out) {
-        const { writeFileSync: writeFileSync9 } = await import("fs");
-        writeFileSync9(opts.out, JSON.stringify(cert, null, 2) + "\n", "utf-8");
+        const { writeFileSync: writeFileSync12 } = await import("fs");
+        writeFileSync12(opts.out, JSON.stringify(cert, null, 2) + "\n", "utf-8");
         process.stderr.write(`  Certificate written to ${opts.out}
 `);
       }
@@ -34969,7 +35336,7 @@ function registerSim(program3) {
       const maxImprovementRounds = Math.max(0, Math.min(5, Number(opts.maxImprovementRounds ?? 1)));
       const journeys = opts.journeys ? String(opts.journeys).split(",").map((j) => j.trim()).filter(Boolean) : void 0;
       const scenarioIds = opts.scenarioIds ? String(opts.scenarioIds).split(",").map((id) => id.trim()).filter(Boolean) : void 0;
-      const channel = ["chat", "voice", "mixed"].includes(String(opts.channel ?? "")) ? opts.channel : "mixed";
+      const channel2 = ["chat", "voice", "mixed"].includes(String(opts.channel ?? "")) ? opts.channel : "mixed";
       process.stderr.write(`  Running ${mode} certification loop for agent ${opts.agent}...
 `);
       const response = await apiFetch(
@@ -34982,7 +35349,7 @@ function registerSim(program3) {
             max_improvement_rounds: maxImprovementRounds,
             journeys,
             scenario_ids: scenarioIds,
-            channel
+            channel: channel2
           }),
           apiUrlOverride: opts.apiUrl
         }
@@ -34995,8 +35362,8 @@ function registerSim(program3) {
         });
       }
       if (opts.out) {
-        const { writeFileSync: writeFileSync9 } = await import("fs");
-        writeFileSync9(opts.out, JSON.stringify(response.certificate, null, 2) + "\n", "utf-8");
+        const { writeFileSync: writeFileSync12 } = await import("fs");
+        writeFileSync12(opts.out, JSON.stringify(response.certificate, null, 2) + "\n", "utf-8");
         process.stderr.write(`  Final certificate written to ${opts.out}
 `);
       }
@@ -35027,6 +35394,95 @@ ${passIcon}  Certification loop summary
         return;
       }
       throw e;
+    }
+  });
+}
+
+// src/commands/certify.ts
+var import_node_fs2 = require("node:fs");
+function normalizeProfile(raw) {
+  const value = String(raw || "release").trim().toLowerCase();
+  if (value === "smoke" || value === "release" || value === "stress") return value;
+  throw new FohError({
+    step: "certify.run",
+    error: `Invalid certification profile: ${raw}`,
+    remediation: "Use --profile smoke, release, or stress.",
+    statusCode: 400
+  });
+}
+function modeForProfile(profile) {
+  if (profile === "smoke") return "quick";
+  if (profile === "stress") return "stress";
+  return "full";
+}
+function csv(raw) {
+  if (!raw) return void 0;
+  const values = String(raw).split(",").map((value) => value.trim()).filter(Boolean);
+  return values.length > 0 ? values : void 0;
+}
+function channel(raw) {
+  const value = String(raw || "mixed").trim().toLowerCase();
+  if (value === "chat" || value === "voice" || value === "mixed") return value;
+  return "mixed";
+}
+function registerCertify(program3) {
+  const certify = program3.command("certify").description("Produce release certification evidence for an agent");
+  certify.command("run").description("Run certification for an exact agent draft/profile and emit release evidence").requiredOption("--agent <id>", "Agent ID to certify").option("--profile <profile>", "Certification profile: smoke, release, or stress", "release").option("--adaptive-runs <n>", "Adaptive runs for release/stress profiles", "30").option("--journeys <list>", "Comma-separated journey allowlist").option("--scenario-ids <list>", "Comma-separated scenario ID allowlist").option("--channel <channel>", "Channel filter: chat, voice, or mixed", "mixed").option("--out <path>", "Write certification run JSON to this file path").option("--api-url <url>", "API base URL override").option("--json", "Output as machine-readable JSON").action(async (opts) => {
+    try {
+      const profile = normalizeProfile(opts.profile);
+      const mode = modeForProfile(profile);
+      const adaptiveRuns = Math.max(1, Math.min(120, Number(opts.adaptiveRuns ?? 30) || 30));
+      const response = await apiFetch(
+        `/v1/console/agents/${opts.agent}/sim-certify`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            mode,
+            adaptive_runs: adaptiveRuns,
+            journeys: csv(opts.journeys),
+            scenario_ids: csv(opts.scenarioIds),
+            channel: channel(opts.channel)
+          }),
+          apiUrlOverride: opts.apiUrl
+        }
+      );
+      if (!response.ok || !response.certificate) {
+        throw new FohError({
+          step: "certify.run",
+          error: "API did not return a certificate",
+          remediation: "Check that the agent ID is valid and the API is reachable."
+        });
+      }
+      const passed = response.certificate.overall_pass === true;
+      const result = {
+        schema_version: "foh_certification_run.v1",
+        ok: passed,
+        status: passed ? "pass" : "hold",
+        reason_code: passed ? "certification_passed" : "certification_failed",
+        profile,
+        mode,
+        certificate: response.certificate,
+        next_commands: passed ? [`foh agent publish --agent ${opts.agent} --json`] : [`foh certify run --agent ${opts.agent} --profile ${profile} --json`]
+      };
+      if (opts.out) {
+        (0, import_node_fs2.writeFileSync)(opts.out, JSON.stringify(result, null, 2) + "\n", "utf-8");
+      }
+      if (opts.json ?? false) {
+        format(result, { json: true });
+      } else {
+        const summary = response.certificate.scenario_summary;
+        process.stderr.write(`${passed ? "PASS" : "HOLD"} certification ${profile} (${mode})`);
+        if (summary) process.stderr.write(`: ${summary.passed}/${summary.total} scenarios passed`);
+        process.stderr.write("\n");
+      }
+      if (!passed) markCommandFailed(1);
+    } catch (error2) {
+      if (error2 instanceof FohError) {
+        formatError(error2, { json: opts.json ?? false });
+        markCommandFailed(1);
+        return;
+      }
+      throw error2;
     }
   });
 }
@@ -36233,7 +36689,7 @@ function toErrorRecord(error2) {
   return { message: String(error2) };
 }
 function registerDiag(program3) {
-  program3.command("diag").description("Collect support diagnostics bundle for current CLI/API context").requiredOption("--out <path>", "Write diagnostics bundle JSON to this file path").option("--org <id>", "Org ID to probe (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as machine-readable JSON").action(async (opts) => {
+  program3.command("diag").alias("debug").description("Collect support diagnostics bundle for current CLI/API context").requiredOption("--out <path>", "Write diagnostics bundle JSON to this file path").option("--org <id>", "Org ID to probe (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as machine-readable JSON").action(async (opts) => {
     try {
       const checks = [];
       const generatedAt = (/* @__PURE__ */ new Date()).toISOString();
@@ -36440,14 +36896,35 @@ function inferReasonCode(artifact) {
 function inferPromotionDecision(sourceType, reasonCode) {
   const reason = String(reasonCode || "").toLowerCase();
   if (sourceType === "external_agent_run") {
+    if (reason.includes("friendlyname") || reason.includes("guardrail") || reason.includes("rule_id") || reason.includes("api") || reason.includes("http_4") || reason.includes("http_5") || reason.includes("404") || reason.includes("500") || reason.includes("roundtrip")) return "fix_api";
+    if (reason.includes("contact_phone") || reason.includes("voice_contact") || reason.includes("voice_not_included") || reason.includes("agent_limit") || reason.includes("org_") || reason.includes("template_apply")) return "fix_config";
     if (reason.includes("exec_policy") || reason.includes("policy_blocked") || reason.includes("auth") || reason.includes("config")) return "fix_config";
     if (reason.includes("cli") || reason.includes("command") || reason.includes("flag")) return "fix_cli";
+    if (reason.includes("proof") || reason.includes("certification") || reason.includes("simulation")) return "add_test";
     return "fix_docs";
   }
   if (sourceType === "knowledge_miss") return "fix_docs";
   if (sourceType === "setup_failure" || sourceType === "proof_failure" || sourceType === "live_proof_failure") return "fix_config";
   if (sourceType === "replay_failure" || sourceType === "runtime_miss") return "add_test";
   return "fix_runtime";
+}
+function inferOwnerSubsystem(sourceType, reasonCode) {
+  const reason = String(reasonCode || "").toLowerCase();
+  if (sourceType === "external_agent_run") {
+    if (reason.includes("simulation") || reason.includes("certification") || reason.includes("scenario")) return "dojo_certification";
+    if (reason.includes("contact_phone") || reason.includes("voice_contact") || reason.includes("voice_not_included") || reason.includes("byon") || reason.includes("provider_capacity")) return "voice_contact";
+    if (reason.includes("eval_auth") || reason.includes("exec_policy") || reason.includes("policy_blocked") || reason.includes("sandbox") || reason.includes("runner") || reason.includes("codex")) return "infra_runner";
+    if (reason.includes("friendlyname") || reason.includes("guardrail") || reason.includes("rule_id") || reason.includes("api") || reason.includes("http_4") || reason.includes("http_5") || reason.includes("404") || reason.includes("500") || reason.includes("roundtrip")) return "api_contract";
+    if (reason.includes("cli") || reason.includes("command") || reason.includes("flag")) return "cli";
+    if (reason.includes("docs") || reason.includes("unclear") || reason.includes("not_found")) return "docs";
+    if (reason.includes("runtime") || reason.includes("widget") || reason.includes("proof")) return "runtime";
+    return "product_ux";
+  }
+  if (sourceType === "knowledge_miss") return "docs";
+  if (sourceType === "replay_failure" || sourceType === "runtime_miss") return "runtime";
+  if (sourceType === "proof_failure" || sourceType === "live_proof_failure") return "runtime";
+  if (sourceType === "setup_failure") return "product_ux";
+  return "product_ux";
 }
 function collectIds(artifact, explicit = {}) {
   const source = getPath2(artifact, "source");
@@ -36487,6 +36964,17 @@ function defaultNextCommands(input) {
   }
   if (input.sourceType === "external_agent_run" && input.sourceArtifactPath) {
     commands.push(`foh bug improve --from external-agent-run --file ${input.sourceArtifactPath} --json`);
+  }
+  if (input.ownerSubsystem === "dojo_certification") {
+    commands.push(input.ids.agent_id ? `foh sim certify-loop --agent ${input.ids.agent_id} --json` : "foh sim certify-loop --agent <agent_id> --json");
+  }
+  if (input.ownerSubsystem === "voice_contact") {
+    commands.push("foh provision status --json");
+    commands.push(input.ids.agent_id ? `foh prove --agent ${input.ids.agent_id} --mission voice --contact-path auto --json` : "foh prove --mission voice --contact-path auto --json");
+  }
+  if (input.ownerSubsystem === "infra_runner") {
+    commands.push("foh auth whoami --json");
+    commands.push("foh eval external-agent execute --runner codex --dry-run --json");
   }
   if (input.sourceArtifactPath) {
     commands.push(`foh bug report --out test-results/bug-report.from-improvement.json --command "investigate ${input.reasonCode}" --request-url https://front-of-house-api.stldocs.app/api --response-status 500 --next-check "Review ${(0, import_path7.basename)(input.sourceArtifactPath)}" --json`);
@@ -36543,12 +37031,13 @@ function buildImprovementPacket(input) {
     });
   }
   const promotionDecision = parseEnum(input.promotionDecision, IMPROVEMENT_DECISIONS, "--recommendation") ?? inferPromotionDecision(sourceType, reasonCode);
+  const ownerSubsystem = inferOwnerSubsystem(sourceType, reasonCode);
   const evidenceSummary = redactString(
     nonEmpty2(input.evidenceSummary) ?? nonEmpty2(getPath2(artifact, "summary")) ?? `Improvement candidate generated from ${sourceType} with reason ${reasonCode}.`
   );
   const nextCommands = Array.from(new Set([
     ...input.nextCommands ?? [],
-    ...defaultNextCommands({ sourceType, ids, sourceArtifactPath: input.sourceArtifactPath, reasonCode })
+    ...defaultNextCommands({ sourceType, ids, sourceArtifactPath: input.sourceArtifactPath, reasonCode, ownerSubsystem })
   ].map((command) => command.trim()).filter(Boolean)));
   const packet = {
     schema_version: "foh_improvement_packet.v1",
@@ -36556,6 +37045,12 @@ function buildImprovementPacket(input) {
     source_type: sourceType,
     reason_code: reasonCode,
     promotion_decision: promotionDecision,
+    owner_subsystem: ownerSubsystem,
+    routing: {
+      owner_subsystem: ownerSubsystem,
+      promotion_decision: promotionDecision,
+      reason_family: ownerSubsystem
+    },
     ids,
     evidence: {
       summary: evidenceSummary,
@@ -36932,6 +37427,106 @@ function registerBug(program3) {
   });
 }
 
+// src/lib/proof-cache.ts
+var import_node_crypto2 = require("node:crypto");
+var import_node_fs3 = require("node:fs");
+var import_node_path = require("node:path");
+var DEFAULT_MAX_AGE_MS = 15 * 60 * 1e3;
+var DEFAULT_WAIT_MS = 180 * 1e3;
+var DEFAULT_POLL_MS = 500;
+function sleep3(ms) {
+  return new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
+}
+function stableJson(value) {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    return `{${Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, entry]) => `${JSON.stringify(key)}:${stableJson(entry)}`).join(",")}}`;
+  }
+  return JSON.stringify(value);
+}
+function cacheKey2(kind, keyParts) {
+  return (0, import_node_crypto2.createHash)("sha256").update(stableJson({ kind, keyParts, schema_version: "foh_proof_cache_key.v1" })).digest("hex").slice(0, 32);
+}
+function publicPath(filePath) {
+  const rel = (0, import_node_path.relative)(process.cwd(), filePath).replaceAll("\\", "/");
+  return rel.startsWith("..") ? filePath.replaceAll("\\", "/") : rel;
+}
+function readFreshCache(filePath, maxAgeMs) {
+  try {
+    const payload = JSON.parse((0, import_node_fs3.readFileSync)(filePath, "utf8"));
+    const createdAt = Date.parse(String(payload.created_at || ""));
+    if (!Number.isFinite(createdAt)) return null;
+    if (Date.now() - createdAt > maxAgeMs) return null;
+    return payload.value ?? null;
+  } catch {
+    return null;
+  }
+}
+function writeCache(filePath, value) {
+  (0, import_node_fs3.mkdirSync)((0, import_node_path.dirname)(filePath), { recursive: true });
+  (0, import_node_fs3.writeFileSync)(filePath, `${JSON.stringify({
+    schema_version: "foh_proof_cache_entry.v1",
+    created_at: (/* @__PURE__ */ new Date()).toISOString(),
+    value
+  }, null, 2)}
+`, "utf8");
+}
+function resolveProofCacheDir(input) {
+  const value = String(input || process.env.FOH_PROOF_CACHE_DIR || "").trim();
+  if (!value) return null;
+  return (0, import_node_path.isAbsolute)(value) ? value : (0, import_node_path.resolve)(process.cwd(), value);
+}
+async function withProofCache(options, run) {
+  const resolvedDir = resolveProofCacheDir(options.cacheDir);
+  if (!resolvedDir) {
+    return {
+      value: await run(),
+      metadata: { hit: false, key: "disabled", cache_path: "", waited_ms: 0 }
+    };
+  }
+  const key = cacheKey2(options.kind, options.keyParts);
+  const cachePath = (0, import_node_path.join)(resolvedDir, `${key}.json`);
+  const lockPath = (0, import_node_path.join)(resolvedDir, `${key}.lock`);
+  const maxAgeMs = options.maxAgeMs ?? DEFAULT_MAX_AGE_MS;
+  const waitMs = options.waitMs ?? Number(process.env.FOH_PROOF_CACHE_WAIT_MS || DEFAULT_WAIT_MS);
+  const pollMs = options.pollMs ?? DEFAULT_POLL_MS;
+  (0, import_node_fs3.mkdirSync)(resolvedDir, { recursive: true });
+  const existing = readFreshCache(cachePath, maxAgeMs);
+  if (existing) {
+    return {
+      value: existing,
+      metadata: { hit: true, key, cache_path: publicPath(cachePath), waited_ms: 0 }
+    };
+  }
+  let lockOwner = false;
+  try {
+    (0, import_node_fs3.mkdirSync)(lockPath);
+    lockOwner = true;
+  } catch {
+    const started = Date.now();
+    while (Date.now() - started < waitMs) {
+      await sleep3(pollMs);
+      const waitedValue = readFreshCache(cachePath, maxAgeMs);
+      if (waitedValue) {
+        return {
+          value: waitedValue,
+          metadata: { hit: true, key, cache_path: publicPath(cachePath), waited_ms: Date.now() - started }
+        };
+      }
+    }
+  }
+  try {
+    const value = await run();
+    writeCache(cachePath, value);
+    return {
+      value,
+      metadata: { hit: false, key, cache_path: publicPath(cachePath), waited_ms: 0 }
+    };
+  } finally {
+    if (lockOwner) (0, import_node_fs3.rmSync)(lockPath, { recursive: true, force: true });
+  }
+}
+
 // src/commands/prove.ts
 function categoryForCheck(name) {
   if (name === "auth") return "auth";
@@ -36959,8 +37554,8 @@ function hasBlockingChecks(checks) {
 }
 function publicKeyFromEnsureResponse(response) {
   const record2 = response && typeof response === "object" ? response : {};
-  const channel = record2.channel && typeof record2.channel === "object" ? record2.channel : {};
-  const publicKey = channel.public_key ?? record2.widget_public_key ?? record2.public_key;
+  const channel2 = record2.channel && typeof record2.channel === "object" ? record2.channel : {};
+  const publicKey = channel2.public_key ?? record2.widget_public_key ?? record2.public_key;
   return typeof publicKey === "string" && publicKey.trim() ? publicKey.trim() : void 0;
 }
 function publicKeyFromEmbedResponse(response) {
@@ -36978,6 +37573,11 @@ function normalizeMutationMode(raw, repair) {
   const value = String(raw || "read-only").trim().toLowerCase();
   return value === "ensure" ? "ensure" : "read-only";
 }
+function normalizeContactPath(raw) {
+  const value = String(raw || "auto").trim().toLowerCase();
+  if (value === "managed" || value === "byon") return value;
+  return "auto";
+}
 function agentIdFromList(response) {
   const agents = Array.isArray(response.agents) ? response.agents : [];
   const usable = agents.filter((agent) => typeof agent.id === "string" && agent.id.trim());
@@ -36991,11 +37591,43 @@ function firstUsableOrgId(response) {
   const usable = orgs.map((org) => org && typeof org === "object" ? org : {}).map((org) => String(org.org_id ?? org.id ?? "").trim()).filter(Boolean);
   return { orgId: usable.length === 1 ? usable[0] : void 0, count: usable.length };
 }
+function readStringField(record2, keys) {
+  for (const key of keys) {
+    const value = record2[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return "";
+}
+function isProviderCapacityBlocked(onboarding) {
+  const code = readStringField(onboarding, [
+    "provisioning_reason_code",
+    "provisioning_error_code",
+    "reason_code",
+    "code"
+  ]).toLowerCase();
+  if ([
+    "provider_capacity_blocked",
+    "twilio_subaccount_limit_reached",
+    "reserve_pool_exhausted",
+    "global_safety_limit_reached"
+  ].includes(code)) {
+    return true;
+  }
+  const message = readStringField(onboarding, [
+    "provisioning_error",
+    "provisioning_message",
+    "error",
+    "message"
+  ]).toLowerCase();
+  return /maximum number of subaccounts|subaccount limit|reserve[- ]number pool|reserve pool exhausted|global safety limit/.test(message);
+}
 function registerProve(program3) {
-  program3.command("prove").description("Produce one setup/runtime proof bundle for an agent").option("--agent <id>", "Agent ID to prove").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--cert-mode <m>", "Simulation cert mode: quick, full, stress", "quick").option("--cert-adaptive-runs <n>", "Adaptive runs for full/stress certification", "30").option("--cert-max-improvement-rounds <n>", "Max prompt improvement rounds in cert loop (0-5)", "1").option("--mission <mission>", "Proof mission: setup, widget, voice, publish", "setup").option("--mutation-mode <mode>", "Proof mutation mode: read-only or ensure", "read-only").option("--repair", "Alias for --mutation-mode ensure").option("--require-phone", "Hold proof if no phone/contact number is provisioned").option("--skip-cert", "Skip simulation certification check").option("--skip-smoke", "Skip widget runtime smoke check").option("--skip-voice-health", "Skip realtime voice provider health check").option("--out <path>", "Write signed proof report JSON to this path").option("--strict", "Exit non-zero unless all non-skipped checks pass").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+  program3.command("prove").description("Produce one setup/runtime proof bundle for an agent").option("--agent <id>", "Agent ID to prove").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--include-certification", "Run explicit simulation certification check (slow)").option("--cert-mode <m>", "Simulation cert mode when --include-certification is set: quick, full, stress", "quick").option("--cert-adaptive-runs <n>", "Adaptive runs for full/stress certification when included", "30").option("--cert-max-improvement-rounds <n>", "Max prompt improvement rounds in included cert loop (0-5)", "1").option("--mission <mission>", "Proof mission: setup, widget, voice, publish", "setup").option("--contact-path <mode>", "Voice contact path: auto, managed, or byon", "auto").option("--mutation-mode <mode>", "Proof mutation mode: read-only or ensure", "read-only").option("--repair", "Alias for --mutation-mode ensure").option("--require-phone", "Hold proof if no phone/contact number is provisioned").option("--skip-cert", "Deprecated compatibility flag; certification is skipped unless --include-certification is set").option("--skip-smoke", "Skip widget runtime smoke check").option("--skip-voice-health", "Skip realtime voice provider health check").option("--proof-cache-dir <path>", "Optional local proof cache directory for shared certification results").option("--out <path>", "Write signed proof report JSON to this path").option("--strict", "Exit non-zero unless all non-skipped checks pass").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
     const checks = [];
     const mission = normalizeMission(opts.mission);
+    const contactPath = normalizeContactPath(opts.contactPath);
     const mutationMode = normalizeMutationMode(opts.mutationMode, Boolean(opts.repair));
+    let validationFingerprint = null;
     const ctx = {
       tokenPresent: false,
       traceIds: [],
@@ -37077,6 +37709,7 @@ function registerProve(program3) {
           apiUrlOverride: opts.apiUrl
         });
         const issues = Array.isArray(validation.issues) ? validation.issues : [];
+        validationFingerprint = validation;
         if (validation.ok === false || issues.length > 0) {
           checks.push(hold("agent_validation", "agent_validation_issues", `Agent validation returned ${issues.length} issue(s).`, `foh agent validate --agent ${ctx.agentId} --json`, validation));
         } else {
@@ -37092,15 +37725,56 @@ function registerProve(program3) {
             apiUrlOverride: opts.apiUrl
           });
           const phoneNumber = typeof onboarding.phone_number === "string" && onboarding.phone_number.trim() ? onboarding.phone_number.trim() : null;
+          const provisioningStatus = typeof onboarding.provisioning_status === "string" ? onboarding.provisioning_status : null;
           if (phoneNumber) {
             checks.push(pass("contact_channel", "Contact phone number is provisioned.", {
               phone_number_present: true,
-              provisioning_status: onboarding.provisioning_status ?? null
+              provisioning_status: provisioningStatus,
+              contact_path: contactPath
+            }));
+          } else if (contactPath === "byon" && (opts.requirePhone || mission === "voice")) {
+            checks.push(hold("contact_channel", "byon_voice_number_not_configured", "BYON/customer-owned voice contact path was requested, but no contact phone is configured for this org.", `foh provision status --org ${ctx.orgId} --json`, {
+              provisioning_status: provisioningStatus,
+              mission,
+              contact_path: contactPath,
+              spend_policy: resolveCliSpendPolicy(),
+              spend_class: "customer_owned",
+              safe_to_retry: false,
+              operator_note: "Attach or configure the customer-owned voice number, then rerun proof. This path should not buy a FOH-owned number."
+            }));
+          } else if (provisioningStatus === "failed" && isProviderCapacityBlocked(onboarding) && (opts.requirePhone || mission === "voice")) {
+            checks.push(hold("contact_channel", "provider_capacity_blocked", "Phone/contact provisioning is blocked by provider/account capacity or empty reserve inventory.", `foh provision status --org ${ctx.orgId} --json`, {
+              provisioning_status: provisioningStatus,
+              mission,
+              contact_path: contactPath,
+              spend_policy: resolveCliSpendPolicy(),
+              spend_class: "paid_foh",
+              safe_to_retry: false,
+              operator_note: "Do not retry blindly. Resolve provider/account capacity or use BYON/customer-owned contact path."
+            }));
+          } else if (provisioningStatus === "failed" && (opts.requirePhone || mission === "voice")) {
+            checks.push(hold("contact_channel", "contact_phone_provisioning_failed", "Phone/contact provisioning failed for this org.", `foh provision status --org ${ctx.orgId} --json`, {
+              provisioning_status: provisioningStatus,
+              mission,
+              contact_path: contactPath,
+              spend_policy: resolveCliSpendPolicy()
+            }));
+          } else if (isNoSpendPolicy() && (opts.requirePhone || mission === "voice")) {
+            checks.push(hold("contact_channel", "voice_contact_expected_no_spend_hold", "No phone/contact number is provisioned; this is expected in no-spend eval mode unless a BYON/customer-approved phone path exists.", `foh provision status --org ${ctx.orgId} --json`, {
+              provisioning_status: provisioningStatus,
+              mission,
+              contact_path: contactPath,
+              spend_policy: resolveCliSpendPolicy(),
+              spend_class: "free",
+              safe_to_retry: true,
+              operator_note: "No-spend proof observes contact readiness only. Do not buy a FOH-owned number during mass evals."
             }));
           } else if (opts.requirePhone || mission === "voice") {
             checks.push(hold("contact_channel", "contact_phone_missing", "No phone/contact number is provisioned for this org.", `foh provision buy --org ${ctx.orgId} --json`, {
-              provisioning_status: onboarding.provisioning_status ?? null,
-              mission
+              provisioning_status: provisioningStatus,
+              mission,
+              contact_path: contactPath,
+              spend_policy: resolveCliSpendPolicy()
             }));
           } else {
             checks.push(skipped("contact_channel", "contact_phone_not_required", "No phone/contact number is provisioned; pass --require-phone to make this a blocker.", `foh provision buy --org ${ctx.orgId} --json`));
@@ -37204,29 +37878,57 @@ function registerProve(program3) {
         }
       }
       if (opts.skipCert) {
-        checks.push(skipped("simulation_certification", "operator_skipped", "Skipped by --skip-cert.", `foh sim certify-loop --agent ${ctx.agentId} --json`));
+        checks.push(skipped("simulation_certification", "operator_skipped", "Skipped by --skip-cert.", `foh certify run --agent ${ctx.agentId} --profile release --json`));
+      } else if (!opts.includeCertification) {
+        checks.push(skipped(
+          "simulation_certification",
+          "certification_explicitly_required",
+          "Runtime proof does not run release certification by default.",
+          `foh certify run --agent ${ctx.agentId} --profile release --json`
+        ));
       } else {
         try {
           const certMode = normalizeAgentCertMode(opts.certMode);
-          const loop = await runSetupCertifyLoop(ctx.agentId, {
+          const agentId = ctx.agentId;
+          const adaptiveRuns = Math.max(1, Number(opts.certAdaptiveRuns ?? 30) || 30);
+          const maxImprovementRounds = Math.max(0, Math.min(5, Number(opts.certMaxImprovementRounds ?? 1) || 1));
+          const cached2 = await withProofCache({
+            cacheDir: opts.proofCacheDir,
+            kind: "simulation_certification",
+            keyParts: {
+              agent_id: agentId,
+              org_id: ctx.orgId,
+              api_url: opts.apiUrl || ctx.apiUrl || null,
+              cert_mode: certMode,
+              adaptive_runs: adaptiveRuns,
+              max_improvement_rounds: maxImprovementRounds,
+              validation_fingerprint: validationFingerprint
+            }
+          }, () => runSetupCertifyLoop(agentId, {
             mode: certMode,
-            adaptiveRuns: Math.max(1, Number(opts.certAdaptiveRuns ?? 30) || 30),
-            maxImprovementRounds: Math.max(0, Math.min(5, Number(opts.certMaxImprovementRounds ?? 1) || 1)),
+            adaptiveRuns,
+            maxImprovementRounds,
             orgId: ctx.orgId,
             apiUrlOverride: opts.apiUrl
-          });
+          }));
+          const loop = cached2.value;
+          const loopWithCache = {
+            ...loop,
+            proof_cache: cached2.metadata
+          };
           if (!loop.overall_pass) {
-            checks.push(hold("simulation_certification", "simulation_certification_failed", "Simulation certification did not pass.", `foh sim certify-loop --agent ${ctx.agentId} --${certMode === "quick" ? "full" : certMode} --json`, loop));
+            checks.push(hold("simulation_certification", "simulation_certification_failed", "Simulation certification did not pass.", `foh certify run --agent ${agentId} --profile ${certMode === "quick" ? "smoke" : certMode === "stress" ? "stress" : "release"} --json`, loopWithCache));
           } else {
             checks.push(pass("simulation_certification", "Simulation certification passed.", {
               mode: loop.mode,
               attempts: loop.attempts?.length ?? 0,
               improvement_runs: loop.improvement_runs,
-              scenario_summary: loop.certificate?.scenario_summary
+              scenario_summary: loop.certificate?.scenario_summary,
+              proof_cache: cached2.metadata
             }));
           }
         } catch (error2) {
-          checks.push(fail("simulation_certification", "simulation_certification_failed", error2, `foh sim certify-loop --agent ${ctx.agentId} --json`));
+          checks.push(fail("simulation_certification", "simulation_certification_failed", error2, `foh certify run --agent ${ctx.agentId} --profile release --json`));
         }
       }
     } else {
@@ -37252,6 +37954,7 @@ function registerProve(program3) {
         org_id: ctx.orgId ?? null,
         agent_id: ctx.agentId ?? null,
         mission,
+        contact_path: contactPath,
         mutation_mode: mutationMode,
         widget_public_key_present: Boolean(ctx.widgetPublicKey),
         conversation_id: ctx.conversationId ?? null,
@@ -37715,7 +38418,7 @@ async function runSelf(args, apiUrlOverride) {
   if (apiUrlOverride && !spawnArgs.includes("--api-url")) {
     spawnArgs.push("--api-url", apiUrlOverride);
   }
-  return await new Promise((resolve12, reject) => {
+  return await new Promise((resolve13, reject) => {
     const child = (0, import_child_process2.spawn)(process.execPath, [process.argv[1], ...spawnArgs], {
       stdio: "inherit",
       env: {
@@ -37725,7 +38428,7 @@ async function runSelf(args, apiUrlOverride) {
       }
     });
     child.once("error", reject);
-    child.once("close", (code) => resolve12(typeof code === "number" ? code : 1));
+    child.once("close", (code) => resolve13(typeof code === "number" ? code : 1));
   });
 }
 function shouldUseInteractiveHome(argv) {
@@ -38103,17 +38806,17 @@ function detectUpdateAvailability(currentVersion, cwd = process.cwd()) {
 async function applyRepoUpdate(repoRoot) {
   const scriptPath = (0, import_path9.join)(repoRoot, "scripts", "Install-FohCli.ps1");
   if (process.platform === "win32") {
-    return await new Promise((resolve12, reject) => {
+    return await new Promise((resolve13, reject) => {
       const child = (0, import_child_process3.spawn)(
         "powershell",
         ["-ExecutionPolicy", "Bypass", "-File", scriptPath],
         { stdio: "inherit" }
       );
       child.once("error", reject);
-      child.once("close", (code) => resolve12(typeof code === "number" ? code : 1));
+      child.once("close", (code) => resolve13(typeof code === "number" ? code : 1));
     });
   }
-  return await new Promise((resolve12, reject) => {
+  return await new Promise((resolve13, reject) => {
     const child = (0, import_child_process3.spawn)(
       "corepack",
       ["pnpm", "cli:install:global"],
@@ -38123,7 +38826,7 @@ async function applyRepoUpdate(repoRoot) {
       }
     );
     child.once("error", reject);
-    child.once("close", (code) => resolve12(typeof code === "number" ? code : 1));
+    child.once("close", (code) => resolve13(typeof code === "number" ? code : 1));
   });
 }
 function shouldShowUpdateNotice(argv = process.argv) {
@@ -38259,8 +38962,8 @@ function registerUpdate(program3) {
 }
 
 // src/commands/eval.ts
-var import_fs15 = require("fs");
-var import_path13 = require("path");
+var import_fs16 = require("fs");
+var import_path14 = require("path");
 var import_child_process5 = require("child_process");
 
 // src/lib/external-agent-artifact-safety.ts
@@ -38281,7 +38984,8 @@ var TEXT_ARTIFACT_NAMES = /* @__PURE__ */ new Set([
   "run.json",
   "terminal-transcript.txt"
 ]);
-var SECRET_RE2 = /\b(?:Bearer\s+)?(?:sk|pk|xai|whsec|EAAN|ghp|gho|github_pat|npm_)[A-Za-z0-9_\-.]{12,}\b/gi;
+var SECRET_RE2 = /\b(?:Bearer\s+[A-Za-z0-9_\-.]{12,}|(?:sk|pk|xai|whsec|EAAN|ghp|gho|github_pat)[A-Za-z0-9_\-.]{12,}|npm_[A-Za-z0-9]{20,})\b/g;
+var SECRET_QUERY_PARAM_RE = /\b((?:device_code|access_token|refresh_token|api_key|token)=)[A-Za-z0-9_.~-]{12,}/gi;
 var EMAIL_RE2 = /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi;
 var PHONE_RE2 = /(?<!\w)(?:\+?\d[\d\s().-]{7,}\d)(?!\w)/g;
 function escapeRegExp(value) {
@@ -38308,6 +39012,9 @@ function matchesFor(pattern, text) {
   const matches = text.match(pattern);
   return matches ? matches.length : 0;
 }
+function secretMatches(text) {
+  return matchesFor(SECRET_RE2, text) + matchesFor(SECRET_QUERY_PARAM_RE, text);
+}
 function redactionPatterns(input) {
   return {
     secret: SECRET_RE2,
@@ -38319,16 +39026,21 @@ function redactionPatterns(input) {
 }
 function redactExternalAgentArtifactText(text, input = {}) {
   const patterns = redactionPatterns(input);
-  let redacted = text.replace(patterns.secret, "[redacted_secret]").replace(patterns.email, "[redacted_email]").replace(patterns.phone, "[redacted_phone]");
+  let redacted = redactExternalAgentSecretText(text).replace(patterns.email, "[redacted_email]").replace(patterns.phone, "[redacted_phone]");
   if (patterns.privateRepo) redacted = redacted.replace(patterns.privateRepo, "[redacted_private_repo_path]");
   if (patterns.home) redacted = redacted.replace(patterns.home, "[redacted_home_path]");
   return redacted;
+}
+function redactExternalAgentSecretText(text) {
+  return text.replace(SECRET_QUERY_PARAM_RE, "$1[redacted_secret]").replace(SECRET_RE2, "[redacted_secret]");
 }
 function artifactFiles(runDir) {
   if (!(0, import_fs12.existsSync)(runDir)) return [];
   return (0, import_fs12.readdirSync)(runDir).map((name) => (0, import_path10.join)(runDir, name)).filter((path2) => {
     const stat = (0, import_fs12.statSync)(path2);
-    return stat.isFile() && TEXT_ARTIFACT_NAMES.has(path2.split(/[\\/]/).pop() || "");
+    const name = path2.split(/[\\/]/).pop() || "";
+    if (name.endsWith(".redacted")) return false;
+    return stat.isFile() && (TEXT_ARTIFACT_NAMES.has(name) || name.startsWith("command-output-cmd_"));
   }).sort();
 }
 function finding(kind, file2, count) {
@@ -38343,7 +39055,7 @@ function finding(kind, file2, count) {
 function scanText(input) {
   const patterns = redactionPatterns(input);
   return [
-    finding("secret_like_token", input.file, matchesFor(patterns.secret, input.text)),
+    finding("secret_like_token", input.file, secretMatches(input.text)),
     finding("private_repo_path", input.file, matchesFor(patterns.privateRepo, input.text)),
     finding("local_home_path", input.file, matchesFor(patterns.home, input.text)),
     finding("email_address", input.file, matchesFor(patterns.email, input.text)),
@@ -38401,7 +39113,7 @@ var EXTERNAL_AGENT_RUN_DIR_ENV = "FOH_EXTERNAL_AGENT_RUN_DIR";
 var EXTERNAL_AGENT_PROMPT_VERSION_ENV = "FOH_EXTERNAL_AGENT_PROMPT_VERSION";
 var SECRET_RE3 = /\b(?:Bearer\s+)?(?:sk|pk|xai|whsec|EAAN|ghp|gho|github_pat|npm_)[A-Za-z0-9_\-.]{12,}\b/gi;
 function redactText(value) {
-  return value.replace(SECRET_RE3, "[redacted_secret]");
+  return redactExternalAgentSecretText(value).replace(SECRET_RE3, "[redacted_secret]");
 }
 function redactPath(value) {
   let redacted = redactText(value);
@@ -38417,43 +39129,240 @@ function getExternalAgentRunDir() {
   if (!raw || !raw.trim()) return null;
   return (0, import_path11.resolve)(raw);
 }
+function commandIdFor(input) {
+  const seed = `${input.startedAt}:${input.argv.join("\0")}:${process.pid}`;
+  let hash2 = 2166136261;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash2 ^= seed.charCodeAt(i);
+    hash2 = Math.imul(hash2, 16777619);
+  }
+  return `cmd_${(hash2 >>> 0).toString(16).padStart(8, "0")}`;
+}
+function outputArtifactName(commandId) {
+  return `command-output-${commandId}.txt`;
+}
+function collectCheckReasonCodes(parsed) {
+  const checks = Array.isArray(parsed.checks) ? parsed.checks : [];
+  const codes = /* @__PURE__ */ new Set();
+  for (const check2 of checks) {
+    if (!check2 || typeof check2 !== "object") continue;
+    const record2 = check2;
+    const status = typeof record2.status === "string" ? record2.status.toLowerCase() : "";
+    const reasonCode = typeof record2.reason_code === "string" ? record2.reason_code.trim() : "";
+    if (reasonCode && status && status !== "pass" && status !== "skipped") {
+      codes.add(reasonCode);
+    }
+  }
+  return Array.from(codes);
+}
+function parseEnvelope(text) {
+  const candidates = [
+    ...text.split(/\r?\n/).map((line) => line.trim()).filter((line) => line.startsWith("{") && line.endsWith("}")).reverse()
+  ];
+  const firstObject = text.indexOf("{");
+  const lastObject = text.lastIndexOf("}");
+  if (firstObject >= 0 && lastObject > firstObject) candidates.push(text.slice(firstObject, lastObject + 1));
+  for (const candidate of candidates) {
+    try {
+      const parsed = JSON.parse(candidate);
+      const status = typeof parsed.status === "string" ? parsed.status : parsed.ok === true ? "pass" : parsed.ok === false ? "fail" : null;
+      const reasonCode = typeof parsed.reason_code === "string" ? parsed.reason_code : typeof parsed.code === "string" ? parsed.code : null;
+      const checkReasonCodes = collectCheckReasonCodes(parsed);
+      if (status || reasonCode || checkReasonCodes.length > 0) return { status, reasonCode, checkReasonCodes };
+    } catch {
+    }
+  }
+  return { status: null, reasonCode: null, checkReasonCodes: [] };
+}
 function recordExternalAgentCliInvocation(input) {
   const runDir = getExternalAgentRunDir();
-  if (!runDir) return;
+  if (!runDir) return null;
   try {
     (0, import_fs13.mkdirSync)(runDir, { recursive: true });
+    const startedAt = (/* @__PURE__ */ new Date()).toISOString();
     const args = input.argv.slice(2).map((arg) => redactText(String(arg)));
+    const commandId = commandIdFor({ startedAt, argv: args });
+    const promptVersion = process.env[EXTERNAL_AGENT_PROMPT_VERSION_ENV] || null;
+    const cwd = redactPath(process.cwd());
     const record2 = {
-      schema_version: "external_agent_cli_command.v1",
-      recorded_at: (/* @__PURE__ */ new Date()).toISOString(),
+      schema_version: "external_agent_cli_command.v2",
+      command_id: commandId,
+      phase: "started",
+      recorded_at: startedAt,
       cli_version: input.cliVersion,
-      cwd: redactPath(process.cwd()),
+      cwd,
       argv: args,
       command: args.join(" "),
       json_requested: args.includes("--json"),
-      prompt_version: process.env[EXTERNAL_AGENT_PROMPT_VERSION_ENV] || null
+      prompt_version: promptVersion,
+      started_at: startedAt
     };
     (0, import_fs13.appendFileSync)((0, import_path11.join)(runDir, "commands.ndjson"), safeJsonLine(record2), "utf8");
+    return {
+      commandId,
+      runDir,
+      startedAt,
+      cliVersion: input.cliVersion,
+      cwd,
+      argv: args,
+      command: args.join(" "),
+      jsonRequested: args.includes("--json"),
+      promptVersion
+    };
   } catch {
+    return null;
   }
+}
+function installExternalAgentCliCompletionRecorder(capture) {
+  if (!capture) return;
+  const chunks = [];
+  const maxChars = 256 * 1024;
+  const originalStdoutWrite = process.stdout.write.bind(process.stdout);
+  const originalStderrWrite = process.stderr.write.bind(process.stderr);
+  function captureChunk(chunk) {
+    if (typeof chunk === "string") {
+      if (chunks.join("").length < maxChars) chunks.push(chunk.slice(0, maxChars));
+      return;
+    }
+    if (Buffer.isBuffer(chunk)) {
+      if (chunks.join("").length < maxChars) chunks.push(chunk.toString("utf8").slice(0, maxChars));
+    }
+  }
+  process.stdout.write = ((chunk, ...args) => {
+    captureChunk(chunk);
+    return originalStdoutWrite(chunk, ...args);
+  });
+  process.stderr.write = ((chunk, ...args) => {
+    captureChunk(chunk);
+    return originalStderrWrite(chunk, ...args);
+  });
+  process.once("exit", (code) => {
+    try {
+      process.stdout.write = originalStdoutWrite;
+      process.stderr.write = originalStderrWrite;
+      const output = redactPath(chunks.join("").slice(0, maxChars));
+      completeExternalAgentCliInvocation(capture, {
+        output,
+        exitCode: Number.isInteger(code) ? code : process.exitCode && Number.isInteger(process.exitCode) ? Number(process.exitCode) : null
+      });
+    } catch {
+    }
+  });
+}
+function completeExternalAgentCliInvocation(capture, input) {
+  const completedAt = input.completedAt || (/* @__PURE__ */ new Date()).toISOString();
+  const output = redactPath(String(input.output || "").slice(0, 256 * 1024));
+  const parsed = parseEnvelope(output);
+  const exitCode = Number.isInteger(input.exitCode) ? Number(input.exitCode) : null;
+  const status = parsed.status ?? (exitCode === 0 ? "pass" : exitCode === null ? null : "fail");
+  let artifact = null;
+  if (output.trim()) {
+    artifact = outputArtifactName(capture.commandId);
+    (0, import_fs13.writeFileSync)((0, import_path11.join)(capture.runDir, artifact), output, "utf8");
+  }
+  const record2 = {
+    schema_version: "external_agent_cli_command.v2",
+    command_id: capture.commandId,
+    phase: "completed",
+    recorded_at: completedAt,
+    cli_version: capture.cliVersion,
+    cwd: capture.cwd,
+    argv: capture.argv,
+    command: capture.command,
+    json_requested: capture.jsonRequested,
+    prompt_version: capture.promptVersion,
+    started_at: capture.startedAt,
+    completed_at: completedAt,
+    duration_ms: Math.max(0, Date.parse(completedAt) - Date.parse(capture.startedAt)),
+    exit_code: exitCode,
+    status,
+    reason_code: parsed.reasonCode,
+    check_reason_codes: parsed.checkReasonCodes,
+    output_artifact: artifact,
+    output_bytes: Buffer.byteLength(output, "utf8")
+  };
+  (0, import_fs13.appendFileSync)((0, import_path11.join)(capture.runDir, "commands.ndjson"), safeJsonLine(record2), "utf8");
 }
 function readCommandRecords(runDir) {
   const commandLogPath = (0, import_path11.join)(runDir, "commands.ndjson");
   if (!(0, import_fs13.existsSync)(commandLogPath)) return [];
-  return (0, import_fs13.readFileSync)(commandLogPath, "utf8").split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => JSON.parse(line));
+  const records = (0, import_fs13.readFileSync)(commandLogPath, "utf8").split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => JSON.parse(line));
+  const byId = /* @__PURE__ */ new Map();
+  const ordered = [];
+  for (const record2 of records) {
+    const id = record2.command_id || `${record2.recorded_at}:${record2.command}`;
+    if (!byId.has(id)) ordered.push(record2);
+    byId.set(id, record2.phase === "completed" ? record2 : byId.get(id) ?? record2);
+  }
+  return ordered.map((record2) => byId.get(record2.command_id || `${record2.recorded_at}:${record2.command}`) || record2);
 }
 
 // src/lib/external-agent-executor.ts
-var import_fs14 = require("fs");
+var import_fs15 = require("fs");
 var import_os2 = require("os");
-var import_path12 = require("path");
+var import_path13 = require("path");
 var import_child_process4 = require("child_process");
+
+// src/lib/external-agent-metadata.ts
+var import_fs14 = require("fs");
+var import_path12 = require("path");
+var EXTERNAL_AGENT_METADATA_FILENAMES = [
+  "external-agent-metadata.json",
+  "agent-metadata.json"
+];
+var PUBLIC_DOC_URL_RE = /^https:\/\/frontofhouse\.okii\.uk(?:\/[A-Za-z0-9._~:/?#[\]@!$&'()*+,;=%-]*)?$/;
+function normalizeDocUrl(value) {
+  const raw = typeof value === "string" ? value : value && typeof value === "object" && typeof value.url === "string" ? String(value.url) : "";
+  const url2 = raw.trim().replace(/[.?!:]+$/g, "");
+  if (!PUBLIC_DOC_URL_RE.test(url2)) return null;
+  return url2;
+}
+function collectDocsFrom(value, docs) {
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const url2 = normalizeDocUrl(entry);
+      if (url2) docs.add(url2);
+    }
+  }
+}
+function readExternalAgentMetadata(runDir) {
+  for (const filename of EXTERNAL_AGENT_METADATA_FILENAMES) {
+    const path2 = (0, import_path12.join)(runDir, filename);
+    if (!(0, import_fs14.existsSync)(path2)) continue;
+    try {
+      const parsed = JSON.parse((0, import_fs14.readFileSync)(path2, "utf8"));
+      const docs = /* @__PURE__ */ new Set();
+      collectDocsFrom(parsed.docs_pages_used, docs);
+      collectDocsFrom(parsed.docs_pages_observed, docs);
+      collectDocsFrom(parsed.docs_used, docs);
+      collectDocsFrom(parsed.public_docs_used, docs);
+      return {
+        path: filename,
+        docs_pages_used: Array.from(docs).sort()
+      };
+    } catch {
+      return {
+        path: filename,
+        docs_pages_used: []
+      };
+    }
+  }
+  return {
+    path: null,
+    docs_pages_used: []
+  };
+}
+
+// src/lib/external-agent-executor.ts
+var GEMINI_HEADLESS_PROBE_TIMEOUT_MS = 15e3;
 var CODEX_EXECUTOR_DENIED_ENV_PREFIXES = [
   "SUPABASE_",
   "DATABASE_",
   "OPENAI_",
   "XAI_",
   "ANTHROPIC_",
+  "GOOGLE_",
+  "GEMINI_",
   "WHATSAPP_",
   "TWILIO_",
   "STRIPE_"
@@ -38483,6 +39392,13 @@ var CHILD_ENV_ALLOWLIST = [
   "USERPROFILE",
   "WINDIR"
 ];
+var EXTERNAL_AGENT_EVAL_AUTH_ENV_MAP = {
+  FOH_EXTERNAL_AGENT_EVAL_TOKEN: "FOH_SERVICE_TOKEN",
+  FOH_EXTERNAL_AGENT_EVAL_ORG_ID: "FOH_ORG_ID",
+  FOH_EXTERNAL_AGENT_EVAL_API_URL: "FOH_API_URL",
+  FOH_EXTERNAL_AGENT_EVAL_TOKEN_EXPIRES_AT: "FOH_TOKEN_EXPIRES_AT"
+};
+var DEFAULT_FOH_API_URL2 = "https://api.frontofhouse.okii.uk";
 var ExternalAgentExecutorError = class extends Error {
   reasonCode;
   constructor(reasonCode, message) {
@@ -38505,20 +39421,95 @@ function buildCodexExecutorEnv(input) {
       env[key] = value;
     }
   }
+  for (const [sourceKey, childKey] of Object.entries(EXTERNAL_AGENT_EVAL_AUTH_ENV_MAP)) {
+    const value = source[sourceKey];
+    if (typeof value === "string" && value.trim() && !isDeniedEnvKey(childKey)) {
+      env[childKey] = value;
+    }
+  }
+  env.npm_config_cache = (0, import_path13.join)((0, import_path13.dirname)(input.runDir), ".npm-cache");
+  env.npm_config_prefer_online = "true";
+  env.npm_config_update_notifier = "false";
+  env.npm_config_yes = "true";
   env[EXTERNAL_AGENT_RUN_DIR_ENV] = input.runDir;
   env[EXTERNAL_AGENT_PROMPT_VERSION_ENV] = input.promptVersion;
+  env[FOH_CLI_SPEND_POLICY_ENV] = NO_SPEND_POLICY;
   env.FOH_CLI_SUPPRESS_BANNER = "1";
   return env;
 }
+function readExternalAgentEvalAuthEnv(env = process.env) {
+  return {
+    token: String(env.FOH_EXTERNAL_AGENT_EVAL_TOKEN || "").trim(),
+    orgId: String(env.FOH_EXTERNAL_AGENT_EVAL_ORG_ID || "").trim(),
+    apiUrl: String(env.FOH_EXTERNAL_AGENT_EVAL_API_URL || env.FOH_API_URL || DEFAULT_FOH_API_URL2).trim() || DEFAULT_FOH_API_URL2,
+    expiresAt: String(env.FOH_EXTERNAL_AGENT_EVAL_TOKEN_EXPIRES_AT || "").trim()
+  };
+}
+function shouldRunExternalAgentEvalAuthPreflight(env = process.env) {
+  return Boolean(
+    env.FOH_EXTERNAL_AGENT_EVAL_TOKEN || env.FOH_EXTERNAL_AGENT_EVAL_ORG_ID || env.FOH_EXTERNAL_AGENT_EVAL_API_URL || env.FOH_EXTERNAL_AGENT_EVAL_TOKEN_EXPIRES_AT || env.FOH_SERVICE_TOKEN || env.FOH_ORG_ID || env.FOH_API_URL || env.FOH_TOKEN_EXPIRES_AT
+  );
+}
+async function runExternalAgentEvalAuthPreflight(env = process.env, options = {}) {
+  const hasExplicitEvalAuth = Boolean(
+    env.FOH_EXTERNAL_AGENT_EVAL_TOKEN || env.FOH_EXTERNAL_AGENT_EVAL_ORG_ID || env.FOH_EXTERNAL_AGENT_EVAL_API_URL || env.FOH_EXTERNAL_AGENT_EVAL_TOKEN_EXPIRES_AT
+  );
+  if (!shouldRunExternalAgentEvalAuthPreflight(env) && !options.requireExplicitEvalAuth) return null;
+  const checkedAt = (/* @__PURE__ */ new Date()).toISOString();
+  const auth = readExternalAgentEvalAuthEnv(env);
+  const tokenTtlMs = auth.expiresAt ? Date.parse(auth.expiresAt) - Date.now() : null;
+  const base = {
+    api_url: auth.apiUrl,
+    org_id: auth.orgId || null,
+    checked_at: checkedAt,
+    token_present: Boolean(auth.token) && hasExplicitEvalAuth,
+    expires_at: auth.expiresAt || null,
+    token_ttl_seconds: tokenTtlMs === null || !Number.isFinite(tokenTtlMs) ? null : Math.max(0, Math.floor(tokenTtlMs / 1e3)),
+    minimum_required_ttl_seconds: typeof options.minimumTtlMs === "number" ? Math.ceil(options.minimumTtlMs / 1e3) : null,
+    matched_org: null
+  };
+  if (!hasExplicitEvalAuth || !auth.token || !auth.orgId) {
+    return { ...base, ok: false, reason_code: "eval_auth_missing" };
+  }
+  if (auth.expiresAt) {
+    const expiresMs = Date.parse(auth.expiresAt);
+    if (Number.isFinite(expiresMs) && expiresMs <= Date.now()) {
+      return { ...base, ok: false, reason_code: "eval_auth_expired" };
+    }
+    if (typeof options.minimumTtlMs === "number" && Number.isFinite(expiresMs) && expiresMs - Date.now() < options.minimumTtlMs) {
+      return { ...base, ok: false, reason_code: "eval_auth_expires_too_soon" };
+    }
+  }
+  const res = await fetch(`${auth.apiUrl.replace(/\/$/, "")}/v1/console/auth/my-orgs`, {
+    headers: {
+      Authorization: `Bearer ${auth.token}`
+    }
+  }).catch(() => null);
+  if (!res || res.status === 401) {
+    return { ...base, ok: false, reason_code: "eval_auth_expired" };
+  }
+  if (!res.ok) {
+    return { ...base, ok: false, reason_code: "eval_auth_wrong_org" };
+  }
+  const body = await res.json().catch(() => ({}));
+  const orgs = Array.isArray(body.orgs) ? body.orgs : [];
+  const matchedOrg = orgs.some((org) => String(org?.org_id || "").trim() === auth.orgId);
+  return {
+    ...base,
+    ok: matchedOrg,
+    reason_code: matchedOrg ? "eval_auth_ok" : "eval_auth_wrong_org",
+    matched_org: matchedOrg
+  };
+}
 function normalizeForCompare(path2) {
-  const resolved = (0, import_path12.resolve)(path2);
+  const resolved = (0, import_path13.resolve)(path2);
   return process.platform === "win32" ? resolved.toLowerCase() : resolved;
 }
 function isPathInside(childPath, parentPath) {
   const child = normalizeForCompare(childPath);
   const parent = normalizeForCompare(parentPath);
-  const rel = (0, import_path12.relative)(parent, child);
-  return rel === "" || !!rel && !rel.startsWith("..") && !(0, import_path12.isAbsolute)(rel);
+  const rel = (0, import_path13.relative)(parent, child);
+  return rel === "" || !!rel && !rel.startsWith("..") && !(0, import_path13.isAbsolute)(rel);
 }
 function requireString(value, field) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -38527,10 +39518,10 @@ function requireString(value, field) {
   return value;
 }
 function readBatch(batchPath) {
-  if (!(0, import_fs14.existsSync)(batchPath)) {
+  if (!(0, import_fs15.existsSync)(batchPath)) {
     throw new ExternalAgentExecutorError("external_agent_batch_not_found", `Batch file not found: ${batchPath}`);
   }
-  const parsed = JSON.parse((0, import_fs14.readFileSync)(batchPath, "utf8"));
+  const parsed = JSON.parse((0, import_fs15.readFileSync)(batchPath, "utf8"));
   if (parsed.schema_version !== "external_agent_batch_plan.v1") {
     throw new ExternalAgentExecutorError("invalid_external_agent_batch", "Batch schema_version must be external_agent_batch_plan.v1.");
   }
@@ -38540,11 +39531,16 @@ function readBatch(batchPath) {
   return parsed;
 }
 function defaultRunnerProbe(command, args) {
+  const isGeminiHeadlessSmoke = args.includes("FOH_GEMINI_HEADLESS_PROBE");
+  const spawnOptions = {
+    encoding: "utf8",
+    timeout: isGeminiHeadlessSmoke ? GEMINI_HEADLESS_PROBE_TIMEOUT_MS : void 0
+  };
   const result = process.platform === "win32" && command.toLowerCase().endsWith(".cmd") ? (0, import_child_process4.spawnSync)(
     "powershell.exe",
     ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", `& ${[command, ...args].map(quotePowerShellArg).join(" ")}`],
-    { encoding: "utf8" }
-  ) : (0, import_child_process4.spawnSync)(command, args, { encoding: "utf8" });
+    spawnOptions
+  ) : (0, import_child_process4.spawnSync)(command, args, spawnOptions);
   return {
     status: typeof result.status === "number" ? result.status : null,
     stdout: String(result.stdout || ""),
@@ -38552,24 +39548,70 @@ function defaultRunnerProbe(command, args) {
     error: result.error
   };
 }
+function geminiCapacityUnavailable(text) {
+  return /MODEL_CAPACITY_EXHAUSTED|RESOURCE_EXHAUSTED|No capacity available|rateLimitExceeded|exhausted your capacity|status 429/i.test(text);
+}
 function quotePowerShellArg(value) {
   return `'${value.replace(/'/g, "''")}'`;
+}
+function quoteShellArg(value) {
+  const text = String(value);
+  if (/^[A-Za-z0-9_./:=@-]+$/.test(text)) return text;
+  return `"${text.replace(/(["$`])/g, "\\$1")}"`;
+}
+function externalAgentSummaryCommand(root) {
+  return [
+    "node",
+    "scripts/summarize-external-agent-runs.mjs",
+    "--root",
+    quoteShellArg(root),
+    "--out",
+    quoteShellArg((0, import_path13.join)(root, "latest-summary.json")),
+    "--report",
+    quoteShellArg((0, import_path13.join)(root, "summary.report.json"))
+  ].join(" ");
 }
 function resolveCodexProbeCommand() {
   if (process.platform !== "win32") return "codex";
   const appData = process.env.APPDATA;
   if (appData) {
-    const appDataShim = (0, import_path12.join)(appData, "npm", "codex.cmd");
-    if ((0, import_fs14.existsSync)(appDataShim)) return appDataShim;
+    const appDataShim = (0, import_path13.join)(appData, "npm", "codex.cmd");
+    if ((0, import_fs15.existsSync)(appDataShim)) return appDataShim;
   }
   return "codex.cmd";
 }
 function resolveCodexExecutionCommand() {
   return resolveCodexProbeCommand();
 }
+function resolveGeminiProbeCommand() {
+  if (process.platform !== "win32") return "gemini";
+  const appData = process.env.APPDATA;
+  if (appData) {
+    const appDataShim = (0, import_path13.join)(appData, "npm", "gemini.cmd");
+    if ((0, import_fs15.existsSync)(appDataShim)) return appDataShim;
+  }
+  return "gemini.cmd";
+}
+function resolveRunnerExecutionCommand(runner) {
+  return runner === "gemini" ? resolveGeminiProbeCommand() : resolveCodexExecutionCommand();
+}
 function validateCodexRunner(options) {
   if (options.skipRunnerProbe) {
-    return { binaryChecked: false, requiredFlagsChecked: false };
+    return {
+      runner: "codex",
+      binaryChecked: false,
+      requiredFlagsChecked: false,
+      version: null,
+      rootHelpChecked: false,
+      execHelpChecked: false,
+      supportsModernApprovalMode: true,
+      supportsLegacyFullAuto: false,
+      supportsYoloAlias: null,
+      yoloPolicy: "not_checked",
+      automationMode: "ask-for-approval-never",
+      globalArgs: ["--ask-for-approval", "never"],
+      execArgs: []
+    };
   }
   const probe = options.runnerProbe ?? defaultRunnerProbe;
   const probeCommand = resolveCodexProbeCommand();
@@ -38577,54 +39619,269 @@ function validateCodexRunner(options) {
   if (version2.error || version2.status !== 0) {
     throw new ExternalAgentExecutorError("external_agent_runner_binary_missing", "Codex runner probe failed: `codex --version` did not exit 0.");
   }
+  const versionText = `${version2.stdout}
+${version2.stderr}`.trim() || null;
   const help = probe(probeCommand, ["exec", "--help"]);
   if (help.error || help.status !== 0) {
     throw new ExternalAgentExecutorError("external_agent_runner_help_unavailable", "Codex runner probe failed: `codex exec --help` did not exit 0.");
   }
-  const helpText = `${help.stdout}
+  const execHelpText = `${help.stdout}
 ${help.stderr}`;
-  const requiredFlags = [
+  const rootHelp = probe(probeCommand, ["--help"]);
+  const rootHelpText = `${rootHelp.stdout}
+${rootHelp.stderr}`;
+  const yoloHelp = probe(probeCommand, ["--yolo", "--help"]);
+  const yoloHelpText = `${yoloHelp.stdout}
+${yoloHelp.stderr}`;
+  const supportsYoloAlias = yoloHelp.status === 0 && /(?:Usage:\s*codex|Codex CLI)/i.test(yoloHelpText);
+  const yoloPolicy = supportsYoloAlias ? "observed_not_canonical" : "unsupported";
+  const commonExecFlags = [
     "--cd",
     "--skip-git-repo-check",
     "--ephemeral",
     "--ignore-rules",
     "--sandbox",
-    "--full-auto",
     "--json",
     "--output-last-message"
   ];
-  const missing = requiredFlags.filter((flag) => !helpText.includes(flag));
+  const missing = commonExecFlags.filter((flag) => !execHelpText.includes(flag));
+  if (String(options.codexModel || "").trim() && !execHelpText.includes("--model")) {
+    missing.push("--model");
+  }
+  const supportsLegacyFullAuto = execHelpText.includes("--full-auto");
+  const supportsModernApprovalMode = rootHelp.status === 0 && rootHelpText.includes("--ask-for-approval");
+  if (!supportsLegacyFullAuto && !supportsModernApprovalMode) {
+    missing.push("--full-auto or --ask-for-approval");
+  }
   if (missing.length > 0) {
     throw new ExternalAgentExecutorError(
       "external_agent_runner_required_flags_missing",
       `Codex runner is missing required exec flag(s): ${missing.join(", ")}`
     );
   }
-  return { binaryChecked: true, requiredFlagsChecked: true };
+  if (supportsModernApprovalMode) {
+    return {
+      runner: "codex",
+      binaryChecked: true,
+      requiredFlagsChecked: true,
+      version: versionText,
+      rootHelpChecked: rootHelp.status === 0,
+      execHelpChecked: true,
+      supportsModernApprovalMode,
+      supportsLegacyFullAuto,
+      supportsYoloAlias,
+      yoloPolicy,
+      automationMode: "ask-for-approval-never",
+      globalArgs: ["--ask-for-approval", "never"],
+      execArgs: []
+    };
+  }
+  return {
+    runner: "codex",
+    binaryChecked: true,
+    requiredFlagsChecked: true,
+    version: versionText,
+    rootHelpChecked: rootHelp.status === 0,
+    execHelpChecked: true,
+    supportsModernApprovalMode,
+    supportsLegacyFullAuto,
+    supportsYoloAlias,
+    yoloPolicy,
+    automationMode: "full-auto",
+    globalArgs: [],
+    execArgs: ["--full-auto"]
+  };
+}
+function validateGeminiRunner(options) {
+  const geminiSandboxMode = normalizeGeminiSandboxMode(options.geminiSandboxMode);
+  const execArgs = [
+    "--approval-mode",
+    "yolo",
+    "--output-format",
+    "stream-json"
+  ];
+  if (geminiSandboxMode === "required") execArgs.splice(2, 0, "--sandbox");
+  if (options.skipRunnerProbe) {
+    return {
+      runner: "gemini",
+      binaryChecked: false,
+      requiredFlagsChecked: false,
+      version: null,
+      rootHelpChecked: false,
+      execHelpChecked: false,
+      supportsModernApprovalMode: false,
+      supportsLegacyFullAuto: false,
+      supportsYoloAlias: null,
+      yoloPolicy: "not_checked",
+      supportsGeminiHeadless: true,
+      supportsGeminiSandbox: geminiSandboxMode === "required",
+      geminiSandboxMode,
+      headlessInvocationChecked: false,
+      automationMode: "gemini-yolo",
+      globalArgs: [],
+      execArgs
+    };
+  }
+  const probe = options.runnerProbe ?? defaultRunnerProbe;
+  const probeCommand = resolveGeminiProbeCommand();
+  const version2 = probe(probeCommand, ["--version"]);
+  if (version2.error || version2.status !== 0) {
+    throw new ExternalAgentExecutorError("external_agent_runner_binary_missing", "Gemini runner probe failed: `gemini --version` did not exit 0.");
+  }
+  const versionText = `${version2.stdout}
+${version2.stderr}`.trim() || null;
+  const help = probe(probeCommand, ["--help"]);
+  if (help.error || help.status !== 0) {
+    throw new ExternalAgentExecutorError("external_agent_runner_help_unavailable", "Gemini runner probe failed: `gemini --help` did not exit 0.");
+  }
+  const helpText = `${help.stdout}
+${help.stderr}`;
+  const requiredFlags = ["--approval-mode", "--output-format"];
+  if (geminiSandboxMode === "required") requiredFlags.push("--sandbox");
+  const missing = requiredFlags.filter((flag) => !helpText.includes(flag));
+  if (missing.length > 0) {
+    throw new ExternalAgentExecutorError(
+      "external_agent_runner_required_flags_missing",
+      `Gemini runner is missing required headless flag(s): ${missing.join(", ")}`
+    );
+  }
+  const smoke = probe(probeCommand, [...execArgs, "FOH_GEMINI_HEADLESS_PROBE"]);
+  const smokeText = `${smoke.stdout}
+${smoke.stderr}`;
+  if (/Cannot use both a positional prompt and the --prompt/i.test(smokeText)) {
+    throw new ExternalAgentExecutorError(
+      "external_agent_runner_headless_probe_failed",
+      "Gemini runner rejected the planned headless invocation before auth."
+    );
+  }
+  if (/GEMINI_SANDBOX.*failed|failed to determine command for sandbox|install docker or podman/i.test(smokeText)) {
+    throw new ExternalAgentExecutorError(
+      "external_agent_runner_sandbox_unavailable",
+      "Gemini runner sandbox is unavailable on this host. Install/configure Docker/Podman or rerun only on an externally isolated host with --gemini-sandbox-mode disabled."
+    );
+  }
+  if (geminiCapacityUnavailable(smokeText)) {
+    throw new ExternalAgentExecutorError(
+      "external_agent_runner_capacity_unavailable",
+      "Gemini runner reached the provider but the selected model has no available capacity. Retry later or configure a supported lower-contention Gemini model before live eval."
+    );
+  }
+  if (smoke.error || smoke.status !== 0 && !/Auth method|GEMINI_API_KEY|GOOGLE_GENAI_USE_VERTEXAI|GOOGLE_GENAI_USE_GCA/i.test(smokeText)) {
+    if (smoke.error?.code === "ETIMEDOUT") {
+      throw new ExternalAgentExecutorError(
+        "external_agent_runner_headless_probe_timed_out",
+        "Gemini runner headless invocation probe timed out before reaching an auth boundary or provider response."
+      );
+    }
+    throw new ExternalAgentExecutorError(
+      "external_agent_runner_headless_probe_failed",
+      "Gemini runner headless invocation probe failed before reaching an auth boundary."
+    );
+  }
+  return {
+    runner: "gemini",
+    binaryChecked: true,
+    requiredFlagsChecked: true,
+    version: versionText,
+    rootHelpChecked: true,
+    execHelpChecked: true,
+    supportsModernApprovalMode: false,
+    supportsLegacyFullAuto: false,
+    supportsYoloAlias: helpText.includes("--yolo"),
+    yoloPolicy: helpText.includes("--yolo") ? "observed_not_canonical" : "unsupported",
+    supportsGeminiHeadless: true,
+    supportsGeminiSandbox: geminiSandboxMode === "required",
+    geminiSandboxMode,
+    headlessInvocationChecked: true,
+    automationMode: "gemini-yolo",
+    globalArgs: [],
+    execArgs
+  };
+}
+function validateRunner(options, runner) {
+  if (runner === "gemini") return validateGeminiRunner(options);
+  return validateCodexRunner(options);
+}
+function normalizeCodexSandboxBackend(value) {
+  const normalized = (value || "default").trim().toLowerCase();
+  if (normalized === "default" || normalized === "legacy-landlock") return normalized;
+  throw new ExternalAgentExecutorError(
+    "invalid_codex_sandbox_backend",
+    `Unsupported Codex sandbox backend: ${value}. Use default or legacy-landlock.`
+  );
+}
+function normalizeCodexSandboxMode(value) {
+  const normalized = (value || "workspace-write").trim().toLowerCase();
+  if (normalized === "workspace-write" || normalized === "danger-full-access") return normalized;
+  throw new ExternalAgentExecutorError(
+    "invalid_codex_sandbox_mode",
+    `Unsupported Codex sandbox mode: ${value}. Use workspace-write or danger-full-access.`
+  );
+}
+function normalizeCodexModel(value) {
+  const normalized = String(value || "").trim();
+  if (!normalized) return null;
+  if (!/^[A-Za-z0-9._:@/-]+$/.test(normalized)) {
+    throw new ExternalAgentExecutorError(
+      "invalid_codex_model",
+      "Unsupported Codex model value. Use a plain model id such as gpt-5.4-mini."
+    );
+  }
+  return normalized;
+}
+function normalizeGeminiSandboxMode(value) {
+  const normalized = (value || "required").trim().toLowerCase();
+  if (normalized === "required" || normalized === "disabled") return normalized;
+  throw new ExternalAgentExecutorError(
+    "invalid_gemini_sandbox_mode",
+    `Unsupported Gemini sandbox mode: ${value}. Use required or disabled.`
+  );
+}
+function codexModelArgs(model) {
+  return model ? ["--model", model] : [];
+}
+function codexConfigArgs(input) {
+  const args = [];
+  if (input.backend === "legacy-landlock") {
+    args.push(
+      "-c",
+      "features.use_legacy_landlock=true",
+      "-c",
+      "features.use_linux_sandbox_bwrap=false"
+    );
+  }
+  if (input.networkAccess) {
+    args.push("-c", "sandbox_workspace_write.network_access=true");
+  }
+  return args;
 }
 function safeRunId(value) {
   return value.toLowerCase().replace(/[^a-z0-9_.-]+/g, "-").replace(/^-+|-+$/g, "") || "run";
 }
 function resolveWorkspaceRoot(input) {
-  if (input.workspaceRoot) return (0, import_path12.resolve)(input.workspaceRoot);
-  const batchStem = (0, import_path12.basename)((0, import_path12.resolve)(input.batchPath)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
-  const repoStem = (0, import_path12.basename)((0, import_path12.resolve)(input.privateRepoRoot)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
-  return (0, import_path12.resolve)((0, import_os2.tmpdir)(), "foh-external-agent-workspaces", repoStem, batchStem);
+  if (input.workspaceRoot) return (0, import_path13.resolve)(input.workspaceRoot);
+  const batchStem = (0, import_path13.basename)((0, import_path13.resolve)(input.batchPath)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
+  const repoStem = (0, import_path13.basename)((0, import_path13.resolve)(input.privateRepoRoot)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
+  return (0, import_path13.resolve)((0, import_os2.tmpdir)(), "foh-external-agent-workspaces", repoStem, batchStem);
 }
 function promptVersionFromPath(promptPath) {
-  const raw = (0, import_fs14.readFileSync)(promptPath, "utf8");
+  const raw = (0, import_fs15.readFileSync)(promptPath, "utf8");
   if (raw.includes("Do not assume access to the private source repository")) return "blank-setup.v1";
   return "unknown";
 }
 function createExternalAgentExecutorPlan(options) {
   const runner = String(options.runner || "codex");
-  if (runner !== "codex") {
+  if (runner !== "codex" && runner !== "gemini") {
     throw new ExternalAgentExecutorError("unsupported_external_agent_runner", `Unsupported runner: ${runner}`);
   }
-  const batchPath = (0, import_path12.resolve)(options.batchPath);
+  const batchPath = (0, import_path13.resolve)(options.batchPath);
   const batch = readBatch(batchPath);
-  const runnerProbe = validateCodexRunner(options);
-  const privateRepoRoot = (0, import_path12.resolve)(options.privateRepoRoot || options.cwd || process.cwd());
+  const runnerProbe = validateRunner(options, runner);
+  const codexSandboxBackend = normalizeCodexSandboxBackend(options.codexSandboxBackend);
+  const codexSandboxMode = normalizeCodexSandboxMode(options.codexSandboxMode);
+  const codexModel = runner === "codex" ? normalizeCodexModel(options.codexModel) : null;
+  const codexNetworkAccess = options.codexNetworkAccess === true;
+  const privateRepoRoot = (0, import_path13.resolve)(options.privateRepoRoot || options.cwd || process.cwd());
   const workspaceRoot = resolveWorkspaceRoot({ batchPath, workspaceRoot: options.workspaceRoot, privateRepoRoot });
   if (isPathInside(workspaceRoot, privateRepoRoot)) {
     throw new ExternalAgentExecutorError(
@@ -38632,17 +39889,17 @@ function createExternalAgentExecutorPlan(options) {
       `Workspace root must be outside the private repository. workspace=${workspaceRoot} repo=${privateRepoRoot}`
     );
   }
-  (0, import_fs14.mkdirSync)(workspaceRoot, { recursive: true });
-  const batchDir = (0, import_path12.resolve)(String(batch.batch_dir || (0, import_path12.resolve)(batchPath, "..")));
+  (0, import_fs15.mkdirSync)(workspaceRoot, { recursive: true });
+  const batchDir = (0, import_path13.resolve)(String(batch.batch_dir || (0, import_path13.resolve)(batchPath, "..")));
   const timeoutMinutes = Number.isFinite(options.timeoutMinutes) && Number(options.timeoutMinutes) > 0 ? Number(options.timeoutMinutes) : 30;
   const runs = batch.runs.map((run) => {
     const runId = safeRunId(requireString(run.run_id, "runs[].run_id"));
-    const runDir = (0, import_path12.resolve)(requireString(run.run_dir, `runs[${runId}].run_dir`));
-    const promptPath = (0, import_path12.resolve)(requireString(run.prompt_path, `runs[${runId}].prompt_path`));
-    const workspaceDir = (0, import_path12.join)(workspaceRoot, runId);
-    (0, import_fs14.mkdirSync)(workspaceDir, { recursive: true });
-    (0, import_fs14.writeFileSync)(
-      (0, import_path12.join)(workspaceDir, "README.md"),
+    const runDir = (0, import_path13.resolve)(requireString(run.run_dir, `runs[${runId}].run_dir`));
+    const promptPath = (0, import_path13.resolve)(requireString(run.prompt_path, `runs[${runId}].prompt_path`));
+    const workspaceDir = (0, import_path13.join)(workspaceRoot, runId);
+    (0, import_fs15.mkdirSync)(workspaceDir, { recursive: true });
+    (0, import_fs15.writeFileSync)(
+      (0, import_path13.join)(workspaceDir, "README.md"),
       [
         "# FOH External-Agent Workspace",
         "",
@@ -38659,22 +39916,28 @@ function createExternalAgentExecutorPlan(options) {
       promptVersion: promptVersionFromPath(promptPath)
     });
     const promptVersion = String(env[EXTERNAL_AGENT_PROMPT_VERSION_ENV] || "unknown");
-    const jsonlPath = (0, import_path12.join)(runDir, "codex-exec.jsonl");
-    const lastMessagePath = (0, import_path12.join)(runDir, "codex-last-message.md");
-    const stderrPath = (0, import_path12.join)(runDir, "codex-stderr.txt");
-    const runPath = (0, import_path12.join)(runDir, "run.json");
-    const artifactSafetyPath = (0, import_path12.join)(runDir, "artifact-safety.json");
-    const args = [
+    const outputStem = runner === "gemini" ? "gemini" : "codex";
+    const jsonlPath = (0, import_path13.join)(runDir, `${outputStem}-exec.jsonl`);
+    const lastMessagePath = (0, import_path13.join)(runDir, `${outputStem}-last-message.md`);
+    const stderrPath = (0, import_path13.join)(runDir, `${outputStem}-stderr.txt`);
+    const runPath = (0, import_path13.join)(runDir, "run.json");
+    const artifactSafetyPath = (0, import_path13.join)(runDir, "artifact-safety.json");
+    const args = runner === "gemini" ? [
+      ...runnerProbe.globalArgs,
+      ...runnerProbe.execArgs
+    ] : [
+      ...runnerProbe.globalArgs,
       "exec",
+      ...codexModelArgs(codexModel),
+      ...codexConfigArgs({ backend: codexSandboxBackend, networkAccess: codexNetworkAccess }),
       "--cd",
       workspaceDir,
       "--skip-git-repo-check",
       "--ephemeral",
       "--ignore-rules",
-      "--ignore-user-config",
       "--sandbox",
-      "workspace-write",
-      "--full-auto",
+      codexSandboxMode,
+      ...runnerProbe.execArgs,
       "--json",
       "--output-last-message",
       lastMessagePath,
@@ -38684,11 +39947,12 @@ function createExternalAgentExecutorPlan(options) {
       run_id: runId,
       model_provider: String(run.model_provider || "unknown"),
       model_name: String(run.model_name || "unknown-model"),
+      runner_model: runner === "codex" ? codexModel : null,
       prompt_version: promptVersion,
       run_dir: runDir,
       prompt_path: promptPath,
       workspace_dir: workspaceDir,
-      command: "codex",
+      command: runner,
       args,
       env_keys: Object.keys(env).sort(),
       outputs: {
@@ -38708,6 +39972,7 @@ function createExternalAgentExecutorPlan(options) {
     batch_path: batchPath,
     batch_dir: batchDir,
     private_repo_root: privateRepoRoot,
+    private_repo_root_explicit: Boolean(options.privateRepoRoot),
     workspace_root: workspaceRoot,
     timeout_minutes: timeoutMinutes,
     safety: {
@@ -38718,38 +39983,128 @@ function createExternalAgentExecutorPlan(options) {
       denied_env_names: [...CODEX_EXECUTOR_DENIED_ENV_NAMES],
       runner_probe: {
         binary_checked: runnerProbe.binaryChecked,
-        required_flags_checked: runnerProbe.requiredFlagsChecked
-      }
+        runner: runnerProbe.runner,
+        required_flags_checked: runnerProbe.requiredFlagsChecked,
+        version: runnerProbe.version,
+        root_help_checked: runnerProbe.rootHelpChecked,
+        exec_help_checked: runnerProbe.execHelpChecked,
+        supports_modern_approval_mode: runnerProbe.supportsModernApprovalMode,
+        supports_legacy_full_auto: runnerProbe.supportsLegacyFullAuto,
+        supports_yolo_alias: runnerProbe.supportsYoloAlias,
+        selected_automation_mode: runnerProbe.automationMode,
+        canonical_command_policy: "explicit-flags",
+        yolo_policy: runnerProbe.yoloPolicy,
+        ...runnerProbe.runner === "gemini" ? {
+          supports_gemini_headless: runnerProbe.supportsGeminiHeadless,
+          supports_gemini_sandbox: runnerProbe.supportsGeminiSandbox,
+          gemini_sandbox_mode: runnerProbe.geminiSandboxMode,
+          headless_invocation_checked: runnerProbe.headlessInvocationChecked
+        } : {}
+      },
+      runner_automation_mode: runnerProbe.automationMode,
+      codex_automation_mode: runner === "codex" ? runnerProbe.automationMode : null,
+      codex_model: runner === "codex" ? codexModel : null,
+      codex_sandbox_mode: codexSandboxMode,
+      codex_sandbox_backend: codexSandboxBackend,
+      codex_network_access: codexNetworkAccess
     },
     runs
   };
 }
 function writeExternalAgentExecutorPlan(plan) {
-  const path2 = (0, import_path12.join)(plan.batch_dir, "executor-plan.json");
-  (0, import_fs14.mkdirSync)(plan.batch_dir, { recursive: true });
-  (0, import_fs14.writeFileSync)(path2, `${JSON.stringify(plan, null, 2)}
+  const path2 = (0, import_path13.join)(plan.batch_dir, "executor-plan.json");
+  (0, import_fs15.mkdirSync)(plan.batch_dir, { recursive: true });
+  (0, import_fs15.writeFileSync)(path2, `${JSON.stringify(plan, null, 2)}
 `, "utf8");
   return path2;
 }
 function proofArtifactPasses(runDir) {
-  const proofPath = (0, import_path12.join)(runDir, "proof.json");
-  if (!(0, import_fs14.existsSync)(proofPath)) return false;
+  const proofPath = (0, import_path13.join)(runDir, "proof.json");
+  if (!(0, import_fs15.existsSync)(proofPath)) return false;
   try {
-    const parsed = JSON.parse((0, import_fs14.readFileSync)(proofPath, "utf8"));
+    const parsed = JSON.parse((0, import_fs15.readFileSync)(proofPath, "utf8"));
     return parsed.ok === true || parsed.status === "pass" || parsed.status === "passed";
   } catch {
     return false;
   }
 }
 function readIfExists(path2) {
-  return (0, import_fs14.existsSync)(path2) ? (0, import_fs14.readFileSync)(path2, "utf8") : "";
+  return (0, import_fs15.existsSync)(path2) ? (0, import_fs15.readFileSync)(path2, "utf8") : "";
+}
+function redactArtifactFile(path2, input = {}) {
+  if (!(0, import_fs15.existsSync)(path2)) return;
+  const original = (0, import_fs15.readFileSync)(path2, "utf8");
+  const redacted = redactExternalAgentArtifactText(original, input);
+  if (redacted !== original) (0, import_fs15.writeFileSync)(path2, redacted, "utf8");
+}
+function redactOutputArtifacts(run, input = {}) {
+  redactArtifactFile(run.outputs.jsonl, input);
+  redactArtifactFile(run.outputs.last_message, input);
+  redactArtifactFile(run.outputs.stderr, input);
+  redactArtifactFile((0, import_path13.join)(run.run_dir, "commands.ndjson"), input);
+  if (!(0, import_fs15.existsSync)(run.run_dir)) return;
+  for (const name of (0, import_fs15.readdirSync)(run.run_dir)) {
+    if (name.startsWith("command-output-cmd_") && !name.endsWith(".redacted")) {
+      redactArtifactFile((0, import_path13.join)(run.run_dir, name), input);
+    }
+  }
+}
+function copyCommandCaptureArtifacts(input) {
+  const commandLog = (0, import_path13.join)(input.captureDir, "commands.ndjson");
+  if ((0, import_fs15.existsSync)(commandLog)) {
+    (0, import_fs15.writeFileSync)((0, import_path13.join)(input.runDir, "commands.ndjson"), (0, import_fs15.readFileSync)(commandLog, "utf8"), "utf8");
+  }
+  for (const name of (0, import_fs15.readdirSync)(input.captureDir)) {
+    if (name.startsWith("command-output-cmd_")) {
+      (0, import_fs15.copyFileSync)((0, import_path13.join)(input.captureDir, name), (0, import_path13.join)(input.runDir, name));
+    } else if (EXTERNAL_AGENT_METADATA_FILENAMES.includes(name)) {
+      (0, import_fs15.copyFileSync)((0, import_path13.join)(input.captureDir, name), (0, import_path13.join)(input.runDir, name));
+    }
+  }
 }
 function relativeArtifactName(path2) {
-  return (0, import_path12.basename)(path2);
+  return (0, import_path13.basename)(path2);
 }
 function classifyRun(input) {
-  if (input.timedOut) return { status: "hold", reasonCode: "codex_runner_timeout" };
+  if (input.timedOut) return { status: "hold", reasonCode: `${input.run.command}_runner_timeout` };
   if (!input.artifactSafetyOk) return { status: "fail", reasonCode: "external_agent_artifact_safety_blocked" };
+  const completedCommands = readCommandRecords(input.run.run_dir).filter((record2) => record2.phase === "completed");
+  const observedVersions = completedCommands.map((record2) => String(record2.cli_version || "").trim()).filter((version2) => /^\d+\.\d+\.\d+$/.test(version2));
+  if (observedVersions.some((version2) => version2 !== CLI_VERSION)) {
+    return { status: "hold", reasonCode: "external_agent_cli_version_drift" };
+  }
+  const commandReasonCodes = completedCommands.flatMap((record2) => [
+    String(record2.reason_code || ""),
+    ...Array.isArray(record2.check_reason_codes) ? record2.check_reason_codes.map((code) => String(code || "")) : []
+  ]).filter(Boolean);
+  const hasCommandReason = (pattern) => commandReasonCodes.some((reason) => pattern.test(reason));
+  if (hasCommandReason(new RegExp(PAID_RESOURCE_BLOCKED_REASON_CODE, "i"))) {
+    return { status: "hold", reasonCode: PAID_RESOURCE_BLOCKED_REASON_CODE };
+  }
+  if (hasCommandReason(/provider_capacity_blocked/i)) {
+    return { status: "hold", reasonCode: "provider_capacity_blocked" };
+  }
+  if (hasCommandReason(/byon_voice_number_not_configured/i)) {
+    return { status: "hold", reasonCode: "byon_voice_number_not_configured" };
+  }
+  if (hasCommandReason(/contact_phone_provisioning_failed/i)) {
+    return { status: "hold", reasonCode: "voice_contact_phone_provisioning_failed" };
+  }
+  if (hasCommandReason(/voice_contact_expected_no_spend_hold/i)) {
+    return { status: "hold", reasonCode: "voice_contact_expected_no_spend_hold" };
+  }
+  if (hasCommandReason(/contact_phone_missing/i)) {
+    return { status: "hold", reasonCode: "voice_contact_phone_missing" };
+  }
+  if (hasCommandReason(/sim(?:ulation)?[_-]?cert(?:ify|ification)?.*failed|simulation_certification_failed/i)) {
+    return { status: "hold", reasonCode: "simulation_certification_failed" };
+  }
+  if (hasCommandReason(/proof_held/i)) {
+    return { status: "hold", reasonCode: "external_agent_proof_held" };
+  }
+  if (hasCommandReason(/agent_limit_reached/i)) {
+    return { status: "hold", reasonCode: "eval_org_agent_limit_reached" };
+  }
   const lastMessage = readIfExists(input.run.outputs.last_message);
   const stderr = readIfExists(input.run.outputs.stderr);
   const combined = `${lastMessage}
@@ -38760,15 +40115,49 @@ ${stderr}`;
   if (/(?:blocked|rejected|declined) by policy|EXEC_POLICY_BLOCKED|command execution was rejected|shell commands were rejected/i.test(combined)) {
     return { status: "hold", reasonCode: "codex_exec_policy_blocked" };
   }
+  if (/bwrap:.*(?:RTM_NEWADDR|Operation not permitted|setting up uid map: Permission denied)|bubblewrap.*(?:RTM_NEWADDR|Operation not permitted|setting up uid map: Permission denied)|Failed RTM_NEWADDR|ENV_SANDBOX_EXEC_BLOCKED|permission profiles requiring direct runtime enforcement are incompatible with --use-legacy-landlock|legacy[_ -]?landlock.*incompatible/i.test(combined)) {
+    return { status: "hold", reasonCode: "codex_sandbox_exec_blocked" };
+  }
+  if (/ENV_NETWORK_DNS_BLOCK|Could not resolve host|npm ping.*timeout|NO_EXECUTABLE_INSTALL/i.test(combined)) {
+    return { status: "hold", reasonCode: "codex_network_dns_blocked" };
+  }
+  if (new RegExp(PAID_RESOURCE_BLOCKED_REASON_CODE, "i").test(combined)) {
+    return { status: "hold", reasonCode: PAID_RESOURCE_BLOCKED_REASON_CODE };
+  }
+  if (/provider_capacity_blocked/i.test(combined)) {
+    return { status: "hold", reasonCode: "provider_capacity_blocked" };
+  }
+  if (/byon_voice_number_not_configured/i.test(combined)) {
+    return { status: "hold", reasonCode: "byon_voice_number_not_configured" };
+  }
+  if (/contact_phone_provisioning_failed/i.test(combined)) {
+    return { status: "hold", reasonCode: "voice_contact_phone_provisioning_failed" };
+  }
+  if (/voice_contact_expected_no_spend_hold/i.test(combined)) {
+    return { status: "hold", reasonCode: "voice_contact_expected_no_spend_hold" };
+  }
+  if (/contact_phone_missing/i.test(combined)) {
+    return { status: "hold", reasonCode: "voice_contact_phone_missing" };
+  }
+  if (/simulation_certification_failed/i.test(combined)) {
+    return { status: "hold", reasonCode: "simulation_certification_failed" };
+  }
+  if (/proof_held/i.test(combined)) {
+    return { status: "hold", reasonCode: "external_agent_proof_held" };
+  }
+  if (/agent_limit_reached/i.test(combined)) {
+    return { status: "hold", reasonCode: "eval_org_agent_limit_reached" };
+  }
   if (/browser|approve|approval|login|auth|sign in/i.test(combined) && !proofArtifactPasses(input.run.run_dir)) {
     return { status: "hold", reasonCode: "auth_browser_approval_required" };
   }
-  if (input.exitCode !== 0) return { status: "hold", reasonCode: "codex_runner_nonzero_exit" };
+  if (input.exitCode !== 0) return { status: "hold", reasonCode: `${input.run.command}_runner_nonzero_exit` };
   if (proofArtifactPasses(input.run.run_dir)) return { status: "pass", reasonCode: null };
   return { status: "hold", reasonCode: "external_agent_proof_artifact_missing" };
 }
 function buildExecutedRunArtifact(input) {
   const commands = readCommandRecords(input.run.run_dir);
+  const agentMetadata = readExternalAgentMetadata(input.run.run_dir);
   return {
     schema_version: "external_agent_run.v1",
     run_id: input.run.run_id,
@@ -38776,7 +40165,8 @@ function buildExecutedRunArtifact(input) {
     failure_reason_code: input.reasonCode,
     model_provider: input.run.model_provider,
     model_name: input.run.model_name,
-    agent_shell: "codex-exec",
+    runner_model: input.run.runner_model,
+    agent_shell: `${input.run.command}-exec`,
     workspace_type: "clean-no-repo-programmatic",
     prompt_version: input.run.prompt_version,
     prompt_path: "prompt.txt",
@@ -38800,40 +40190,59 @@ function buildExecutedRunArtifact(input) {
       "npx --yes @f-o-h/cli@latest"
     ],
     commands_run: commands.map((command) => command.command),
-    docs_pages_used: [],
+    docs_pages_used: agentMetadata.docs_pages_used,
+    eval_state: {
+      lifecycle_strategy: "reuse_existing_eval_state",
+      org_reuse_expected: true,
+      agent_reuse_expected: true,
+      widget_reuse_expected: true,
+      fresh_org_expected: false,
+      ephemeral_org_expected: false,
+      fresh_agent_expected: false,
+      phone_purchase_expected: false,
+      paid_resource_creation_expected: false,
+      spend_policy_expected: NO_SPEND_POLICY,
+      cleanup_expected: false,
+      cleanup_strategy: "no_cleanup_for_reused_eval_state",
+      paid_resource_strategy: "blocked_unless_explicit_byon_or_operator_approved",
+      rationale: "Mass external-agent evals benchmark public docs/CLI/API clarity; reuse avoids paid phone and Twilio inventory churn."
+    },
     artifacts: {
       terminal_transcript: relativeArtifactName(input.run.outputs.jsonl),
-      command_log: (0, import_fs14.existsSync)((0, import_path12.join)(input.run.run_dir, "commands.ndjson")) ? "commands.ndjson" : null,
-      proof_bundle: (0, import_fs14.existsSync)((0, import_path12.join)(input.run.run_dir, "proof.json")) ? "proof.json" : null,
-      replay_packet: (0, import_fs14.existsSync)((0, import_path12.join)(input.run.run_dir, "replay.json")) ? "replay.json" : null,
-      knowledge_packet: (0, import_fs14.existsSync)((0, import_path12.join)(input.run.run_dir, "knowledge.json")) ? "knowledge.json" : null,
+      command_log: (0, import_fs15.existsSync)((0, import_path13.join)(input.run.run_dir, "commands.ndjson")) ? "commands.ndjson" : null,
+      proof_bundle: (0, import_fs15.existsSync)((0, import_path13.join)(input.run.run_dir, "proof.json")) ? "proof.json" : null,
+      replay_packet: (0, import_fs15.existsSync)((0, import_path13.join)(input.run.run_dir, "replay.json")) ? "replay.json" : null,
+      knowledge_packet: (0, import_fs15.existsSync)((0, import_path13.join)(input.run.run_dir, "knowledge.json")) ? "knowledge.json" : null,
       improvement_packet: input.status === "pass" ? null : "improvement-packet.json",
-      notes: (0, import_fs14.existsSync)((0, import_path12.join)(input.run.run_dir, "notes.md")) ? "notes.md" : null,
-      codex_last_message: relativeArtifactName(input.run.outputs.last_message),
-      codex_stderr: relativeArtifactName(input.run.outputs.stderr),
+      agent_metadata: agentMetadata.path,
+      notes: (0, import_fs15.existsSync)((0, import_path13.join)(input.run.run_dir, "notes.md")) ? "notes.md" : null,
+      runner_last_message: relativeArtifactName(input.run.outputs.last_message),
+      runner_stderr: relativeArtifactName(input.run.outputs.stderr),
+      codex_last_message: input.run.command === "codex" ? relativeArtifactName(input.run.outputs.last_message) : null,
+      codex_stderr: input.run.command === "codex" ? relativeArtifactName(input.run.outputs.stderr) : null,
       artifact_safety: relativeArtifactName(input.run.outputs.artifact_safety)
     },
-    summary: input.status === "pass" ? "Controlled Codex external-agent run produced passing proof evidence." : `Controlled Codex external-agent run ended as ${input.status} with reason ${input.reasonCode}.`,
-    next_commands: input.status === "pass" ? ["corepack pnpm eval:external-agent:runs:summary"] : [
+    summary: input.status === "pass" ? `Controlled ${input.run.command} external-agent run produced passing proof evidence.` : `Controlled ${input.run.command} external-agent run ended as ${input.status} with reason ${input.reasonCode}.`,
+    next_commands: input.status === "pass" ? [externalAgentSummaryCommand((0, import_path13.dirname)(input.run.run_dir))] : [
       "foh eval external-agent scan-artifacts --run-dir <run_dir> --private-repo-root <private_repo_root> --write-redacted --json",
       "foh bug improve --from external-agent-run --file <run_dir>/run.json --out <run_dir>/improvement-packet.json --json",
-      "corepack pnpm eval:external-agent:runs:summary"
+      externalAgentSummaryCommand((0, import_path13.dirname)(input.run.run_dir))
     ]
   };
 }
-function spawnCodex(input) {
+function spawnRunner(input) {
   return new Promise((resolveRun) => {
     const started = Date.now();
-    const useShell = process.platform === "win32" && input.command.toLowerCase().endsWith(".cmd");
-    const child = (0, import_child_process4.spawn)(input.command, input.args, {
+    const commandInvocation = buildCommandInvocation(input.command, input.args);
+    const child = (0, import_child_process4.spawn)(commandInvocation.command, commandInvocation.args, {
       cwd: input.cwd,
       env: input.env,
-      shell: useShell,
+      shell: false,
       stdio: ["pipe", "pipe", "pipe"],
       windowsHide: true
     });
-    const stdout = (0, import_fs14.createWriteStream)(input.stdoutPath, { flags: "w" });
-    const stderr = (0, import_fs14.createWriteStream)(input.stderrPath, { flags: "w" });
+    const stdout = (0, import_fs15.createWriteStream)(input.stdoutPath, { flags: "w" });
+    const stderr = (0, import_fs15.createWriteStream)(input.stderrPath, { flags: "w" });
     child.stdout.pipe(stdout);
     child.stderr.pipe(stderr);
     child.stdin.end(input.prompt);
@@ -38868,33 +40277,91 @@ function spawnCodex(input) {
     });
   });
 }
+function buildCommandInvocation(command, args) {
+  if (process.platform === "win32" && command.toLowerCase().endsWith(".cmd")) {
+    const binDir = (0, import_path13.dirname)(command);
+    const codexEntrypoint = (0, import_path13.join)(binDir, "node_modules", "@openai", "codex", "bin", "codex.js");
+    if ((0, import_fs15.existsSync)(codexEntrypoint)) return { command: process.execPath, args: [codexEntrypoint, ...args] };
+    const geminiEntrypoint = (0, import_path13.join)(binDir, "node_modules", "@google", "gemini-cli", "bundle", "gemini.js");
+    if ((0, import_fs15.existsSync)(geminiEntrypoint)) return { command: process.execPath, args: ["--no-warnings=DEP0040", geminiEntrypoint, ...args] };
+  }
+  return { command, args };
+}
 async function executeExternalAgentExecutorPlan(plan, options = {}) {
   const startedAt = (/* @__PURE__ */ new Date()).toISOString();
   const results = [];
-  const runnerCommand = options.runnerCommand || resolveCodexExecutionCommand();
+  const runnerCommand = options.runnerCommand || resolveRunnerExecutionCommand(plan.runner);
+  const authPreflight = options.env || options.requireExplicitEvalAuth ? await runExternalAgentEvalAuthPreflight(options.env ?? {}, {
+    requireExplicitEvalAuth: options.requireExplicitEvalAuth,
+    minimumTtlMs: options.minimumEvalAuthTtlMs
+  }) : null;
+  if (authPreflight && !authPreflight.ok) {
+    const endedAt2 = (/* @__PURE__ */ new Date()).toISOString();
+    const blockedResults = plan.runs.map((run) => {
+      (0, import_fs15.mkdirSync)(run.run_dir, { recursive: true });
+      const runArtifact = buildExecutedRunArtifact({
+        run,
+        startedAt,
+        endedAt: endedAt2,
+        status: "hold",
+        reasonCode: authPreflight.reason_code,
+        exitCode: null,
+        timedOut: false,
+        durationMs: 0
+      });
+      (0, import_fs15.writeFileSync)(run.outputs.run, `${JSON.stringify(runArtifact, null, 2)}
+`, "utf8");
+      return {
+        run_id: run.run_id,
+        status: "hold",
+        failure_reason_code: authPreflight.reason_code,
+        exit_code: null,
+        timed_out: false,
+        duration_ms: 0,
+        artifacts: run.outputs
+      };
+    });
+    return {
+      schema_version: "external_agent_execution_batch_result.v1",
+      ok: false,
+      status: "hold",
+      reason_code: authPreflight.reason_code,
+      auth_preflight: authPreflight,
+      started_at: startedAt,
+      ended_at: endedAt2,
+      runner: plan.runner,
+      run_count: plan.runs.length,
+      results: blockedResults
+    };
+  }
   for (const run of plan.runs) {
     const runStartedAt = (/* @__PURE__ */ new Date()).toISOString();
+    const commandCaptureDir = (0, import_path13.join)(run.workspace_dir, ".foh-capture");
+    (0, import_fs15.mkdirSync)(commandCaptureDir, { recursive: true });
     const env = buildCodexExecutorEnv({
       sourceEnv: options.env,
-      runDir: run.run_dir,
+      runDir: commandCaptureDir,
       promptVersion: run.prompt_version
     });
-    const spawned = await spawnCodex({
+    const spawned = await spawnRunner({
       command: runnerCommand,
       args: run.args,
       cwd: run.workspace_dir,
       env,
-      prompt: (0, import_fs14.readFileSync)(run.prompt_path, "utf8"),
+      prompt: (0, import_fs15.readFileSync)(run.prompt_path, "utf8"),
       stdoutPath: run.outputs.jsonl,
       stderrPath: run.outputs.stderr,
       timeoutMs: plan.timeout_minutes * 60 * 1e3
     });
+    copyCommandCaptureArtifacts({ captureDir: commandCaptureDir, runDir: run.run_dir });
+    const privateRepoRoot = options.privateRepoRoot || plan.private_repo_root;
+    redactOutputArtifacts(run, { privateRepoRoot });
     const artifactSafety = scanExternalAgentArtifacts({
       runDir: run.run_dir,
-      privateRepoRoot: options.privateRepoRoot || plan.private_repo_root,
+      privateRepoRoot,
       writeRedacted: true
     });
-    (0, import_fs14.writeFileSync)(run.outputs.artifact_safety, `${JSON.stringify(artifactSafety, null, 2)}
+    (0, import_fs15.writeFileSync)(run.outputs.artifact_safety, `${JSON.stringify(artifactSafety, null, 2)}
 `, "utf8");
     const runEndedAt = (/* @__PURE__ */ new Date()).toISOString();
     const classification = classifyRun({
@@ -38913,7 +40380,7 @@ async function executeExternalAgentExecutorPlan(plan, options = {}) {
       timedOut: spawned.timedOut,
       durationMs: spawned.durationMs
     });
-    (0, import_fs14.writeFileSync)(run.outputs.run, `${JSON.stringify(runArtifact, null, 2)}
+    (0, import_fs15.writeFileSync)(run.outputs.run, `${JSON.stringify(runArtifact, null, 2)}
 `, "utf8");
     results.push({
       run_id: run.run_id,
@@ -38934,6 +40401,7 @@ async function executeExternalAgentExecutorPlan(plan, options = {}) {
     ok: status === "pass",
     status,
     reason_code: status === "pass" ? "external_agent_execution_passed" : "external_agent_execution_needs_review",
+    ...authPreflight ? { auth_preflight: authPreflight } : {},
     started_at: startedAt,
     ended_at: endedAt,
     runner: plan.runner,
@@ -38946,7 +40414,7 @@ async function executeExternalAgentExecutorPlan(plan, options = {}) {
 var DEFAULT_PROMPT_VERSION = "blank-setup.v1";
 var DEFAULT_BATCH_MODELS = "openai/codex,anthropic/claude,cursor/agent";
 var PROMPTS = {
-  "blank-setup.v1": "Go to https://frontofhouse.okii.uk. Use only public docs, public API docs, and the public npm CLI package. Install the FOH CLI, authenticate or reach a deterministic auth blocker, create or configure a Front Of House voice agent and website widget, run proof/smoke/certification where available, and produce a final evidence summary with commands run, docs used, artifacts created, and any blocker reason codes. Do not assume access to the private source repository.",
+  "blank-setup.v1": "Go to https://frontofhouse.okii.uk. Use only public docs, public API docs, and the public npm CLI package. Always invoke the CLI with `npx --yes @f-o-h/cli@latest ...`; do not use unpinned `npx @f-o-h/cli ...`, because cached older packages can produce invalid evidence. Install or verify the FOH CLI, authenticate or reach a deterministic auth blocker, then create or configure a Front Of House voice agent and website widget. Mass evals reuse existing eval state: run `npx --yes @f-o-h/cli@latest org status --json` and `npx --yes @f-o-h/cli@latest agent list --json` before trying to create a fresh agent; if an existing eval agent is present, configure and prove that agent instead of creating a second bronze-tier agent. Prefer the certification-oriented buyer templates: run `npx --yes @f-o-h/cli@latest templates list --category buyer --json` and use `UK Buyer Qualification` or `Viewing Booking` when available; do not use a greeting-only template for proof/certification. Prefer `npx --yes @f-o-h/cli@latest setup --phone-mode observe` for the free scaffold path: agent, widget, voice config, smoke test, certification, and publish readiness together. Treat phone-number purchasing as an explicit paid/scarce contact-path step, not part of high-volume eval setup. If `FOH_CLI_SPEND_POLICY=no_spend` is active and a command returns `paid_resource_blocked_by_spend_policy`, do not try to bypass it; continue widget/setup proof and report that exact reason code for the phone path. If the customer/operator explicitly owns a number and asks for real PSTN proof, use `npx --yes @f-o-h/cli@latest provision byon attach --phone-number <e164> --confirm-owned --json`; do not invent ownership or buy a FOH-owned number. Run proof/smoke/certification where available, including widget proof, voice proof, and one explicit `foh certify run --agent <id> --profile release --json` before publish. `foh prove` does not run release certification by default; only pass `--include-certification --proof-cache-dir .foh/proof-cache` when an explicit combined proof/certification run is required. If voice proof returns `contact_phone_missing` or `voice_contact_expected_no_spend_hold`, report that exact reason code unless a BYON/customer-approved phone path already exists. If `FOH_EXTERNAL_AGENT_RUN_DIR` is set, write `${FOH_EXTERNAL_AGENT_RUN_DIR}/external-agent-metadata.json` with `schema_version`, `docs_pages_used`, key decisions, and blocker reason codes before finishing. Produce a final evidence summary with commands run, docs used, artifacts created, and any blocker reason codes. Do not assume access to the private source repository.",
   "debug-proof-failure.v1": "You are given a FOH proof or debug artifact. Use public docs and FOH CLI/API behavior to classify whether the blocker is docs, auth, org setup, agent config, widget, channel, runtime, or product bug. Produce a redacted improvement packet or the exact command needed to produce one. Do not ask the human to interpret logs manually unless no machine-readable artifact exists.",
   "knowledge-miss.v1": "A FOH agent failed to answer a business question. Use CLI/API/docs to determine whether this is a knowledge-ingestion issue, retrieval issue, config issue, prompt/behavior issue, or runtime issue. Prefer foh knowledge query, transcript export, replay, and foh bug improve artifacts over screenshots.",
   "replay-failure.v1": "You are given a FOH transcript or replay artifact. Use CLI/API/docs to replay or inspect the failed interaction, identify expected vs actual behavior, and produce a scenario-test or improvement-packet candidate."
@@ -38961,13 +40429,13 @@ function defaultRunDir(modelName, promptVersion) {
   const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").replace("T", "-").slice(0, 23);
   const safeModel = String(modelName || "unknown-model").toLowerCase().replace(/[^a-z0-9_-]+/g, "-");
   const safePrompt = String(promptVersion || DEFAULT_PROMPT_VERSION).toLowerCase().replace(/[^a-z0-9_.-]+/g, "-");
-  return (0, import_path13.resolve)("test-results", "external-agent-runs", date4, `${safeModel}-${safePrompt}-${stamp}`);
+  return (0, import_path14.resolve)("test-results", "external-agent-runs", date4, `${safeModel}-${safePrompt}-${stamp}`);
 }
 function defaultBatchDir(promptVersion) {
   const date4 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
   const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").replace("T", "-").slice(0, 23);
   const safePrompt = String(promptVersion || DEFAULT_PROMPT_VERSION).toLowerCase().replace(/[^a-z0-9_.-]+/g, "-");
-  return (0, import_path13.resolve)("test-results", "external-agent-runs", date4, `batch-${safePrompt}-${stamp}`);
+  return (0, import_path14.resolve)("test-results", "external-agent-runs", date4, `batch-${safePrompt}-${stamp}`);
 }
 function safeSlug(value) {
   return String(value || "unknown").toLowerCase().replace(/[^a-z0-9_.-]+/g, "-").replace(/^-+|-+$/g, "") || "unknown";
@@ -38976,6 +40444,79 @@ function quoteArg(value) {
   const text = String(value);
   if (/^[A-Za-z0-9_./:=@-]+$/.test(text)) return text;
   return `"${text.replace(/(["$`])/g, "\\$1")}"`;
+}
+function scanArtifactsCommand(runDir, privateRepoRoot) {
+  const privateRootArg = privateRepoRoot ? ` --private-repo-root ${quoteArg(privateRepoRoot)}` : "";
+  return `foh eval external-agent scan-artifacts --run-dir ${quoteArg(runDir)}${privateRootArg} --write-redacted --json`;
+}
+function externalAgentSummaryCommand2(root) {
+  const summaryPath = (0, import_path14.join)(root, "latest-summary.json");
+  const reportPath = (0, import_path14.join)(root, "summary.report.json");
+  return [
+    "node",
+    "scripts/summarize-external-agent-runs.mjs",
+    "--root",
+    quoteArg(root),
+    "--out",
+    quoteArg(summaryPath),
+    "--report",
+    quoteArg(reportPath)
+  ].join(" ");
+}
+function executorRecoveryCommands(reasonCode, runner) {
+  const normalizedRunner = String(runner || "codex").trim().toLowerCase();
+  if (reasonCode === "external_agent_runner_binary_missing") {
+    if (normalizedRunner === "gemini") {
+      return [
+        "gemini --version",
+        "gemini --help",
+        "Install and authenticate Gemini CLI on the isolated eval host, then rerun the same `foh eval external-agent execute --runner gemini --dry-run --json` command."
+      ];
+    }
+    return [
+      "codex --version",
+      "codex exec --help",
+      "Run `codex login` on the isolated eval host if the binary is installed but not usable, then rerun the dry-run executor plan."
+    ];
+  }
+  if (reasonCode === "external_agent_runner_required_flags_missing" || reasonCode === "external_agent_runner_help_unavailable") {
+    return [
+      `${normalizedRunner} --version`,
+      `${normalizedRunner} --help`,
+      "Upgrade or reinstall the runner CLI on the isolated eval host, then rerun the dry-run executor plan."
+    ];
+  }
+  if (reasonCode === "external_agent_runner_sandbox_unavailable") {
+    return [
+      "gemini --version",
+      "gemini --help",
+      "Install/configure Docker or Podman for Gemini sandboxing, or rerun only on an externally isolated host with `--gemini-sandbox-mode disabled` after confirming no private repo or runtime secrets are present."
+    ];
+  }
+  if (reasonCode === "external_agent_runner_headless_probe_failed") {
+    return [
+      `${normalizedRunner} --version`,
+      `${normalizedRunner} --help`,
+      "Upgrade, downgrade, or reconfigure the runner CLI until the planned non-interactive invocation reaches an auth boundary without parser errors."
+    ];
+  }
+  if (reasonCode === "external_agent_runner_headless_probe_timed_out") {
+    return [
+      `${normalizedRunner} --version`,
+      `${normalizedRunner} --help`,
+      "Retry the dry-run once. If it repeats, reduce the probe/model contention or use a different subscribed runner before launching live evals."
+    ];
+  }
+  if (reasonCode === "external_agent_runner_capacity_unavailable") {
+    return [
+      "gemini --version",
+      "gemini --help",
+      "Retry after the Gemini capacity window resets, or configure a supported lower-contention Gemini model before rerunning the same executor dry-run."
+    ];
+  }
+  return [
+    "Fix the executor plan input or workspace path and rerun with --dry-run."
+  ];
 }
 function parseModelSpec(raw) {
   const [provider, ...nameParts] = String(raw || "").split("/");
@@ -38993,21 +40534,69 @@ function inferShell(raw) {
   if (process.platform === "win32") return { command: "powershell.exe", args: ["-NoLogo", "-NoProfile"], label: "powershell" };
   return { command: process.env.SHELL || "sh", args: [], label: process.env.SHELL || "sh" };
 }
-function writePrompt(runDir, promptVersion) {
-  const prompt = PROMPTS[promptVersion] ?? PROMPTS[DEFAULT_PROMPT_VERSION];
-  const path2 = (0, import_path13.join)(runDir, "prompt.txt");
-  (0, import_fs15.writeFileSync)(path2, `${prompt}
+function replayPromptContext(replayFile) {
+  const file2 = String(replayFile || "").trim();
+  if (!file2) return "";
+  return [
+    "",
+    "Replay artifact context:",
+    `- Replay file: ${file2}`,
+    `- Start by running: npx --yes @f-o-h/cli@latest agent replay --file ${quoteArg(file2)} --json`,
+    "- If the replay packet exposes trace/test next commands, run the safest read-only command and convert any failure into `foh bug improve` evidence."
+  ].join("\n");
+}
+function knowledgeMissPromptContext(knowledgeQuestion, expectedAnswer) {
+  const question = String(knowledgeQuestion || "").trim();
+  if (!question) return "";
+  const expected = String(expectedAnswer || "").trim();
+  return [
+    "",
+    "Planted knowledge-miss context:",
+    `- Question to diagnose: ${question}`,
+    ...expected ? [`- Expected answer or missing fact: ${expected}`] : [],
+    `- Start by running: npx --yes @f-o-h/cli@latest knowledge query --agent <agent_id> --text ${quoteArg(question)} --explain --json`,
+    "- If the query returns no match or low confidence, write the failure packet and convert it with `foh bug improve --source-type knowledge_miss --from-file <packet.json> --json`.",
+    "- Do not patch around the miss manually; produce the smallest redacted artifact that explains whether the fix belongs to docs, ingestion, retrieval, config, or runtime."
+  ].join("\n");
+}
+function writePrompt(runDir, promptVersion, context = {}) {
+  const prompt = [
+    PROMPTS[promptVersion] ?? PROMPTS[DEFAULT_PROMPT_VERSION],
+    replayPromptContext(context.replayFile),
+    knowledgeMissPromptContext(context.knowledgeQuestion, context.expectedAnswer)
+  ].join("");
+  const path2 = (0, import_path14.join)(runDir, "prompt.txt");
+  (0, import_fs16.writeFileSync)(path2, `${prompt}
 `, "utf8");
   return path2;
 }
 function writeSession(runDir, session) {
-  const path2 = (0, import_path13.join)(runDir, "session.json");
-  (0, import_fs15.writeFileSync)(path2, `${JSON.stringify(session, null, 2)}
+  const path2 = (0, import_path14.join)(runDir, "session.json");
+  (0, import_fs16.writeFileSync)(path2, `${JSON.stringify(session, null, 2)}
 `, "utf8");
   return path2;
 }
+function buildDefaultEvalState() {
+  return {
+    lifecycle_strategy: "reuse_existing_eval_state",
+    org_reuse_expected: true,
+    agent_reuse_expected: true,
+    widget_reuse_expected: true,
+    fresh_org_expected: false,
+    ephemeral_org_expected: false,
+    fresh_agent_expected: false,
+    phone_purchase_expected: false,
+    paid_resource_creation_expected: false,
+    spend_policy_expected: "no_spend",
+    cleanup_expected: false,
+    cleanup_strategy: "no_cleanup_for_reused_eval_state",
+    paid_resource_strategy: "blocked_unless_explicit_byon_or_operator_approved",
+    rationale: "Mass external-agent evals benchmark public docs/CLI/API clarity; reuse avoids paid phone and Twilio inventory churn."
+  };
+}
 function buildRunArtifact(input) {
   const commands = readCommandRecords(input.runDir);
+  const agentMetadata = readExternalAgentMetadata(input.runDir);
   const startedAt = String(input.session.started_at);
   const endedAt = (/* @__PURE__ */ new Date()).toISOString();
   const status = input.status;
@@ -39041,7 +40630,13 @@ function buildRunArtifact(input) {
       "npx --yes @f-o-h/cli@latest"
     ],
     commands_run: commands.map((command) => command.command),
-    docs_pages_used: [],
+    docs_pages_used: agentMetadata.docs_pages_used,
+    eval_state: buildDefaultEvalState(),
+    context: {
+      replay_file: input.session.replay_file ?? null,
+      knowledge_question: input.session.knowledge_question ?? null,
+      expected_answer: input.session.expected_answer ?? null
+    },
     artifacts: {
       terminal_transcript: null,
       command_log: "commands.ndjson",
@@ -39049,28 +40644,32 @@ function buildRunArtifact(input) {
       replay_packet: null,
       knowledge_packet: null,
       improvement_packet: status === "pass" ? null : "improvement-packet.json",
+      agent_metadata: agentMetadata.path,
       notes: "notes.md"
     },
     summary: status === "pass" ? "External-agent capture session completed and was marked pass." : `External-agent capture session completed with ${commands.length} captured FOH command(s); classify and improve reason ${reasonCode}.`,
-    next_commands: status === "pass" ? ["corepack pnpm eval:external-agent:runs:summary"] : [
-      `foh bug improve --from external-agent-run --file ${(0, import_path13.join)(input.runDir, "run.json")} --out ${(0, import_path13.join)(input.runDir, "improvement-packet.json")} --json`,
-      "corepack pnpm eval:external-agent:runs:summary"
+    next_commands: status === "pass" ? [externalAgentSummaryCommand2((0, import_path14.dirname)(input.runDir))] : [
+      `foh bug improve --from external-agent-run --file ${(0, import_path14.join)(input.runDir, "run.json")} --out ${(0, import_path14.join)(input.runDir, "improvement-packet.json")} --json`,
+      externalAgentSummaryCommand2((0, import_path14.dirname)(input.runDir))
     ]
   };
 }
 function registerEval(program3) {
   const evalCommand = program3.command("eval").description("Run or summarize external-agent evaluation workflows");
   const external = evalCommand.command("external-agent").description("Capture clean external coding-agent setup attempts");
-  external.command("batch").description("Create a deterministic multi-model external-agent batch plan").option("--models <list>", "Comma-separated provider/model list", DEFAULT_BATCH_MODELS).option("--prompt-version <version>", "Prompt version", DEFAULT_PROMPT_VERSION).option("--workspace-type <type>", "Workspace type label", "clean-no-repo").option("--agent-shell <name>", "Agent shell label", "vscode-terminal").option("--out-dir <path>", "Batch output directory").option("--json", "Output as JSON").action(async (opts) => {
+  external.command("batch").description("Create a deterministic multi-model external-agent batch plan").option("--models <list>", "Comma-separated provider/model list", DEFAULT_BATCH_MODELS).option("--prompt-version <version>", "Prompt version", DEFAULT_PROMPT_VERSION).option("--replay-file <path>", "Local transcript/replay artifact to seed replay-failure prompts").option("--knowledge-question <text>", "Question to seed knowledge-miss prompts").option("--expected-answer <text>", "Expected answer or missing fact for planted knowledge-miss prompts").option("--workspace-type <type>", "Workspace type label", "clean-no-repo").option("--agent-shell <name>", "Agent shell label", "vscode-terminal").option("--out-dir <path>", "Batch output directory").option("--json", "Output as JSON").action(async (opts) => {
     const promptVersion = String(opts.promptVersion || DEFAULT_PROMPT_VERSION);
-    const batchDir = (0, import_path13.resolve)(String(opts.outDir || defaultBatchDir(promptVersion)));
+    const batchDir = (0, import_path14.resolve)(String(opts.outDir || defaultBatchDir(promptVersion)));
+    const replayFile = opts.replayFile ? (0, import_path14.resolve)(String(opts.replayFile)) : void 0;
+    const knowledgeQuestion = opts.knowledgeQuestion ? String(opts.knowledgeQuestion) : void 0;
+    const expectedAnswer = opts.expectedAnswer ? String(opts.expectedAnswer) : void 0;
     const models = parseModelList(String(opts.models || DEFAULT_BATCH_MODELS));
-    (0, import_fs15.mkdirSync)(batchDir, { recursive: true });
+    (0, import_fs16.mkdirSync)(batchDir, { recursive: true });
     const runs = models.map((model, index) => {
       const runId = `${String(index + 1).padStart(2, "0")}-${safeSlug(model.provider)}-${safeSlug(model.name)}`;
-      const runDir = (0, import_path13.join)(batchDir, runId);
-      (0, import_fs15.mkdirSync)(runDir, { recursive: true });
-      const promptPath = writePrompt(runDir, promptVersion);
+      const runDir = (0, import_path14.join)(batchDir, runId);
+      (0, import_fs16.mkdirSync)(runDir, { recursive: true });
+      const promptPath = writePrompt(runDir, promptVersion, { replayFile, knowledgeQuestion, expectedAnswer });
       const commandArgs = [
         "eval",
         "external-agent",
@@ -39088,6 +40687,9 @@ function registerEval(program3) {
         "--out-dir",
         runDir
       ];
+      if (replayFile) commandArgs.push("--replay-file", replayFile);
+      if (knowledgeQuestion) commandArgs.push("--knowledge-question", knowledgeQuestion);
+      if (expectedAnswer) commandArgs.push("--expected-answer", expectedAnswer);
       return {
         run_id: runId,
         model_provider: model.provider,
@@ -39104,14 +40706,17 @@ function registerEval(program3) {
       created_at: (/* @__PURE__ */ new Date()).toISOString(),
       batch_dir: batchDir,
       prompt_version: promptVersion,
+      replay_file: replayFile ?? null,
+      knowledge_question: knowledgeQuestion ?? null,
+      expected_answer: expectedAnswer ?? null,
       workspace_type: String(opts.workspaceType || "clean-no-repo"),
       agent_shell: String(opts.agentShell || "vscode-terminal"),
       run_count: runs.length,
       runs,
-      summary_command: `corepack pnpm eval:external-agent:runs:summary -- --root ${batchDir}`
+      summary_command: externalAgentSummaryCommand2(batchDir)
     };
-    const batchPath = (0, import_path13.join)(batchDir, "batch.json");
-    (0, import_fs15.writeFileSync)(batchPath, `${JSON.stringify(batch, null, 2)}
+    const batchPath = (0, import_path14.join)(batchDir, "batch.json");
+    (0, import_fs16.writeFileSync)(batchPath, `${JSON.stringify(batch, null, 2)}
 `, "utf8");
     format(cliEnvelope({
       schemaVersion: "external_agent_batch_plan_result.v1",
@@ -39128,13 +40733,16 @@ function registerEval(program3) {
       extra: { batch }
     }), { json: Boolean(opts.json) });
   });
-  external.command("run").description("Launch an instrumented shell and emit external_agent_run.v1 when it exits").option("--model-provider <name>", "Model provider label", "unknown").option("--model-name <name>", "Model name label", "unknown-model").option("--prompt-version <version>", "Prompt version", DEFAULT_PROMPT_VERSION).option("--workspace-type <type>", "Workspace type label", "clean-no-repo").option("--agent-shell <name>", "Agent shell label", "vscode-terminal").option("--out-dir <path>", "Run output directory").option("--status <status>", "Final status when not interactively classified: pass|hold|fail", "hold").option("--reason-code <code>", "Failure/hold reason code", "external_agent_run_needs_review").option("--shell <command>", "Shell command to launch for capture").option("--no-shell", "Do not launch a shell; create/finalize artifacts immediately").option("--json", "Output as JSON").action(async (opts) => {
+  external.command("run").description("Launch an instrumented shell and emit external_agent_run.v1 when it exits").option("--model-provider <name>", "Model provider label", "unknown").option("--model-name <name>", "Model name label", "unknown-model").option("--prompt-version <version>", "Prompt version", DEFAULT_PROMPT_VERSION).option("--replay-file <path>", "Local transcript/replay artifact to seed replay-failure prompts").option("--knowledge-question <text>", "Question to seed knowledge-miss prompts").option("--expected-answer <text>", "Expected answer or missing fact for planted knowledge-miss prompts").option("--workspace-type <type>", "Workspace type label", "clean-no-repo").option("--agent-shell <name>", "Agent shell label", "vscode-terminal").option("--out-dir <path>", "Run output directory").option("--status <status>", "Final status when not interactively classified: pass|hold|fail", "hold").option("--reason-code <code>", "Failure/hold reason code", "external_agent_run_needs_review").option("--shell <command>", "Shell command to launch for capture").option("--no-shell", "Do not launch a shell; create/finalize artifacts immediately").option("--json", "Output as JSON").action(async (opts) => {
     const status = normalizeStatus(opts.status);
     const promptVersion = String(opts.promptVersion || DEFAULT_PROMPT_VERSION);
-    const runDir = (0, import_path13.resolve)(String(opts.outDir || defaultRunDir(opts.modelName, promptVersion)));
-    (0, import_fs15.mkdirSync)(runDir, { recursive: true });
+    const runDir = (0, import_path14.resolve)(String(opts.outDir || defaultRunDir(opts.modelName, promptVersion)));
+    const replayFile = opts.replayFile ? (0, import_path14.resolve)(String(opts.replayFile)) : void 0;
+    const knowledgeQuestion = opts.knowledgeQuestion ? String(opts.knowledgeQuestion) : void 0;
+    const expectedAnswer = opts.expectedAnswer ? String(opts.expectedAnswer) : void 0;
+    (0, import_fs16.mkdirSync)(runDir, { recursive: true });
     const runId = runDir.split(/[\\/]/).filter(Boolean).slice(-1)[0];
-    const promptPath = writePrompt(runDir, promptVersion);
+    const promptPath = writePrompt(runDir, promptVersion, { replayFile, knowledgeQuestion, expectedAnswer });
     const shell = inferShell(opts.shell);
     const session = {
       schema_version: "external_agent_capture_session.v1",
@@ -39143,18 +40751,22 @@ function registerEval(program3) {
       model_provider: String(opts.modelProvider || "unknown"),
       model_name: String(opts.modelName || "unknown-model"),
       prompt_version: promptVersion,
+      replay_file: replayFile ?? null,
+      knowledge_question: knowledgeQuestion ?? null,
+      expected_answer: expectedAnswer ?? null,
       workspace_type: String(opts.workspaceType || "clean-no-repo"),
       agent_shell: String(opts.agentShell || shell.label),
       manual_intervention_count: 0,
       run_dir: runDir,
       prompt_path: promptPath,
+      eval_state: buildDefaultEvalState(),
       capture_env: {
         [EXTERNAL_AGENT_RUN_DIR_ENV]: runDir,
         [EXTERNAL_AGENT_PROMPT_VERSION_ENV]: promptVersion
       }
     };
     writeSession(runDir, session);
-    (0, import_fs15.writeFileSync)((0, import_path13.join)(runDir, "notes.md"), "# External Agent Run Notes\n\n", "utf8");
+    (0, import_fs16.writeFileSync)((0, import_path14.join)(runDir, "notes.md"), "# External Agent Run Notes\n\n", "utf8");
     let shellExitCode = null;
     if (opts.shell !== false) {
       process.stdout.write(`
@@ -39176,8 +40788,8 @@ Exit the shell to finalize run.json.
       shellExitCode = typeof result.status === "number" ? result.status : null;
     }
     const artifact = buildRunArtifact({ runDir, session, status, reasonCode: opts.reasonCode, shellExitCode });
-    const runPath = (0, import_path13.join)(runDir, "run.json");
-    (0, import_fs15.writeFileSync)(runPath, `${JSON.stringify(artifact, null, 2)}
+    const runPath = (0, import_path14.join)(runDir, "run.json");
+    (0, import_fs16.writeFileSync)(runPath, `${JSON.stringify(artifact, null, 2)}
 `, "utf8");
     format(cliEnvelope({
       schemaVersion: "external_agent_capture_result.v1",
@@ -39187,7 +40799,7 @@ Exit the shell to finalize run.json.
       artifacts: {
         run: runPath,
         prompt: promptPath,
-        commands: (0, import_path13.join)(runDir, "commands.ndjson")
+        commands: (0, import_path14.join)(runDir, "commands.ndjson")
       },
       nextCommands: artifact.next_commands,
       extra: { run: artifact }
@@ -39196,7 +40808,7 @@ Exit the shell to finalize run.json.
   external.command("scan-artifacts").description("Scan and redact external-agent run artifacts before they are promoted into improvement loops").requiredOption("--run-dir <path>", "External-agent run artifact directory").option("--private-repo-root <path>", "Private repository root that must not appear in artifacts").option("--write-redacted", "Write .redacted copies next to scanned artifacts").option("--json", "Output as JSON").action(async (opts) => {
     const report = scanExternalAgentArtifacts({
       runDir: String(opts.runDir),
-      privateRepoRoot: opts.privateRepoRoot ? String(opts.privateRepoRoot) : process.cwd(),
+      privateRepoRoot: opts.privateRepoRoot ? String(opts.privateRepoRoot) : void 0,
       writeRedacted: Boolean(opts.writeRedacted)
     });
     format(cliEnvelope({
@@ -39212,7 +40824,7 @@ Exit the shell to finalize run.json.
     }), { json: Boolean(opts.json) });
     if (!report.ok) process.exitCode = 1;
   });
-  external.command("execute").description("Create a guarded dry-run executor plan for programmable external-agent runners").requiredOption("--batch <path>", "Path to external_agent_batch_plan.v1 batch.json").option("--runner <runner>", "Runner implementation", "codex").option("--workspace-root <path>", "Clean executor workspace root; must be outside the private repo").option("--private-repo-root <path>", "Private repository root to guard against").option("--timeout-minutes <minutes>", "Per-run timeout planned for future execution", "30").option("--skip-runner-probe", "Skip local runner binary/help probing").option("--dry-run", "Write the executor plan without launching the runner", true).option("--live", "Launch one controlled external-agent run after writing the guarded plan").option("--json", "Output as JSON").action(async (opts) => {
+  external.command("execute").description("Create a guarded dry-run executor plan for programmable external-agent runners").requiredOption("--batch <path>", "Path to external_agent_batch_plan.v1 batch.json").option("--runner <runner>", "Runner implementation", "codex").option("--workspace-root <path>", "Clean executor workspace root; must be outside the private repo").option("--private-repo-root <path>", "Private repository root to guard against").option("--timeout-minutes <minutes>", "Per-run timeout planned for future execution", "30").option("--codex-model <model>", "Codex model override for controlled evals; recorded in executor-plan.json and run.json").option("--codex-sandbox-backend <backend>", "Codex sandbox backend override: default|legacy-landlock", "default").option("--codex-sandbox-mode <mode>", "Codex sandbox mode: workspace-write|danger-full-access", "workspace-write").option("--codex-network-access", "Allow Codex workspace-write sandbox network access for public docs/npm probes").option("--gemini-sandbox-mode <mode>", "Gemini sandbox mode: required|disabled", "required").option("--skip-runner-probe", "Skip local runner binary/help probing").option("--dry-run", "Write the executor plan without launching the runner", true).option("--live", "Launch one controlled external-agent run after writing the guarded plan").option("--json", "Output as JSON").action(async (opts) => {
     try {
       const plan = createExternalAgentExecutorPlan({
         batchPath: String(opts.batch),
@@ -39220,6 +40832,11 @@ Exit the shell to finalize run.json.
         workspaceRoot: opts.workspaceRoot ? String(opts.workspaceRoot) : void 0,
         privateRepoRoot: opts.privateRepoRoot ? String(opts.privateRepoRoot) : void 0,
         timeoutMinutes: Number(opts.timeoutMinutes || 30),
+        codexModel: opts.codexModel ? String(opts.codexModel) : void 0,
+        codexSandboxBackend: String(opts.codexSandboxBackend || "default"),
+        codexSandboxMode: String(opts.codexSandboxMode || "workspace-write"),
+        codexNetworkAccess: Boolean(opts.codexNetworkAccess),
+        geminiSandboxMode: String(opts.geminiSandboxMode || "required"),
         skipRunnerProbe: Boolean(opts.skipRunnerProbe),
         cwd: process.cwd()
       });
@@ -39240,10 +40857,13 @@ Exit the shell to finalize run.json.
           return;
         }
         const result = await executeExternalAgentExecutorPlan(plan, {
-          privateRepoRoot: plan.private_repo_root
+          privateRepoRoot: plan.private_repo_root,
+          env: process.env,
+          requireExplicitEvalAuth: true,
+          minimumEvalAuthTtlMs: (plan.timeout_minutes + 5) * 60 * 1e3
         });
-        const resultPath = (0, import_path13.join)(plan.batch_dir, "execution-result.json");
-        (0, import_fs15.writeFileSync)(resultPath, `${JSON.stringify(result, null, 2)}
+        const resultPath = (0, import_path14.join)(plan.batch_dir, "execution-result.json");
+        (0, import_fs16.writeFileSync)(resultPath, `${JSON.stringify(result, null, 2)}
 `, "utf8");
         format(cliEnvelope({
           schemaVersion: "external_agent_execution_result.v1",
@@ -39256,8 +40876,11 @@ Exit the shell to finalize run.json.
             runs: result.results.map((run) => run.artifacts.run)
           },
           nextCommands: [
-            ...result.results.map((run) => `foh eval external-agent scan-artifacts --run-dir ${quoteArg(plan.runs.find((item) => item.run_id === run.run_id)?.run_dir || ".")} --private-repo-root ${quoteArg(plan.private_repo_root)} --write-redacted --json`),
-            "corepack pnpm eval:external-agent:runs:summary"
+            ...result.results.map((run) => scanArtifactsCommand(
+              plan.runs.find((item) => item.run_id === run.run_id)?.run_dir || ".",
+              plan.private_repo_root_explicit ? plan.private_repo_root : void 0
+            )),
+            externalAgentSummaryCommand2(plan.batch_dir)
           ],
           extra: { result }
         }), { json: Boolean(opts.json) });
@@ -39285,9 +40908,7 @@ Exit the shell to finalize run.json.
           status: "blocked",
           reasonCode: error2.reasonCode,
           summary: error2.message,
-          nextCommands: [
-            "Fix the executor plan input or workspace path and rerun with --dry-run."
-          ]
+          nextCommands: executorRecoveryCommands(error2.reasonCode, String(opts.runner || "codex"))
         }), { json: Boolean(opts.json) });
         process.exitCode = 1;
         return;
@@ -39365,9 +40986,32 @@ function installSoftExitTrap() {
   });
 }
 
+// src/lib/mission-help.ts
+var CLI_MISSION_EXAMPLES = [
+  { mission: "Start", command: "foh start", description: "guided setup and next action selector" },
+  { mission: "Setup", command: "foh setup --phone-mode observe --json", description: "create or update agent, widget, voice config, and proof scaffold" },
+  { mission: "Prove", command: "foh prove --agent <agent_id> --mission widget --json", description: "produce a machine-readable proof report" },
+  { mission: "Certify", command: "foh certify run --agent <agent_id> --profile release --json", description: "produce release evidence before publish" },
+  { mission: "Debug", command: "foh debug --out test-results/foh-cli-diag.latest.json --json", description: "collect auth/org/API diagnostics" },
+  { mission: "Improve", command: "foh bug improve --from-file <artifact.json> --json", description: "convert a failure artifact into a redacted improvement packet" },
+  { mission: "Publish", command: "foh agent publish --agent <agent_id> --json", description: "publish after proof gates pass" }
+];
+function missionHelpText() {
+  return [
+    "",
+    "Common missions:",
+    ...CLI_MISSION_EXAMPLES.map((item) => `  ${item.command.padEnd(66)} ${item.description}`),
+    "",
+    "For AI agents: prefer --json and follow next_commands exactly when a command blocks."
+  ].join("\n");
+}
+function addMissionHelp(program3) {
+  program3.addHelpText("afterAll", missionHelpText());
+}
+
 // src/index.ts
 installSoftExitTrap();
-recordExternalAgentCliInvocation({ argv: process.argv, cliVersion: CLI_VERSION });
+installExternalAgentCliCompletionRecorder(recordExternalAgentCliInvocation({ argv: process.argv, cliVersion: CLI_VERSION }));
 var program2 = new Command();
 var BUG_REPORT_URL = process.env.FOH_BUG_REPORT_URL ?? "https://github.com/iiko38/front-of-house/issues";
 function shouldRenderBanner2(argv) {
@@ -39422,6 +41066,7 @@ function writeKnownError(message, remediation) {
 `);
 }
 program2.name("foh").description("Front Of House CLI - AI-operator provisioning tool").version(CLI_VERSION).option("--json", "Output as machine-readable JSON").option("--api-url <url>", "Internal API base URL override (operators only)").option("--no-color", "Disable colour output");
+addMissionHelp(program2);
 registerAuth(program2);
 registerOrg(program2);
 registerTenant(program2);
@@ -39446,6 +41091,7 @@ registerOps(program2);
 registerSetup(program2);
 registerManifest(program2);
 registerSim(program2);
+registerCertify(program2);
 registerDiag(program2);
 registerBug(program2);
 registerProve(program2);
