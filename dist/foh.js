@@ -32786,7 +32786,7 @@ var StdioServerTransport = class {
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.68";
+var CLI_VERSION = "0.1.69";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -39869,6 +39869,27 @@ function resolveWorkspaceRoot(input) {
   const repoStem = (0, import_path13.basename)((0, import_path13.resolve)(input.privateRepoRoot)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
   return (0, import_path13.resolve)((0, import_os2.tmpdir)(), "foh-external-agent-workspaces", repoStem, batchStem);
 }
+function findNearestGitRoot(startPath) {
+  let current = (0, import_path13.resolve)(startPath);
+  while (true) {
+    if ((0, import_fs15.existsSync)((0, import_path13.join)(current, ".git"))) return current;
+    const parent = (0, import_path13.dirname)(current);
+    if (parent === current) return null;
+    current = parent;
+  }
+}
+function resolvePrivateRepoRoot(input) {
+  if (input.explicitPrivateRepoRoot) {
+    return { root: (0, import_path13.resolve)(input.explicitPrivateRepoRoot), explicit: true };
+  }
+  const cwd = (0, import_path13.resolve)(input.cwd || process.cwd());
+  const gitRoot = findNearestGitRoot(cwd);
+  if (gitRoot) return { root: gitRoot, explicit: false };
+  return {
+    root: (0, import_path13.join)(cwd, ".foh-no-private-repo-root-sentinel"),
+    explicit: false
+  };
+}
 function promptVersionFromPath(promptPath) {
   const raw = (0, import_fs15.readFileSync)(promptPath, "utf8");
   if (raw.includes("Do not assume access to the private source repository")) return "blank-setup.v1";
@@ -39886,7 +39907,11 @@ function createExternalAgentExecutorPlan(options) {
   const codexSandboxMode = normalizeCodexSandboxMode(options.codexSandboxMode);
   const codexModel = runner === "codex" ? normalizeCodexModel(options.codexModel) : null;
   const codexNetworkAccess = options.codexNetworkAccess === true;
-  const privateRepoRoot = (0, import_path13.resolve)(options.privateRepoRoot || options.cwd || process.cwd());
+  const privateRepo = resolvePrivateRepoRoot({
+    explicitPrivateRepoRoot: options.privateRepoRoot,
+    cwd: options.cwd
+  });
+  const privateRepoRoot = privateRepo.root;
   const workspaceRoot = resolveWorkspaceRoot({ batchPath, workspaceRoot: options.workspaceRoot, privateRepoRoot });
   if (isPathInside(workspaceRoot, privateRepoRoot)) {
     throw new ExternalAgentExecutorError(
@@ -39977,7 +40002,7 @@ function createExternalAgentExecutorPlan(options) {
     batch_path: batchPath,
     batch_dir: batchDir,
     private_repo_root: privateRepoRoot,
-    private_repo_root_explicit: Boolean(options.privateRepoRoot),
+    private_repo_root_explicit: privateRepo.explicit,
     workspace_root: workspaceRoot,
     timeout_minutes: timeoutMinutes,
     safety: {
