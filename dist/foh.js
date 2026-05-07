@@ -32790,7 +32790,7 @@ var StdioServerTransport = class {
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.73";
+var CLI_VERSION = "0.1.74";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -35480,9 +35480,11 @@ function registerCertify(program3) {
   const certify = program3.command("certify").description("Produce release certification evidence for an agent");
   certify.command("run").description("Run certification for an exact agent draft/profile and emit release evidence").requiredOption("--agent <id>", "Agent ID to certify").option("--profile <profile>", "Certification profile: smoke, release, or stress", "release").option("--adaptive-runs <n>", "Adaptive runs override; release defaults to a budget-safe 5").option("--journeys <list>", "Comma-separated journey allowlist").option("--scenario-ids <list>", "Comma-separated scenario ID allowlist").option("--channel <channel>", "Channel filter: chat, voice, or mixed", "mixed").option("--out <path>", "Write certification run JSON to this file path").option("--api-url <url>", "API base URL override").option("--json", "Output as machine-readable JSON").action(async (opts) => {
     try {
+      const totalStarted = Date.now();
       const profile = normalizeProfile(opts.profile);
       const mode = modeForProfile(profile);
       const adaptiveRuns = Math.max(1, Math.min(120, Number(opts.adaptiveRuns ?? defaultAdaptiveRuns(profile)) || defaultAdaptiveRuns(profile)));
+      const apiStarted = Date.now();
       const response = await apiFetch(
         `/v1/console/agents/${opts.agent}/sim-certify`,
         {
@@ -35497,6 +35499,7 @@ function registerCertify(program3) {
           apiUrlOverride: opts.apiUrl
         }
       );
+      const apiMs = Math.max(0, Date.now() - apiStarted);
       if (!response.ok || !response.certificate) {
         throw new FohError({
           step: "certify.run",
@@ -35512,6 +35515,10 @@ function registerCertify(program3) {
         reason_code: passed ? "certification_passed" : "certification_failed",
         profile,
         mode,
+        timing: {
+          api_ms: apiMs,
+          total_ms: Math.max(0, Date.now() - totalStarted)
+        },
         certificate: response.certificate,
         next_commands: passed ? [`foh agent publish --agent ${opts.agent} --json`] : [`foh certify run --agent ${opts.agent} --profile ${profile} --json`]
       };
@@ -37507,8 +37514,10 @@ function readFreshCache(filePath, maxAgeMs) {
     const payload = JSON.parse((0, import_node_fs3.readFileSync)(filePath, "utf8"));
     const createdAt = Date.parse(String(payload.created_at || ""));
     if (!Number.isFinite(createdAt)) return null;
-    if (Date.now() - createdAt > maxAgeMs) return null;
-    return payload.value ?? null;
+    const ageMs = Date.now() - createdAt;
+    if (ageMs > maxAgeMs) return null;
+    if (payload.value === void 0) return null;
+    return { value: payload.value, ageMs };
   } catch {
     return null;
   }
@@ -37532,7 +37541,16 @@ async function withProofCache(options, run) {
   if (!resolvedDir) {
     return {
       value: await run(),
-      metadata: { hit: false, key: "disabled", cache_path: "", waited_ms: 0 }
+      metadata: {
+        hit: false,
+        miss: true,
+        key: "disabled",
+        cache_path: "",
+        waited_ms: 0,
+        waited_for_peer: false,
+        source: "disabled",
+        age_ms: null
+      }
     };
   }
   const key = cacheKey2(options.kind, options.keyParts);
@@ -37545,8 +37563,17 @@ async function withProofCache(options, run) {
   const existing = readFreshCache(cachePath, maxAgeMs);
   if (existing) {
     return {
-      value: existing,
-      metadata: { hit: true, key, cache_path: publicPath(cachePath), waited_ms: 0 }
+      value: existing.value,
+      metadata: {
+        hit: true,
+        miss: false,
+        key,
+        cache_path: publicPath(cachePath),
+        waited_ms: 0,
+        waited_for_peer: false,
+        source: "cache",
+        age_ms: existing.ageMs
+      }
     };
   }
   let lockOwner = false;
@@ -37560,8 +37587,17 @@ async function withProofCache(options, run) {
       const waitedValue = readFreshCache(cachePath, maxAgeMs);
       if (waitedValue) {
         return {
-          value: waitedValue,
-          metadata: { hit: true, key, cache_path: publicPath(cachePath), waited_ms: Date.now() - started }
+          value: waitedValue.value,
+          metadata: {
+            hit: true,
+            miss: false,
+            key,
+            cache_path: publicPath(cachePath),
+            waited_ms: Date.now() - started,
+            waited_for_peer: true,
+            source: "cache",
+            age_ms: waitedValue.ageMs
+          }
         };
       }
     }
@@ -37571,7 +37607,16 @@ async function withProofCache(options, run) {
     writeCache(cachePath, value);
     return {
       value,
-      metadata: { hit: false, key, cache_path: publicPath(cachePath), waited_ms: 0 }
+      metadata: {
+        hit: false,
+        miss: true,
+        key,
+        cache_path: publicPath(cachePath),
+        waited_ms: 0,
+        waited_for_peer: false,
+        source: "fresh_run",
+        age_ms: null
+      }
     };
   } finally {
     if (lockOwner) (0, import_node_fs3.rmSync)(lockPath, { recursive: true, force: true });
@@ -37579,6 +37624,37 @@ async function withProofCache(options, run) {
 }
 
 // src/commands/prove.ts
+function addTiming(timings, name, startedMs) {
+  timings.set(name, (timings.get(name) ?? 0) + Math.max(0, Date.now() - startedMs));
+}
+async function timedCheck(timings, name, fn) {
+  const startedMs = Date.now();
+  try {
+    return await fn();
+  } finally {
+    addTiming(timings, name, startedMs);
+  }
+}
+function enrichCheckTimings(checks, timings) {
+  return checks.map((check2) => ({
+    ...check2,
+    duration_ms: Math.max(0, timings.get(check2.name) ?? check2.duration_ms ?? 0)
+  }));
+}
+function proofTimingSummary(checks, commandStartedMs) {
+  const totalCheckDurationMs = checks.reduce((sum, check2) => sum + (check2.duration_ms ?? 0), 0);
+  return {
+    total_ms: Math.max(0, Date.now() - commandStartedMs),
+    total_check_duration_ms: totalCheckDurationMs,
+    slow_checks: checks.filter((check2) => (check2.duration_ms ?? 0) > 0).map((check2) => ({
+      name: check2.name,
+      category: check2.category,
+      status: check2.status,
+      reason_code: check2.reason_code,
+      duration_ms: check2.duration_ms ?? 0
+    })).sort((a, b) => b.duration_ms - a.duration_ms).slice(0, 10)
+  };
+}
 function categoryForCheck(name) {
   if (name === "auth") return "auth";
   if (name === "contact_channel" || name === "voice_realtime_health") return "voice";
@@ -37674,7 +37750,9 @@ function isProviderCapacityBlocked(onboarding) {
 }
 function registerProve(program3) {
   program3.command("prove").description("Produce one setup/runtime proof bundle for an agent").option("--agent <id>", "Agent ID to prove").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--include-certification", "Run explicit simulation certification check (slow)").option("--cert-mode <m>", "Simulation cert mode when --include-certification is set: quick, full, stress", "quick").option("--cert-adaptive-runs <n>", "Adaptive runs for full/stress certification when included", "30").option("--cert-max-improvement-rounds <n>", "Max prompt improvement rounds in included cert loop (0-5)", "1").option("--mission <mission>", "Proof mission: setup, widget, voice, publish", "setup").option("--contact-path <mode>", "Voice contact path: auto, managed, or byon", "auto").option("--mutation-mode <mode>", "Proof mutation mode: read-only or ensure", "read-only").option("--repair", "Alias for --mutation-mode ensure").option("--require-phone", "Hold proof if no phone/contact number is provisioned").option("--skip-cert", "Deprecated compatibility flag; certification is skipped unless --include-certification is set").option("--skip-smoke", "Skip widget runtime smoke check").option("--skip-voice-health", "Skip realtime voice provider health check").option("--proof-cache-dir <path>", "Optional local proof cache directory for shared certification results").option("--out <path>", "Write signed proof report JSON to this path").option("--strict", "Exit non-zero unless all non-skipped checks pass").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
+    const commandStartedMs = Date.now();
     const checks = [];
+    const checkTimings = /* @__PURE__ */ new Map();
     const mission = normalizeMission(opts.mission);
     const contactPath = normalizeContactPath(opts.contactPath);
     const mutationMode = normalizeMutationMode(opts.mutationMode, Boolean(opts.repair));
@@ -37685,7 +37763,9 @@ function registerProve(program3) {
       correlationIds: []
     };
     try {
+      const authStartedMs = Date.now();
       const creds = loadCredentials(opts.apiUrl);
+      addTiming(checkTimings, "auth", authStartedMs);
       ctx.apiUrl = creds.apiUrl;
       ctx.tokenPresent = Boolean(creds.token);
       ctx.orgId = opts.org || creds.orgId;
@@ -37694,13 +37774,14 @@ function registerProve(program3) {
         org_id_from_credentials: creds.orgId ?? null
       }));
     } catch (error2) {
+      if (!checkTimings.has("auth")) addTiming(checkTimings, "auth", commandStartedMs);
       checks.push(hold("auth", "auth_missing_or_expired", "CLI is not authenticated.", "foh auth login --web", {
         message: error2 instanceof Error ? error2.message : String(error2)
       }));
     }
     if (ctx.tokenPresent && !ctx.orgId) {
       try {
-        const orgs = await apiFetch("/v1/console/auth/my-orgs", { apiUrlOverride: opts.apiUrl });
+        const orgs = await timedCheck(checkTimings, "org", () => apiFetch("/v1/console/auth/my-orgs", { apiUrlOverride: opts.apiUrl }));
         const resolved = firstUsableOrgId(orgs);
         if (resolved.orgId) {
           ctx.orgId = resolved.orgId;
@@ -37728,10 +37809,10 @@ function registerProve(program3) {
         checks.push(pass("agent_selection", "Using explicitly supplied agent.", { agent_id: ctx.agentId }));
       } else {
         try {
-          const list = await apiFetch("/v1/console/agents", {
+          const list = await timedCheck(checkTimings, "agent_selection", () => apiFetch("/v1/console/agents", {
             orgId: ctx.orgId,
             apiUrlOverride: opts.apiUrl
-          });
+          }));
           const resolved = agentIdFromList(list);
           if (resolved.agentId) {
             ctx.agentId = resolved.agentId;
@@ -37754,11 +37835,11 @@ function registerProve(program3) {
     }
     if (ctx.agentId) {
       try {
-        const validation = await apiFetch(`/v1/console/agents/${ctx.agentId}/validate`, {
+        const validation = await timedCheck(checkTimings, "agent_validation", () => apiFetch(`/v1/console/agents/${ctx.agentId}/validate`, {
           method: "POST",
           orgId: ctx.orgId,
           apiUrlOverride: opts.apiUrl
-        });
+        }));
         const issues = Array.isArray(validation.issues) ? validation.issues : [];
         validationFingerprint = validation;
         if (validation.ok === false || issues.length > 0) {
@@ -37771,10 +37852,10 @@ function registerProve(program3) {
       }
       if (ctx.orgId) {
         try {
-          const onboarding = await apiFetch(`/v1/console/org/${ctx.orgId}/onboarding`, {
+          const onboarding = await timedCheck(checkTimings, "contact_channel", () => apiFetch(`/v1/console/org/${ctx.orgId}/onboarding`, {
             orgId: ctx.orgId,
             apiUrlOverride: opts.apiUrl
-          });
+          }));
           const phoneNumber = typeof onboarding.phone_number === "string" && onboarding.phone_number.trim() ? onboarding.phone_number.trim() : null;
           const provisioningStatus = typeof onboarding.provisioning_status === "string" ? onboarding.provisioning_status : null;
           if (phoneNumber) {
@@ -37838,10 +37919,10 @@ function registerProve(program3) {
         checks.push(skipped("voice_realtime_health", "operator_skipped", "Skipped by --skip-voice-health.", "foh voice realtime-health --json"));
       } else {
         try {
-          const health = await apiFetch(
+          const health = await timedCheck(checkTimings, "voice_realtime_health", () => apiFetch(
             "/v1/console/realtime/health",
             { apiUrlOverride: opts.apiUrl }
-          );
+          ));
           const providers = Array.isArray(health.providers) ? health.providers : [];
           if (providers.length === 0) {
             checks.push(skipped("voice_realtime_health", "voice_health_no_providers", "Realtime voice health returned no providers.", "foh voice realtime-health --json"));
@@ -37859,13 +37940,14 @@ function registerProve(program3) {
         }
       }
       try {
-        const embed = await apiFetch("/v1/console/channels/widget/embed-snippet", {
+        const embed = await timedCheck(checkTimings, "widget_embed", () => apiFetch("/v1/console/channels/widget/embed-snippet", {
           orgId: ctx.orgId,
           apiUrlOverride: opts.apiUrl,
-          headers: { "x-agent-id": ctx.agentId }
-        });
+          headers: { "x-agent-id": String(ctx.agentId) }
+        }));
         const publicKey = publicKeyFromEmbedResponse(embed);
         if (publicKey) {
+          checkTimings.set("widget_channel", Math.max(checkTimings.get("widget_channel") ?? 0, checkTimings.get("widget_embed") ?? 0));
           ctx.widgetPublicKey = publicKey;
           checks.push(pass("widget_channel", "Widget channel is available in read-only proof mode.", {
             public_key_present: true,
@@ -37880,12 +37962,12 @@ function registerProve(program3) {
       } catch (error2) {
         if (mutationMode === "ensure") {
           try {
-            const ensure = await apiFetch("/v1/console/channels/widget/ensure", {
+            const ensure = await timedCheck(checkTimings, "widget_channel", () => apiFetch("/v1/console/channels/widget/ensure", {
               method: "POST",
               body: JSON.stringify({ agentId: ctx.agentId }),
               orgId: ctx.orgId,
               apiUrlOverride: opts.apiUrl
-            });
+            }));
             const publicKey = publicKeyFromEnsureResponse(ensure);
             if (!publicKey) {
               checks.push(hold("widget_channel", "widget_public_key_missing", "Widget channel ensure returned no public key.", `foh widget ensure --agent ${ctx.agentId} --json`, ensure));
@@ -37915,7 +37997,7 @@ function registerProve(program3) {
         checks.push(skipped("widget_smoke", "widget_public_key_required", "Skipped because widget public key is unavailable.", `foh widget ensure --agent ${ctx.agentId} --json`));
       } else {
         try {
-          const smoke = await runWidgetSmoke(ctx.widgetPublicKey, opts.apiUrl);
+          const smoke = await timedCheck(checkTimings, "widget_smoke", () => runWidgetSmoke(ctx.widgetPublicKey, opts.apiUrl));
           ctx.conversationId = smoke.conversation_id;
           ctx.traceIds = smoke.trace_ids;
           ctx.correlationIds = smoke.correlation_ids;
@@ -37943,7 +38025,7 @@ function registerProve(program3) {
           const agentId = ctx.agentId;
           const adaptiveRuns = Math.max(1, Number(opts.certAdaptiveRuns ?? 30) || 30);
           const maxImprovementRounds = Math.max(0, Math.min(5, Number(opts.certMaxImprovementRounds ?? 1) || 1));
-          const cached2 = await withProofCache({
+          const cached2 = await timedCheck(checkTimings, "simulation_certification", () => withProofCache({
             cacheDir: opts.proofCacheDir,
             kind: "simulation_certification",
             keyParts: {
@@ -37961,7 +38043,7 @@ function registerProve(program3) {
             maxImprovementRounds,
             orgId: ctx.orgId,
             apiUrlOverride: opts.apiUrl
-          }));
+          })));
           const loop = cached2.value;
           const loopWithCache = {
             ...loop,
@@ -37991,8 +38073,9 @@ function registerProve(program3) {
       checks.push(skipped("widget_smoke", "agent_required", "Skipped until an agent is selected.", "foh agent list --json"));
       checks.push(skipped("simulation_certification", "agent_required", "Skipped until an agent is selected.", "foh agent list --json"));
     }
-    const status = hasBlockingChecks(checks) ? "hold" : "pass";
-    const nextCommands = Array.from(new Set(checks.map((check2) => check2.next_command).filter((command) => Boolean(command))));
+    const timedChecks = enrichCheckTimings(checks, checkTimings);
+    const status = hasBlockingChecks(timedChecks) ? "hold" : "pass";
+    const nextCommands = Array.from(new Set(timedChecks.map((check2) => check2.next_command).filter((command) => Boolean(command))));
     if (status === "pass" && ctx.agentId) {
       nextCommands.push(`foh agent publish --agent ${ctx.agentId} --json`);
     }
@@ -38012,10 +38095,11 @@ function registerProve(program3) {
         trace_ids: ctx.traceIds,
         correlation_ids: ctx.correlationIds
       },
-      checks,
+      checks: timedChecks,
       nextCommands,
       extra: {
-        generated_at: (/* @__PURE__ */ new Date()).toISOString()
+        generated_at: (/* @__PURE__ */ new Date()).toISOString(),
+        timing: proofTimingSummary(timedChecks, commandStartedMs)
       }
     }));
     const artifactPath = opts.out ? writeSignedJsonArtifact(String(opts.out), report) : void 0;
@@ -39805,15 +39889,82 @@ function collapseCommandRecords(records) {
   }
   return order.map((id) => byId.get(id)).filter((record2) => Boolean(record2));
 }
+function readCommandOutputJson(runDir, command) {
+  const artifact = typeof command.output_artifact === "string" && command.output_artifact.trim() ? command.output_artifact.trim() : "";
+  if (!artifact || artifact.includes("..") || artifact.includes("/") || artifact.includes("\\")) return null;
+  const artifactPath = (0, import_path15.join)(runDir, artifact);
+  if (!(0, import_fs16.existsSync)(artifactPath)) return null;
+  try {
+    const text = (0, import_fs16.readFileSync)(artifactPath, "utf8");
+    const firstObject = text.indexOf("{");
+    const lastObject = text.lastIndexOf("}");
+    if (firstObject < 0 || lastObject <= firstObject) return null;
+    return JSON.parse(text.slice(firstObject, lastObject + 1));
+  } catch {
+    return null;
+  }
+}
+function commandTimingBreakdown(command, output) {
+  const schemaVersion = String(output?.schema_version || "");
+  if (schemaVersion === "foh_cli_proof_report.v1") {
+    const timing = asObject(output?.timing) || {};
+    const cacheSources = /* @__PURE__ */ new Map();
+    let cacheWaitMs = 0;
+    let cacheHitCount = 0;
+    let cacheMissCount = 0;
+    for (const check2 of toArray2(output?.checks)) {
+      const detail = asObject(check2)?.detail;
+      const proofCache = asObject(asObject(detail)?.proof_cache);
+      if (!proofCache) continue;
+      if (proofCache["hit"] === true) cacheHitCount += 1;
+      if (proofCache["miss"] === true) cacheMissCount += 1;
+      cacheWaitMs += Number(proofCache["waited_ms"] || 0);
+      increment(cacheSources, proofCache["source"] || "unknown");
+    }
+    return {
+      kind: "proof",
+      command: command.command || "",
+      total_ms: Number(timing.total_ms || command.duration_ms || 0),
+      total_check_duration_ms: Number(timing.total_check_duration_ms || 0),
+      slow_checks: toArray2(timing.slow_checks).slice(0, 5),
+      cache_wait_ms: cacheWaitMs,
+      cache_hit_count: cacheHitCount,
+      cache_miss_count: cacheMissCount,
+      cache_sources: ranked(cacheSources)
+    };
+  }
+  if (schemaVersion === "foh_certification_run.v1") {
+    const timing = asObject(output?.timing) || {};
+    const certificate = asObject(output?.certificate) || {};
+    return {
+      kind: "certification",
+      command: command.command || "",
+      total_ms: Number(timing.total_ms || command.duration_ms || 0),
+      api_ms: Number(timing.api_ms || 0),
+      status: output?.status || null,
+      reason_code: output?.reason_code || null,
+      scenario_summary: certificate.scenario_summary || null
+    };
+  }
+  return null;
+}
 function analyzeRunArtifacts(runPath, run, cwd) {
   const runDir = (0, import_path15.dirname)(runPath);
   const commands = collapseCommandRecords(readNdjson((0, import_path15.join)(runDir, "commands.ndjson")));
   const reasonCounts = /* @__PURE__ */ new Map();
   const slowSteps = [];
+  const timingBreakdowns = [];
   let completed = 0;
   let withDuration = 0;
   let totalDuration = 0;
   for (const command of commands) {
+    const output = readCommandOutputJson(runDir, command);
+    const breakdown = commandTimingBreakdown(command, output);
+    if (breakdown) timingBreakdowns.push({
+      run_id: run.run_id,
+      run_path: (0, import_path15.relative)(cwd, runPath).replaceAll("\\", "/"),
+      ...breakdown
+    });
     if (command.phase === "completed" || command.completed_at) completed += 1;
     if (typeof command.duration_ms === "number") {
       withDuration += 1;
@@ -39858,6 +40009,7 @@ function analyzeRunArtifacts(runPath, run, cwd) {
     total_command_duration_ms: totalDuration,
     command_reason_codes: ranked(reasonCounts),
     slow_steps: slowSteps.sort((a, b) => Number(b.duration_ms) - Number(a.duration_ms)).slice(0, 10),
+    timing_breakdowns: timingBreakdowns,
     docs_pages_observed: Array.from(docs).sort(),
     codex_command_execution_completed_count: codexCommandExecutions,
     codex_failed_exit_code_count: codexFailedExitCodes
@@ -39875,6 +40027,7 @@ function summarizeExternalAgentRuns(options) {
   const commandReasonCounts = /* @__PURE__ */ new Map();
   const docsCounts = /* @__PURE__ */ new Map();
   const slowSteps = [];
+  const timingBreakdowns = [];
   let manualInterventions = 0;
   let commandCount = 0;
   let completedCommandCount = 0;
@@ -39900,6 +40053,7 @@ function summarizeExternalAgentRuns(options) {
     codexCommandExecutions += Number(artifactSummary.codex_command_execution_completed_count || 0);
     codexFailedExitCodes += Number(artifactSummary.codex_failed_exit_code_count || 0);
     for (const row of toArray2(artifactSummary.slow_steps)) slowSteps.push(row);
+    for (const row of toArray2(artifactSummary.timing_breakdowns)) timingBreakdowns.push(row);
     for (const row of toArray2(artifactSummary.command_reason_codes)) {
       const entry = asObject(row);
       if (entry) increment(commandReasonCounts, entry.key, Number(entry.count || 1));
@@ -39936,7 +40090,8 @@ function summarizeExternalAgentRuns(options) {
       commands_with_duration_count: commandsWithDurationCount,
       total_command_duration_ms: totalCommandDurationMs,
       command_reason_codes: commandReasonCodes2,
-      slow_steps: slowSteps.sort((a, b) => Number(b.duration_ms || 0) - Number(a.duration_ms || 0) || String(a.command || "").localeCompare(String(b.command || ""))).slice(0, 20)
+      slow_steps: slowSteps.sort((a, b) => Number(b.duration_ms || 0) - Number(a.duration_ms || 0) || String(a.command || "").localeCompare(String(b.command || ""))).slice(0, 20),
+      timing_breakdowns: timingBreakdowns.sort((a, b) => Number(b.total_ms || 0) - Number(a.total_ms || 0) || String(a.command || "").localeCompare(String(b.command || ""))).slice(0, 20)
     },
     codex_telemetry: {
       command_execution_completed_count: codexCommandExecutions,
