@@ -14383,6 +14383,11 @@ async function runSetupCertifyLoop(agentId, params) {
 }
 
 // src/lib/agent-publish-gate.ts
+function normalizePublishCertificationEvidence(publish) {
+  const evidence = publish.certification_evidence;
+  if (!evidence || typeof evidence !== "object" || Array.isArray(evidence)) return null;
+  return evidence;
+}
 async function validateCertifyAndPublishAgent(opts) {
   const validation = await apiFetch(
     `/v1/console/agents/${opts.agentId}/validate`,
@@ -14403,11 +14408,14 @@ async function validateCertifyAndPublishAgent(opts) {
     apiUrlOverride: opts.apiUrlOverride,
     orgId: opts.orgId
   });
+  const evidence = normalizePublishCertificationEvidence(publish);
   return {
     validation,
     certification: {
       status: "not_run",
-      reason_code: "publish_consumes_existing_certification_evidence"
+      reason_code: "publish_consumes_existing_certification_evidence",
+      evidence_source: evidence?.source ?? null,
+      evidence
     },
     publish
   };
@@ -32790,7 +32798,7 @@ var StdioServerTransport = class {
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.74";
+var CLI_VERSION = "0.1.75";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -38057,6 +38065,7 @@ function registerProve(program3) {
               attempts: loop.attempts?.length ?? 0,
               improvement_runs: loop.improvement_runs,
               scenario_summary: loop.certificate?.scenario_summary,
+              performance_summary: loop.certificate?.performance_summary ?? null,
               proof_cache: cached2.metadata
             }));
           }
