@@ -14172,8 +14172,8 @@ function registerAgentGuardrailCommands(agent) {
     try {
       rule = JSON.parse(opts.rule);
     } catch {
-      const { readFileSync: readFileSync14 } = await import("fs");
-      rule = JSON.parse(readFileSync14(opts.rule, "utf-8"));
+      const { readFileSync: readFileSync16 } = await import("fs");
+      rule = JSON.parse(readFileSync16(opts.rule, "utf-8"));
     }
     const data = await apiFetch(`/v1/console/agents/${opts.agent}/guardrails`, {
       method: "POST",
@@ -14323,7 +14323,7 @@ async function publishAgentFromCurrentDraft(agentId, options) {
     orgId
   });
   try {
-    await apiFetch(`/v1/console/agents/${agentId}/publish`, {
+    return await apiFetch(`/v1/console/agents/${agentId}/publish`, {
       method: "POST",
       body: JSON.stringify({ flowDraft }),
       apiUrlOverride,
@@ -14399,7 +14399,7 @@ async function validateCertifyAndPublishAgent(opts) {
       remediation: `Run: foh agent validate --agent ${opts.agentId}  to see details.`
     });
   }
-  await publishAgentFromCurrentDraft(opts.agentId, {
+  const publish = await publishAgentFromCurrentDraft(opts.agentId, {
     apiUrlOverride: opts.apiUrlOverride,
     orgId: opts.orgId
   });
@@ -14409,7 +14409,7 @@ async function validateCertifyAndPublishAgent(opts) {
       status: "not_run",
       reason_code: "publish_consumes_existing_certification_evidence"
     },
-    publish: { ok: true }
+    publish
   };
 }
 
@@ -14719,9 +14719,9 @@ function registerAgent(program3) {
       process.stdout.write(yaml);
       return;
     }
-    const { writeFileSync: writeFileSync12 } = await import("fs");
+    const { writeFileSync: writeFileSync13 } = await import("fs");
     const outputPath = opts.output ?? "tenant.yaml";
-    writeFileSync12(
+    writeFileSync13(
       outputPath,
       `# tenant.yaml - Front Of House agent manifest
 # Edit this file and run: foh plan tenant.yaml
@@ -15084,11 +15084,6 @@ function registerInstagramChannelCommands(instagram, addCommonOptions) {
   }));
 }
 
-// src/commands/channel-whatsapp.ts
-var import_node_crypto = require("node:crypto");
-var import_node_fs = require("node:fs");
-var path = __toESM(require("node:path"));
-
 // src/commands/channel-whatsapp-helpers.ts
 function parsePositiveNumber(value, fallback) {
   if (value === void 0 || value === null || String(value).trim() === "") return fallback;
@@ -15215,7 +15210,11 @@ function buildReasonedNextSteps({
   return dedupeSteps(steps);
 }
 
-// ../../scripts/lib/channel-live-proof-evaluator.mjs
+// src/commands/channel-whatsapp-live-proof.ts
+var import_node_fs = require("node:fs");
+var path = __toESM(require("node:path"));
+
+// src/lib/channel-live-proof-evaluator.mjs
 function normalizeStatusValue(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -15282,55 +15281,7 @@ function evaluateChannelLiveProofArtifact({
   };
 }
 
-// src/commands/channel-whatsapp.ts
-var WHATSAPP_WEBHOOK_CHALLENGE_TIMEOUT_MS = 1e4;
-var WHATSAPP_VERIFY_TOKEN_PREFIX = "foh-wa";
-var WHATSAPP_SENDER_MODEL = {
-  test_number: "Meta test numbers are sandbox senders for free temporary API tests only; do not store them as production sender config.",
-  production_sender: "Production traffic requires a verified WhatsApp Business phone number; store that sender phone_number_id and WABA-owned credentials in FOH channel config.",
-  runtime_source_of_truth: "FOH runtime resolves WhatsApp credentials from org/channel config, not from personal mobile numbers or hidden environment fallbacks."
-};
-function parseBooleanOption({
-  value,
-  fallback,
-  optionName,
-  step
-}) {
-  if (typeof value === "boolean") return value;
-  const normalized = String(value ?? "").trim().toLowerCase();
-  if (!normalized) return fallback;
-  if (normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "y") return true;
-  if (normalized === "false" || normalized === "0" || normalized === "no" || normalized === "n") return false;
-  throw new FohError({
-    step,
-    error: `Invalid boolean value for ${optionName}: ${String(value)}`,
-    remediation: `Use ${optionName} true|false (also accepts 1|0, yes|no).`
-  });
-}
-async function runWhatsAppReadinessChecks({
-  orgId,
-  apiUrlOverride,
-  verifyToken
-}) {
-  const status = await apiFetch("/v1/console/channels/whatsapp/status", {
-    orgId,
-    apiUrlOverride
-  });
-  const verifyPayload = verifyToken ? { verifyToken: String(verifyToken) } : {};
-  const verify = await apiFetch("/v1/console/channels/whatsapp/verify", {
-    method: "POST",
-    body: JSON.stringify(verifyPayload),
-    orgId,
-    apiUrlOverride
-  });
-  const test = await apiFetch("/v1/console/channels/whatsapp/test", {
-    method: "POST",
-    body: JSON.stringify({ dryRun: true }),
-    orgId,
-    apiUrlOverride
-  });
-  return { status, verify, test };
-}
+// src/commands/channel-whatsapp-live-proof.ts
 function resolveLiveProof({
   enabled,
   artifactPathRaw,
@@ -15385,6 +15336,57 @@ function resolveLiveProof({
     pass_signal: evaluated.pass_signal,
     freshness: evaluated.freshness
   };
+}
+
+// src/commands/channel-whatsapp-setup.ts
+var import_node_crypto = require("node:crypto");
+var WHATSAPP_WEBHOOK_CHALLENGE_TIMEOUT_MS = 1e4;
+var WHATSAPP_VERIFY_TOKEN_PREFIX = "foh-wa";
+var WHATSAPP_SENDER_MODEL = {
+  test_number: "Meta test numbers are sandbox senders for free temporary API tests only; do not store them as production sender config.",
+  production_sender: "Production traffic requires a verified WhatsApp Business phone number; store that sender phone_number_id and WABA-owned credentials in FOH channel config.",
+  runtime_source_of_truth: "FOH runtime resolves WhatsApp credentials from org/channel config, not from personal mobile numbers or hidden environment fallbacks."
+};
+function parseBooleanOption({
+  value,
+  fallback,
+  optionName,
+  step
+}) {
+  if (typeof value === "boolean") return value;
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (!normalized) return fallback;
+  if (normalized === "true" || normalized === "1" || normalized === "yes" || normalized === "y") return true;
+  if (normalized === "false" || normalized === "0" || normalized === "no" || normalized === "n") return false;
+  throw new FohError({
+    step,
+    error: `Invalid boolean value for ${optionName}: ${String(value)}`,
+    remediation: `Use ${optionName} true|false (also accepts 1|0, yes|no).`
+  });
+}
+async function runWhatsAppReadinessChecks({
+  orgId,
+  apiUrlOverride,
+  verifyToken
+}) {
+  const status = await apiFetch("/v1/console/channels/whatsapp/status", {
+    orgId,
+    apiUrlOverride
+  });
+  const verifyPayload = verifyToken ? { verifyToken: String(verifyToken) } : {};
+  const verify = await apiFetch("/v1/console/channels/whatsapp/verify", {
+    method: "POST",
+    body: JSON.stringify(verifyPayload),
+    orgId,
+    apiUrlOverride
+  });
+  const test = await apiFetch("/v1/console/channels/whatsapp/test", {
+    method: "POST",
+    body: JSON.stringify({ dryRun: true }),
+    orgId,
+    apiUrlOverride
+  });
+  return { status, verify, test };
 }
 function buildWebhookUrl(apiBaseUrl) {
   return `${apiBaseUrl.replace(/\/$/, "")}/v1/whatsapp/webhook`;
@@ -15522,6 +15524,8 @@ function assertProofPass(strict, reasons) {
     markCommandFailed(1);
   }
 }
+
+// src/commands/channel-whatsapp.ts
 function registerWhatsAppChannelCommands(whatsapp, addCommonOptions) {
   addCommonOptions(
     whatsapp.command("start").description("Assess WhatsApp onboarding readiness and print fastest setup path")
@@ -16169,11 +16173,11 @@ function registerVoice(program3) {
     }
     const outputPath = String(opts.out || `foh-voice-preview-${provider}-${voiceId}.mp3`).trim();
     const audio = Buffer.from(await res.arrayBuffer());
-    const { mkdirSync: mkdirSync8, writeFileSync: writeFileSync12 } = await import("fs");
-    const { dirname: dirname8, resolve: resolve13 } = await import("path");
+    const { mkdirSync: mkdirSync8, writeFileSync: writeFileSync13 } = await import("fs");
+    const { dirname: dirname11, resolve: resolve13 } = await import("path");
     const absolutePath = resolve13(outputPath);
-    mkdirSync8(dirname8(absolutePath), { recursive: true });
-    writeFileSync12(absolutePath, audio);
+    mkdirSync8(dirname11(absolutePath), { recursive: true });
+    writeFileSync13(absolutePath, audio);
     format({
       status: "ok",
       provider,
@@ -32786,7 +32790,7 @@ var StdioServerTransport = class {
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.69";
+var CLI_VERSION = "0.1.70";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -33806,6 +33810,35 @@ function readDraftKnowledgeText(draft) {
   const fromLegacy = typeof draft.knowledge_base === "string" ? draft.knowledge_base : "";
   return fromLegacy;
 }
+function normalizeKnowledgeText(value) {
+  return value.replace(/^\uFEFF/, "").replace(/\r\n?/g, "\n").trim();
+}
+function splitDraftKnowledgeSegments(value) {
+  return value.replace(/\r\n?/g, "\n").split(/\n\s*---+\s*\n/g).map((segment) => normalizeKnowledgeText(segment)).filter(Boolean);
+}
+function buildDraftKnowledgeUpdate(existing, fileContent) {
+  const normalizedContent = normalizeKnowledgeText(fileContent);
+  if (normalizedContent.length === 0) {
+    throw new FohError({
+      step: "knowledge.ingest-file",
+      error: "Knowledge file is empty after normalization",
+      remediation: "Pass a file with non-empty text content.",
+      statusCode: 400
+    });
+  }
+  const existingSegments = splitDraftKnowledgeSegments(existing);
+  const duplicate = existingSegments.includes(normalizedContent);
+  const nextSegments = duplicate ? existingSegments : [...existingSegments, normalizedContent];
+  const nextKnowledge = nextSegments.join("\n\n---\n\n");
+  const normalizedExisting = existingSegments.join("\n\n---\n\n");
+  return {
+    nextKnowledge,
+    normalizedContent,
+    duplicate,
+    shouldPatch: nextKnowledge !== normalizedExisting || normalizeKnowledgeText(existing) !== normalizedExisting,
+    segmentCount: nextSegments.length
+  };
+}
 function tokenize(value) {
   return value.toLowerCase().split(/[^a-z0-9]+/g).map((token) => token.trim()).filter((token) => token.length >= 3);
 }
@@ -33929,23 +33962,25 @@ function registerKnowledge(program3) {
         apiUrlOverride: opts.apiUrl
       });
       const existing = readDraftKnowledgeText(draft);
-      const nextKnowledge = existing.trim().length > 0 ? `${existing}
-
----
-${content}` : content;
-      await apiFetch(`/v1/console/agents/${opts.agent}/draft`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          knowledge_base_raw: nextKnowledge,
-          knowledge_base: nextKnowledge
-        }),
-        orgId: opts.org,
-        apiUrlOverride: opts.apiUrl
-      });
+      const update = buildDraftKnowledgeUpdate(existing, content);
+      if (update.shouldPatch) {
+        await apiFetch(`/v1/console/agents/${opts.agent}/draft`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            knowledge_base_raw: update.nextKnowledge,
+            knowledge_base: update.nextKnowledge
+          }),
+          orgId: opts.org,
+          apiUrlOverride: opts.apiUrl
+        });
+      }
       data = {
         ok: true,
         source: "agent_draft_direct",
-        length: nextKnowledge.length
+        length: update.nextKnowledge.length,
+        draft_knowledge_updated: update.shouldPatch,
+        draft_knowledge_deduped: update.duplicate,
+        segment_count: update.segmentCount
       };
     } else {
       data = await apiFetch("/v1/knowledge/documents", {
@@ -33953,7 +33988,7 @@ ${content}` : content;
         body: JSON.stringify({
           name: (0, import_path2.basename)(opts.file),
           source_type: "text",
-          source_value: content,
+          source_value: normalizeKnowledgeText(content),
           agent_id: opts.agent
         }),
         orgId: opts.org,
@@ -34078,47 +34113,8 @@ function registerLeads(program3) {
 // src/commands/setup.ts
 var import_crypto3 = require("crypto");
 
-// src/lib/signed-report.ts
-var import_crypto2 = require("crypto");
-var import_fs4 = require("fs");
-var import_path3 = require("path");
-function canonicalize(value) {
-  if (value === null || value === void 0) return null;
-  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return value;
-  if (Array.isArray(value)) return value.map((entry) => canonicalize(entry));
-  if (typeof value === "object") {
-    const sortedEntries = Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, entryValue]) => [key, canonicalize(entryValue)]);
-    return Object.fromEntries(sortedEntries);
-  }
-  return String(value);
-}
-function stableStringify(value) {
-  return JSON.stringify(canonicalize(value), null, 2) + "\n";
-}
-function sha256Hex(input) {
-  return (0, import_crypto2.createHash)("sha256").update(input).digest("hex");
-}
-function signReport(reportPayload) {
-  const canonical = stableStringify(reportPayload);
-  return {
-    ...reportPayload,
-    report_hash: {
-      algorithm: "sha256",
-      digest_hex: sha256Hex(canonical),
-      canonicalization: "sorted-json-v1",
-      verification_note: "Recompute SHA-256 over canonical payload JSON before report_hash and compare digest_hex."
-    }
-  };
-}
-function writeSignedJsonArtifact(path2, value) {
-  const absolutePath = (0, import_path3.resolve)(path2);
-  (0, import_fs4.mkdirSync)((0, import_path3.dirname)(absolutePath), { recursive: true });
-  (0, import_fs4.writeFileSync)(absolutePath, stableStringify(value), "utf-8");
-  return absolutePath;
-}
-
 // src/commands/manifest.ts
-var import_fs5 = require("fs");
+var import_fs4 = require("fs");
 var import_picocolors3 = __toESM(require_picocolors());
 function formatDiff(diffs) {
   if (diffs.length === 0) return "No changes";
@@ -34154,7 +34150,7 @@ function formatDiff(diffs) {
 function loadManifestFile(filePath) {
   let raw;
   try {
-    raw = (0, import_fs5.readFileSync)(filePath, "utf-8");
+    raw = (0, import_fs4.readFileSync)(filePath, "utf-8");
   } catch {
     throw new FohError({
       step: "manifest.load",
@@ -34379,79 +34375,12 @@ function normalizeAgentCertMode(value) {
   return agentCertModeValues.includes(value) ? value : "quick";
 }
 
-// src/commands/setup.ts
-var SETUP_STEP_ORDER = [
-  "check_credentials",
-  "check_org_access",
-  "submit_compliance",
-  "wait_compliance",
-  "provision_phone",
-  "create_agent",
-  "validate_agent",
-  "seed_guardrails",
-  "ensure_widget",
-  "set_widget_domains",
-  "configure_voice",
-  "run_smoke_test",
-  "sim_certify_loop",
-  "widget_smoke",
-  "publish_agent",
-  "emit_summary"
-];
+// src/commands/setup-apply.ts
 function extractGuardrailsList(response) {
   if (Array.isArray(response)) return response;
   if (Array.isArray(response.guardrails)) return response.guardrails;
   if (Array.isArray(response.rules)) return response.rules;
   return [];
-}
-function resolveResumeIndex(resumeFromRaw) {
-  if (!resumeFromRaw) {
-    return { resumeFrom: null, resumeIndex: 0 };
-  }
-  const resumeFrom = String(resumeFromRaw).trim();
-  const resumeIndex = SETUP_STEP_ORDER.indexOf(resumeFrom);
-  if (resumeIndex < 0) {
-    throw new FohError({
-      step: "setup.resume",
-      error: `Invalid --resume-from step: ${String(resumeFromRaw)}`,
-      remediation: `Use one of: ${SETUP_STEP_ORDER.join(", ")}`
-    });
-  }
-  return { resumeFrom, resumeIndex };
-}
-function nowIso() {
-  return (/* @__PURE__ */ new Date()).toISOString();
-}
-function timedStepResult(result, startedAtIso, startedAtMs) {
-  return {
-    ...result,
-    started_at: startedAtIso,
-    completed_at: nowIso(),
-    duration_ms: Math.max(0, Date.now() - startedAtMs)
-  };
-}
-function optionNameToFlag(key) {
-  return "--" + key.replace(/([A-Z])/g, "-$1").toLowerCase();
-}
-function normalizeSetupPhoneMode(raw) {
-  const value = String(raw || "purchase").trim().toLowerCase();
-  if (value === "observe" || value === "skip" || value === "purchase") return value;
-  throw new FohError({
-    step: "setup.phone_mode",
-    error: `Invalid --phone-mode "${String(raw)}"`,
-    remediation: "Use one of: observe, skip, purchase.",
-    reasonCode: "setup_invalid_phone_mode"
-  });
-}
-function complianceSkipDetail(phoneMode) {
-  return {
-    reason_code: `compliance_skipped_phone_mode_${phoneMode}`,
-    phone_mode: phoneMode,
-    spend_policy: resolveCliSpendPolicy(),
-    spend_class: "free",
-    safe_to_retry: true,
-    operator_note: "Compliance is only required before paid FOH-owned phone purchase."
-  };
 }
 function isMissingAgentTestsError(error2) {
   if (!(error2 instanceof FohError)) return false;
@@ -34510,6 +34439,11 @@ async function rebaseEvalAgentDraftFromTemplate(params) {
     draft_keys: Object.keys(draft).sort()
   };
 }
+
+// src/commands/setup-missing-options.ts
+function optionNameToFlag(key) {
+  return "--" + key.replace(/([A-Z])/g, "-$1").toLowerCase();
+}
 function buildMissingOptionsPlan(missing, opts) {
   const missingFlags = missing.map(optionNameToFlag);
   const signInUrl = buildConsoleSignInUrl(resolveConsoleBaseUrl(opts.consoleUrl));
@@ -34559,6 +34493,123 @@ function emitMissingOptionsPlan(missing, opts) {
 `);
   }
 }
+
+// src/commands/setup-plan.ts
+var SETUP_STEP_ORDER = [
+  "check_credentials",
+  "check_org_access",
+  "submit_compliance",
+  "wait_compliance",
+  "provision_phone",
+  "create_agent",
+  "validate_agent",
+  "seed_guardrails",
+  "ensure_widget",
+  "set_widget_domains",
+  "configure_voice",
+  "run_smoke_test",
+  "sim_certify_loop",
+  "widget_smoke",
+  "publish_agent",
+  "emit_summary"
+];
+function resolveResumeIndex(resumeFromRaw) {
+  if (!resumeFromRaw) {
+    return { resumeFrom: null, resumeIndex: 0 };
+  }
+  const resumeFrom = String(resumeFromRaw).trim();
+  const resumeIndex = SETUP_STEP_ORDER.indexOf(resumeFrom);
+  if (resumeIndex < 0) {
+    throw new FohError({
+      step: "setup.resume",
+      error: `Invalid --resume-from step: ${String(resumeFromRaw)}`,
+      remediation: `Use one of: ${SETUP_STEP_ORDER.join(", ")}`
+    });
+  }
+  return { resumeFrom, resumeIndex };
+}
+function nowIso() {
+  return (/* @__PURE__ */ new Date()).toISOString();
+}
+function timedStepResult(result, startedAtIso, startedAtMs) {
+  return {
+    ...result,
+    started_at: startedAtIso,
+    completed_at: nowIso(),
+    duration_ms: Math.max(0, Date.now() - startedAtMs)
+  };
+}
+function normalizeSetupPhoneMode(raw) {
+  const value = String(raw || "purchase").trim().toLowerCase();
+  if (value === "observe" || value === "skip" || value === "purchase") return value;
+  throw new FohError({
+    step: "setup.phone_mode",
+    error: `Invalid --phone-mode "${String(raw)}"`,
+    remediation: "Use one of: observe, skip, purchase.",
+    reasonCode: "setup_invalid_phone_mode"
+  });
+}
+function complianceSkipDetail(phoneMode) {
+  return {
+    reason_code: `compliance_skipped_phone_mode_${phoneMode}`,
+    phone_mode: phoneMode,
+    spend_policy: resolveCliSpendPolicy(),
+    spend_class: "free",
+    safe_to_retry: true,
+    operator_note: "Compliance is only required before paid FOH-owned phone purchase."
+  };
+}
+
+// src/lib/signed-report.ts
+var import_crypto2 = require("crypto");
+var import_fs5 = require("fs");
+var import_path3 = require("path");
+function canonicalize(value) {
+  if (value === null || value === void 0) return null;
+  if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") return value;
+  if (Array.isArray(value)) return value.map((entry) => canonicalize(entry));
+  if (typeof value === "object") {
+    const sortedEntries = Object.entries(value).sort(([a], [b]) => a.localeCompare(b)).map(([key, entryValue]) => [key, canonicalize(entryValue)]);
+    return Object.fromEntries(sortedEntries);
+  }
+  return String(value);
+}
+function stableStringify(value) {
+  return JSON.stringify(canonicalize(value), null, 2) + "\n";
+}
+function sha256Hex(input) {
+  return (0, import_crypto2.createHash)("sha256").update(input).digest("hex");
+}
+function signReport(reportPayload) {
+  const canonical = stableStringify(reportPayload);
+  return {
+    ...reportPayload,
+    report_hash: {
+      algorithm: "sha256",
+      digest_hex: sha256Hex(canonical),
+      canonicalization: "sorted-json-v1",
+      verification_note: "Recompute SHA-256 over canonical payload JSON before report_hash and compare digest_hex."
+    }
+  };
+}
+function writeSignedJsonArtifact(path2, value) {
+  const absolutePath = (0, import_path3.resolve)(path2);
+  (0, import_fs5.mkdirSync)((0, import_path3.dirname)(absolutePath), { recursive: true });
+  (0, import_fs5.writeFileSync)(absolutePath, stableStringify(value), "utf-8");
+  return absolutePath;
+}
+
+// src/commands/setup-report.ts
+function writeSetupRunReport(reportPayload, reportOut) {
+  const signed = signReport(reportPayload);
+  const reportPath = reportOut ? writeSignedJsonArtifact(String(reportOut), signed) : null;
+  return {
+    reportHash: signed.report_hash.digest_hex,
+    reportPath
+  };
+}
+
+// src/commands/setup.ts
 function registerSetup(program3) {
   program3.command("setup").description("Fully provision a new agency customer in one command").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--agent-template <id>", "Agent template ID (e.g. viewing-request)").option("--agent-name <name>", "Name for the new agent").option("--phone-country <cc>", "Phone number country code", "GB").option("--phone-area-code <code>", "Phone area code preference").option("--phone-mode <mode>", "Phone path: observe, skip, or purchase", "purchase").option("--widget-domains <domains>", "Comma-separated widget domain allowlist").option("--voice-provider <p>", "TTS provider: openai, azure, twilio").option("--voice-id <id>", "Voice ID").option("--skip-compliance", "Skip compliance submission and wait").option("--skip-voice", "Skip voice configuration").option("--skip-tests", "Skip smoke tests").option("--cert-mode <m>", "Simulation cert mode: quick, full, stress", "quick").option("--cert-adaptive-runs <n>", "Adaptive run count for certification loop", "30").option("--cert-max-improvement-rounds <n>", "Max instruction improvement rounds in cert loop (0-5)", "1").option("--resume-from <step>", `Resume from a setup step (${SETUP_STEP_ORDER.join(", ")})`).option("--report-out <path>", "Optional path to write signed setup run report JSON").option("--dry-run", "Print all steps that would run without making any API calls").option("--api-url <url>", "API base URL override").option("--console-url <url>", "Console sign-in URL override").option("--json", "Output as JSON").action(async (opts) => {
     if (!opts.org) {
@@ -34644,12 +34695,7 @@ function registerSetup(program3) {
         steps: completed,
         failure: failure ?? null
       };
-      const signed = signReport(reportPayload);
-      const reportPath = opts.reportOut ? writeSignedJsonArtifact(String(opts.reportOut), signed) : null;
-      return {
-        reportHash: signed.report_hash.digest_hex,
-        reportPath
-      };
+      return writeSetupRunReport(reportPayload, opts.reportOut);
     };
     const shouldResumeSkip = (stepName) => {
       if (!resumeState.resumeFrom) return false;
@@ -35140,8 +35186,8 @@ function registerSetup(program3) {
         }
         try {
           const manifest = await agentExport(resolvedAgentId, { apiUrlOverride: opts.apiUrl });
-          const { writeFileSync: writeFileSync12 } = await import("fs");
-          writeFileSync12(
+          const { writeFileSync: writeFileSync13 } = await import("fs");
+          writeFileSync13(
             "tenant.yaml",
             `# tenant.yaml - Front Of House agent manifest
 # Edit this file and run: foh plan tenant.yaml
@@ -35311,8 +35357,8 @@ function registerSim(program3) {
       }
       const cert = response.certificate;
       if (opts.out) {
-        const { writeFileSync: writeFileSync12 } = await import("fs");
-        writeFileSync12(opts.out, JSON.stringify(cert, null, 2) + "\n", "utf-8");
+        const { writeFileSync: writeFileSync13 } = await import("fs");
+        writeFileSync13(opts.out, JSON.stringify(cert, null, 2) + "\n", "utf-8");
         process.stderr.write(`  Certificate written to ${opts.out}
 `);
       }
@@ -35362,8 +35408,8 @@ function registerSim(program3) {
         });
       }
       if (opts.out) {
-        const { writeFileSync: writeFileSync12 } = await import("fs");
-        writeFileSync12(opts.out, JSON.stringify(response.certificate, null, 2) + "\n", "utf-8");
+        const { writeFileSync: writeFileSync13 } = await import("fs");
+        writeFileSync13(opts.out, JSON.stringify(response.certificate, null, 2) + "\n", "utf-8");
         process.stderr.write(`  Final certificate written to ${opts.out}
 `);
       }
@@ -38967,9 +39013,9 @@ function registerUpdate(program3) {
 }
 
 // src/commands/eval.ts
-var import_fs16 = require("fs");
-var import_path14 = require("path");
-var import_child_process5 = require("child_process");
+var import_fs19 = require("fs");
+var import_path18 = require("path");
+var import_child_process6 = require("child_process");
 
 // src/lib/external-agent-artifact-safety.ts
 var import_fs12 = require("fs");
@@ -39303,63 +39349,13 @@ function readCommandRecords(runDir) {
 }
 
 // src/lib/external-agent-executor.ts
-var import_fs15 = require("fs");
+var import_fs18 = require("fs");
 var import_os2 = require("os");
-var import_path13 = require("path");
-var import_child_process4 = require("child_process");
+var import_path17 = require("path");
+var import_child_process5 = require("child_process");
 
-// src/lib/external-agent-metadata.ts
-var import_fs14 = require("fs");
+// src/lib/external-agent-executor-env.ts
 var import_path12 = require("path");
-var EXTERNAL_AGENT_METADATA_FILENAMES = [
-  "external-agent-metadata.json",
-  "agent-metadata.json"
-];
-var PUBLIC_DOC_URL_RE = /^https:\/\/frontofhouse\.okii\.uk(?:\/[A-Za-z0-9._~:/?#[\]@!$&'()*+,;=%-]*)?$/;
-function normalizeDocUrl(value) {
-  const raw = typeof value === "string" ? value : value && typeof value === "object" && typeof value.url === "string" ? String(value.url) : "";
-  const url2 = raw.trim().replace(/[.?!:]+$/g, "");
-  if (!PUBLIC_DOC_URL_RE.test(url2)) return null;
-  return url2;
-}
-function collectDocsFrom(value, docs) {
-  if (Array.isArray(value)) {
-    for (const entry of value) {
-      const url2 = normalizeDocUrl(entry);
-      if (url2) docs.add(url2);
-    }
-  }
-}
-function readExternalAgentMetadata(runDir) {
-  for (const filename of EXTERNAL_AGENT_METADATA_FILENAMES) {
-    const path2 = (0, import_path12.join)(runDir, filename);
-    if (!(0, import_fs14.existsSync)(path2)) continue;
-    try {
-      const parsed = JSON.parse((0, import_fs14.readFileSync)(path2, "utf8"));
-      const docs = /* @__PURE__ */ new Set();
-      collectDocsFrom(parsed.docs_pages_used, docs);
-      collectDocsFrom(parsed.docs_pages_observed, docs);
-      collectDocsFrom(parsed.docs_used, docs);
-      collectDocsFrom(parsed.public_docs_used, docs);
-      return {
-        path: filename,
-        docs_pages_used: Array.from(docs).sort()
-      };
-    } catch {
-      return {
-        path: filename,
-        docs_pages_used: []
-      };
-    }
-  }
-  return {
-    path: null,
-    docs_pages_used: []
-  };
-}
-
-// src/lib/external-agent-executor.ts
-var GEMINI_HEADLESS_PROBE_TIMEOUT_MS = 15e3;
 var CODEX_EXECUTOR_DENIED_ENV_PREFIXES = [
   "SUPABASE_",
   "DATABASE_",
@@ -39403,15 +39399,6 @@ var EXTERNAL_AGENT_EVAL_AUTH_ENV_MAP = {
   FOH_EXTERNAL_AGENT_EVAL_API_URL: "FOH_API_URL",
   FOH_EXTERNAL_AGENT_EVAL_TOKEN_EXPIRES_AT: "FOH_TOKEN_EXPIRES_AT"
 };
-var DEFAULT_FOH_API_URL2 = "https://api.frontofhouse.okii.uk";
-var ExternalAgentExecutorError = class extends Error {
-  reasonCode;
-  constructor(reasonCode, message) {
-    super(message);
-    this.name = "ExternalAgentExecutorError";
-    this.reasonCode = reasonCode;
-  }
-};
 function isDeniedEnvKey(key) {
   const upper = key.toUpperCase();
   if (CODEX_EXECUTOR_DENIED_ENV_NAMES.some((name) => upper === name)) return true;
@@ -39432,7 +39419,7 @@ function buildCodexExecutorEnv(input) {
       env[childKey] = value;
     }
   }
-  env.npm_config_cache = (0, import_path13.join)((0, import_path13.dirname)(input.runDir), ".npm-cache");
+  env.npm_config_cache = (0, import_path12.join)((0, import_path12.dirname)(input.runDir), ".npm-cache");
   env.npm_config_prefer_online = "true";
   env.npm_config_update_notifier = "false";
   env.npm_config_yes = "true";
@@ -39442,6 +39429,369 @@ function buildCodexExecutorEnv(input) {
   env.FOH_CLI_SUPPRESS_BANNER = "1";
   return env;
 }
+
+// src/lib/external-agent-executor-artifacts.ts
+var import_fs15 = require("fs");
+var import_path14 = require("path");
+
+// src/lib/external-agent-metadata.ts
+var import_fs14 = require("fs");
+var import_path13 = require("path");
+var EXTERNAL_AGENT_METADATA_FILENAMES = [
+  "external-agent-metadata.json",
+  "agent-metadata.json"
+];
+var PUBLIC_DOC_URL_RE = /^https:\/\/frontofhouse\.okii\.uk(?:\/[A-Za-z0-9._~:/?#[\]@!$&'()*+,;=%-]*)?$/;
+function normalizeDocUrl(value) {
+  const raw = typeof value === "string" ? value : value && typeof value === "object" && typeof value.url === "string" ? String(value.url) : "";
+  const url2 = raw.trim().replace(/[.?!:]+$/g, "");
+  if (!PUBLIC_DOC_URL_RE.test(url2)) return null;
+  return url2;
+}
+function collectDocsFrom(value, docs) {
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      const url2 = normalizeDocUrl(entry);
+      if (url2) docs.add(url2);
+    }
+  }
+}
+function readExternalAgentMetadata(runDir) {
+  for (const filename of EXTERNAL_AGENT_METADATA_FILENAMES) {
+    const path2 = (0, import_path13.join)(runDir, filename);
+    if (!(0, import_fs14.existsSync)(path2)) continue;
+    try {
+      const parsed = JSON.parse((0, import_fs14.readFileSync)(path2, "utf8"));
+      const docs = /* @__PURE__ */ new Set();
+      collectDocsFrom(parsed.docs_pages_used, docs);
+      collectDocsFrom(parsed.docs_pages_observed, docs);
+      collectDocsFrom(parsed.docs_used, docs);
+      collectDocsFrom(parsed.public_docs_used, docs);
+      return {
+        path: filename,
+        docs_pages_used: Array.from(docs).sort()
+      };
+    } catch {
+      return {
+        path: filename,
+        docs_pages_used: []
+      };
+    }
+  }
+  return {
+    path: null,
+    docs_pages_used: []
+  };
+}
+
+// src/lib/external-agent-executor-artifacts.ts
+function redactArtifactFile(path2, input = {}) {
+  if (!(0, import_fs15.existsSync)(path2)) return;
+  const original = (0, import_fs15.readFileSync)(path2, "utf8");
+  const redacted = redactExternalAgentArtifactText(original, input);
+  if (redacted !== original) (0, import_fs15.writeFileSync)(path2, redacted, "utf8");
+}
+function redactExternalAgentOutputArtifacts(run, input = {}) {
+  redactArtifactFile(run.outputs.jsonl, input);
+  redactArtifactFile(run.outputs.last_message, input);
+  redactArtifactFile(run.outputs.stderr, input);
+  redactArtifactFile((0, import_path14.join)(run.run_dir, "commands.ndjson"), input);
+  if (!(0, import_fs15.existsSync)(run.run_dir)) return;
+  for (const name of (0, import_fs15.readdirSync)(run.run_dir)) {
+    if (name.startsWith("command-output-cmd_") && !name.endsWith(".redacted")) {
+      redactArtifactFile((0, import_path14.join)(run.run_dir, name), input);
+    }
+  }
+}
+function copyExternalAgentCommandCaptureArtifacts(input) {
+  const commandLog = (0, import_path14.join)(input.captureDir, "commands.ndjson");
+  if ((0, import_fs15.existsSync)(commandLog)) {
+    (0, import_fs15.writeFileSync)((0, import_path14.join)(input.runDir, "commands.ndjson"), (0, import_fs15.readFileSync)(commandLog, "utf8"), "utf8");
+  }
+  for (const name of (0, import_fs15.readdirSync)(input.captureDir)) {
+    if (name.startsWith("command-output-cmd_")) {
+      (0, import_fs15.copyFileSync)((0, import_path14.join)(input.captureDir, name), (0, import_path14.join)(input.runDir, name));
+    } else if (EXTERNAL_AGENT_METADATA_FILENAMES.includes(name)) {
+      (0, import_fs15.copyFileSync)((0, import_path14.join)(input.captureDir, name), (0, import_path14.join)(input.runDir, name));
+    }
+  }
+}
+
+// src/lib/external-agent-executor-classification.ts
+var import_fs16 = require("fs");
+var import_path15 = require("path");
+function proofArtifactPasses(runDir) {
+  const proofPath = (0, import_path15.join)(runDir, "proof.json");
+  if (!(0, import_fs16.existsSync)(proofPath)) return false;
+  try {
+    const parsed = JSON.parse((0, import_fs16.readFileSync)(proofPath, "utf8"));
+    return parsed.ok === true || parsed.status === "pass" || parsed.status === "passed";
+  } catch {
+    return false;
+  }
+}
+function readIfExists(path2) {
+  return (0, import_fs16.existsSync)(path2) ? (0, import_fs16.readFileSync)(path2, "utf8") : "";
+}
+function relativeArtifactName(path2) {
+  return (0, import_path15.basename)(path2);
+}
+function externalAgentSummaryCommand(root) {
+  return [
+    "node",
+    "scripts/summarize-external-agent-runs.mjs",
+    "--root",
+    quoteShellArg(root),
+    "--out",
+    quoteShellArg((0, import_path15.join)(root, "latest-summary.json")),
+    "--report",
+    quoteShellArg((0, import_path15.join)(root, "summary.report.json"))
+  ].join(" ");
+}
+function quoteShellArg(value) {
+  const text = String(value);
+  if (/^[A-Za-z0-9_./:=@-]+$/.test(text)) return text;
+  return `"${text.replace(/(["$`])/g, "\\$1")}"`;
+}
+function classifyExternalAgentRun(input) {
+  if (input.timedOut) return { status: "hold", reasonCode: `${input.run.command}_runner_timeout` };
+  if (!input.artifactSafetyOk) return { status: "fail", reasonCode: "external_agent_artifact_safety_blocked" };
+  const completedCommands = readCommandRecords(input.run.run_dir).filter((record2) => record2.phase === "completed");
+  const observedVersions = completedCommands.map((record2) => String(record2.cli_version || "").trim()).filter((version2) => /^\d+\.\d+\.\d+$/.test(version2));
+  if (observedVersions.some((version2) => version2 !== CLI_VERSION)) {
+    return { status: "hold", reasonCode: "external_agent_cli_version_drift" };
+  }
+  const commandReasonCodes = completedCommands.flatMap((record2) => [
+    String(record2.reason_code || ""),
+    ...Array.isArray(record2.check_reason_codes) ? record2.check_reason_codes.map((code) => String(code || "")) : []
+  ]).filter(Boolean);
+  const hasCommandReason = (pattern) => commandReasonCodes.some((reason) => pattern.test(reason));
+  if (hasCommandReason(new RegExp(PAID_RESOURCE_BLOCKED_REASON_CODE, "i"))) {
+    return { status: "hold", reasonCode: PAID_RESOURCE_BLOCKED_REASON_CODE };
+  }
+  if (hasCommandReason(/provider_capacity_blocked/i)) {
+    return { status: "hold", reasonCode: "provider_capacity_blocked" };
+  }
+  if (hasCommandReason(/byon_voice_number_not_configured/i)) {
+    return { status: "hold", reasonCode: "byon_voice_number_not_configured" };
+  }
+  if (hasCommandReason(/contact_phone_provisioning_failed/i)) {
+    return { status: "hold", reasonCode: "voice_contact_phone_provisioning_failed" };
+  }
+  if (hasCommandReason(/voice_contact_expected_no_spend_hold/i)) {
+    return { status: "hold", reasonCode: "voice_contact_expected_no_spend_hold" };
+  }
+  if (hasCommandReason(/contact_phone_missing/i)) {
+    return { status: "hold", reasonCode: "voice_contact_phone_missing" };
+  }
+  if (hasCommandReason(/sim(?:ulation)?[_-]?cert(?:ify|ification)?.*failed|simulation_certification_failed/i)) {
+    return { status: "hold", reasonCode: "simulation_certification_failed" };
+  }
+  if (hasCommandReason(/proof_held/i)) {
+    return { status: "hold", reasonCode: "external_agent_proof_held" };
+  }
+  if (hasCommandReason(/agent_limit_reached/i)) {
+    return { status: "hold", reasonCode: "eval_org_agent_limit_reached" };
+  }
+  const lastMessage = readIfExists(input.run.outputs.last_message);
+  const stderr = readIfExists(input.run.outputs.stderr);
+  const combined = `${lastMessage}
+${stderr}`;
+  if (/need[^.\n]*(?:private|source)[^.\n]*repo|cannot[^.\n]*without[^.\n]*(?:private|source)[^.\n]*repo|clone[^.\n]*(?:private|source)[^.\n]*repo/i.test(combined)) {
+    return { status: "fail", reasonCode: "private_repo_assumption_detected" };
+  }
+  if (/(?:blocked|rejected|declined) by policy|EXEC_POLICY_BLOCKED|command execution was rejected|shell commands were rejected/i.test(combined)) {
+    return { status: "hold", reasonCode: "codex_exec_policy_blocked" };
+  }
+  if (/bwrap:.*(?:RTM_NEWADDR|Operation not permitted|setting up uid map: Permission denied)|bubblewrap.*(?:RTM_NEWADDR|Operation not permitted|setting up uid map: Permission denied)|Failed RTM_NEWADDR|ENV_SANDBOX_EXEC_BLOCKED|permission profiles requiring direct runtime enforcement are incompatible with --use-legacy-landlock|legacy[_ -]?landlock.*incompatible/i.test(combined)) {
+    return { status: "hold", reasonCode: "codex_sandbox_exec_blocked" };
+  }
+  if (/ENV_NETWORK_DNS_BLOCK|Could not resolve host|npm ping.*timeout|NO_EXECUTABLE_INSTALL/i.test(combined)) {
+    return { status: "hold", reasonCode: "codex_network_dns_blocked" };
+  }
+  if (new RegExp(PAID_RESOURCE_BLOCKED_REASON_CODE, "i").test(combined)) {
+    return { status: "hold", reasonCode: PAID_RESOURCE_BLOCKED_REASON_CODE };
+  }
+  if (/provider_capacity_blocked/i.test(combined)) {
+    return { status: "hold", reasonCode: "provider_capacity_blocked" };
+  }
+  if (/byon_voice_number_not_configured/i.test(combined)) {
+    return { status: "hold", reasonCode: "byon_voice_number_not_configured" };
+  }
+  if (/contact_phone_provisioning_failed/i.test(combined)) {
+    return { status: "hold", reasonCode: "voice_contact_phone_provisioning_failed" };
+  }
+  if (/voice_contact_expected_no_spend_hold/i.test(combined)) {
+    return { status: "hold", reasonCode: "voice_contact_expected_no_spend_hold" };
+  }
+  if (/contact_phone_missing/i.test(combined)) {
+    return { status: "hold", reasonCode: "voice_contact_phone_missing" };
+  }
+  if (/simulation_certification_failed/i.test(combined)) {
+    return { status: "hold", reasonCode: "simulation_certification_failed" };
+  }
+  if (/proof_held/i.test(combined)) {
+    return { status: "hold", reasonCode: "external_agent_proof_held" };
+  }
+  if (/agent_limit_reached/i.test(combined)) {
+    return { status: "hold", reasonCode: "eval_org_agent_limit_reached" };
+  }
+  if (/browser|approve|approval|login|auth|sign in/i.test(combined) && !proofArtifactPasses(input.run.run_dir)) {
+    return { status: "hold", reasonCode: "auth_browser_approval_required" };
+  }
+  if (input.exitCode !== 0) return { status: "hold", reasonCode: `${input.run.command}_runner_nonzero_exit` };
+  if (proofArtifactPasses(input.run.run_dir)) return { status: "pass", reasonCode: null };
+  return { status: "hold", reasonCode: "external_agent_proof_artifact_missing" };
+}
+function buildExecutedExternalAgentRunArtifact(input) {
+  const commands = readCommandRecords(input.run.run_dir);
+  const agentMetadata = readExternalAgentMetadata(input.run.run_dir);
+  return {
+    schema_version: "external_agent_run.v1",
+    run_id: input.run.run_id,
+    status: input.status,
+    failure_reason_code: input.reasonCode,
+    model_provider: input.run.model_provider,
+    model_name: input.run.model_name,
+    runner_model: input.run.runner_model,
+    agent_shell: `${input.run.command}-exec`,
+    workspace_type: "clean-no-repo-programmatic",
+    prompt_version: input.run.prompt_version,
+    prompt_path: "prompt.txt",
+    started_at: input.startedAt,
+    ended_at: input.endedAt,
+    manual_intervention_count: 0,
+    manual_interventions: [],
+    environment: {
+      os: process.platform,
+      node_version: process.version,
+      npm_version: null,
+      foh_cli_version: CLI_VERSION,
+      runner_exit_code: input.exitCode,
+      runner_timed_out: input.timedOut,
+      duration_ms: input.durationMs
+    },
+    public_entrypoints: [
+      "https://frontofhouse.okii.uk",
+      "https://frontofhouse.okii.uk/llms.txt",
+      "https://frontofhouse.okii.uk/openapi.yaml",
+      "npx --yes @f-o-h/cli@latest"
+    ],
+    commands_run: commands.map((command) => command.command),
+    docs_pages_used: agentMetadata.docs_pages_used,
+    eval_state: {
+      lifecycle_strategy: "reuse_existing_eval_state",
+      org_reuse_expected: true,
+      agent_reuse_expected: true,
+      widget_reuse_expected: true,
+      fresh_org_expected: false,
+      ephemeral_org_expected: false,
+      fresh_agent_expected: false,
+      phone_purchase_expected: false,
+      paid_resource_creation_expected: false,
+      spend_policy_expected: NO_SPEND_POLICY,
+      cleanup_expected: false,
+      cleanup_strategy: "no_cleanup_for_reused_eval_state",
+      paid_resource_strategy: "blocked_unless_explicit_byon_or_operator_approved",
+      rationale: "Mass external-agent evals benchmark public docs/CLI/API clarity; reuse avoids paid phone and Twilio inventory churn."
+    },
+    artifacts: {
+      terminal_transcript: relativeArtifactName(input.run.outputs.jsonl),
+      command_log: (0, import_fs16.existsSync)((0, import_path15.join)(input.run.run_dir, "commands.ndjson")) ? "commands.ndjson" : null,
+      proof_bundle: (0, import_fs16.existsSync)((0, import_path15.join)(input.run.run_dir, "proof.json")) ? "proof.json" : null,
+      replay_packet: (0, import_fs16.existsSync)((0, import_path15.join)(input.run.run_dir, "replay.json")) ? "replay.json" : null,
+      knowledge_packet: (0, import_fs16.existsSync)((0, import_path15.join)(input.run.run_dir, "knowledge.json")) ? "knowledge.json" : null,
+      improvement_packet: input.status === "pass" ? null : "improvement-packet.json",
+      agent_metadata: agentMetadata.path,
+      notes: (0, import_fs16.existsSync)((0, import_path15.join)(input.run.run_dir, "notes.md")) ? "notes.md" : null,
+      runner_last_message: relativeArtifactName(input.run.outputs.last_message),
+      runner_stderr: relativeArtifactName(input.run.outputs.stderr),
+      codex_last_message: input.run.command === "codex" ? relativeArtifactName(input.run.outputs.last_message) : null,
+      codex_stderr: input.run.command === "codex" ? relativeArtifactName(input.run.outputs.stderr) : null,
+      artifact_safety: relativeArtifactName(input.run.outputs.artifact_safety)
+    },
+    summary: input.status === "pass" ? `Controlled ${input.run.command} external-agent run produced passing proof evidence.` : `Controlled ${input.run.command} external-agent run ended as ${input.status} with reason ${input.reasonCode}.`,
+    next_commands: input.status === "pass" ? [externalAgentSummaryCommand((0, import_path15.dirname)(input.run.run_dir))] : [
+      "foh eval external-agent scan-artifacts --run-dir <run_dir> --private-repo-root <private_repo_root> --write-redacted --json",
+      "foh bug improve --from external-agent-run --file <run_dir>/run.json --out <run_dir>/improvement-packet.json --json",
+      externalAgentSummaryCommand((0, import_path15.dirname)(input.run.run_dir))
+    ]
+  };
+}
+
+// src/lib/external-agent-runner-execution.ts
+var import_child_process4 = require("child_process");
+var import_fs17 = require("fs");
+var import_path16 = require("path");
+function buildCommandInvocation(command, args) {
+  if (process.platform === "win32" && command.toLowerCase().endsWith(".cmd")) {
+    const binDir = (0, import_path16.dirname)(command);
+    const codexEntrypoint = (0, import_path16.join)(binDir, "node_modules", "@openai", "codex", "bin", "codex.js");
+    if ((0, import_fs17.existsSync)(codexEntrypoint)) return { command: process.execPath, args: [codexEntrypoint, ...args] };
+    const geminiEntrypoint = (0, import_path16.join)(binDir, "node_modules", "@google", "gemini-cli", "bundle", "gemini.js");
+    if ((0, import_fs17.existsSync)(geminiEntrypoint)) return { command: process.execPath, args: ["--no-warnings=DEP0040", geminiEntrypoint, ...args] };
+  }
+  return { command, args };
+}
+function spawnExternalAgentRunner(input) {
+  return new Promise((resolveRun) => {
+    const started = Date.now();
+    const commandInvocation = buildCommandInvocation(input.command, input.args);
+    const child = (0, import_child_process4.spawn)(commandInvocation.command, commandInvocation.args, {
+      cwd: input.cwd,
+      env: input.env,
+      shell: false,
+      stdio: ["pipe", "pipe", "pipe"],
+      windowsHide: true
+    });
+    const stdout = (0, import_fs17.createWriteStream)(input.stdoutPath, { flags: "w" });
+    const stderr = (0, import_fs17.createWriteStream)(input.stderrPath, { flags: "w" });
+    child.stdout.pipe(stdout);
+    child.stderr.pipe(stderr);
+    child.stdin.end(input.prompt);
+    let timedOut = false;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      if (child.pid && process.platform === "win32") {
+        (0, import_child_process4.spawnSync)("taskkill.exe", ["/pid", String(child.pid), "/t", "/f"], { stdio: "ignore" });
+      } else {
+        child.kill("SIGKILL");
+      }
+    }, input.timeoutMs);
+    child.on("close", (exitCode) => {
+      clearTimeout(timer);
+      stdout.end();
+      stderr.end();
+      resolveRun({
+        exitCode,
+        timedOut,
+        durationMs: Date.now() - started
+      });
+    });
+    child.on("error", () => {
+      clearTimeout(timer);
+      stdout.end();
+      stderr.end();
+      resolveRun({
+        exitCode: null,
+        timedOut,
+        durationMs: Date.now() - started
+      });
+    });
+  });
+}
+
+// src/lib/external-agent-executor.ts
+var GEMINI_HEADLESS_PROBE_TIMEOUT_MS = 15e3;
+var DEFAULT_FOH_API_URL2 = "https://api.frontofhouse.okii.uk";
+var ExternalAgentExecutorError = class extends Error {
+  reasonCode;
+  constructor(reasonCode, message) {
+    super(message);
+    this.name = "ExternalAgentExecutorError";
+    this.reasonCode = reasonCode;
+  }
+};
 function readExternalAgentEvalAuthEnv(env = process.env) {
   return {
     token: String(env.FOH_EXTERNAL_AGENT_EVAL_TOKEN || "").trim(),
@@ -39507,14 +39857,14 @@ async function runExternalAgentEvalAuthPreflight(env = process.env, options = {}
   };
 }
 function normalizeForCompare(path2) {
-  const resolved = (0, import_path13.resolve)(path2);
+  const resolved = (0, import_path17.resolve)(path2);
   return process.platform === "win32" ? resolved.toLowerCase() : resolved;
 }
 function isPathInside(childPath, parentPath) {
   const child = normalizeForCompare(childPath);
   const parent = normalizeForCompare(parentPath);
-  const rel = (0, import_path13.relative)(parent, child);
-  return rel === "" || !!rel && !rel.startsWith("..") && !(0, import_path13.isAbsolute)(rel);
+  const rel = (0, import_path17.relative)(parent, child);
+  return rel === "" || !!rel && !rel.startsWith("..") && !(0, import_path17.isAbsolute)(rel);
 }
 function requireString(value, field) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -39523,10 +39873,10 @@ function requireString(value, field) {
   return value;
 }
 function readBatch(batchPath) {
-  if (!(0, import_fs15.existsSync)(batchPath)) {
+  if (!(0, import_fs18.existsSync)(batchPath)) {
     throw new ExternalAgentExecutorError("external_agent_batch_not_found", `Batch file not found: ${batchPath}`);
   }
-  const parsed = JSON.parse((0, import_fs15.readFileSync)(batchPath, "utf8"));
+  const parsed = JSON.parse((0, import_fs18.readFileSync)(batchPath, "utf8"));
   if (parsed.schema_version !== "external_agent_batch_plan.v1") {
     throw new ExternalAgentExecutorError("invalid_external_agent_batch", "Batch schema_version must be external_agent_batch_plan.v1.");
   }
@@ -39541,11 +39891,11 @@ function defaultRunnerProbe(command, args) {
     encoding: "utf8",
     timeout: isGeminiHeadlessSmoke ? GEMINI_HEADLESS_PROBE_TIMEOUT_MS : void 0
   };
-  const result = process.platform === "win32" && command.toLowerCase().endsWith(".cmd") ? (0, import_child_process4.spawnSync)(
+  const result = process.platform === "win32" && command.toLowerCase().endsWith(".cmd") ? (0, import_child_process5.spawnSync)(
     "powershell.exe",
     ["-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", `& ${[command, ...args].map(quotePowerShellArg).join(" ")}`],
     spawnOptions
-  ) : (0, import_child_process4.spawnSync)(command, args, spawnOptions);
+  ) : (0, import_child_process5.spawnSync)(command, args, spawnOptions);
   return {
     status: typeof result.status === "number" ? result.status : null,
     stdout: String(result.stdout || ""),
@@ -39559,29 +39909,12 @@ function geminiCapacityUnavailable(text) {
 function quotePowerShellArg(value) {
   return `'${value.replace(/'/g, "''")}'`;
 }
-function quoteShellArg(value) {
-  const text = String(value);
-  if (/^[A-Za-z0-9_./:=@-]+$/.test(text)) return text;
-  return `"${text.replace(/(["$`])/g, "\\$1")}"`;
-}
-function externalAgentSummaryCommand(root) {
-  return [
-    "node",
-    "scripts/summarize-external-agent-runs.mjs",
-    "--root",
-    quoteShellArg(root),
-    "--out",
-    quoteShellArg((0, import_path13.join)(root, "latest-summary.json")),
-    "--report",
-    quoteShellArg((0, import_path13.join)(root, "summary.report.json"))
-  ].join(" ");
-}
 function resolveCodexProbeCommand() {
   if (process.platform !== "win32") return "codex";
   const appData = process.env.APPDATA;
   if (appData) {
-    const appDataShim = (0, import_path13.join)(appData, "npm", "codex.cmd");
-    if ((0, import_fs15.existsSync)(appDataShim)) return appDataShim;
+    const appDataShim = (0, import_path17.join)(appData, "npm", "codex.cmd");
+    if ((0, import_fs18.existsSync)(appDataShim)) return appDataShim;
   }
   return "codex.cmd";
 }
@@ -39592,8 +39925,8 @@ function resolveGeminiProbeCommand() {
   if (process.platform !== "win32") return "gemini";
   const appData = process.env.APPDATA;
   if (appData) {
-    const appDataShim = (0, import_path13.join)(appData, "npm", "gemini.cmd");
-    if ((0, import_fs15.existsSync)(appDataShim)) return appDataShim;
+    const appDataShim = (0, import_path17.join)(appData, "npm", "gemini.cmd");
+    if ((0, import_fs18.existsSync)(appDataShim)) return appDataShim;
   }
   return "gemini.cmd";
 }
@@ -39864,34 +40197,34 @@ function safeRunId(value) {
   return value.toLowerCase().replace(/[^a-z0-9_.-]+/g, "-").replace(/^-+|-+$/g, "") || "run";
 }
 function resolveWorkspaceRoot(input) {
-  if (input.workspaceRoot) return (0, import_path13.resolve)(input.workspaceRoot);
-  const batchStem = (0, import_path13.basename)((0, import_path13.resolve)(input.batchPath)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
-  const repoStem = (0, import_path13.basename)((0, import_path13.resolve)(input.privateRepoRoot)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
-  return (0, import_path13.resolve)((0, import_os2.tmpdir)(), "foh-external-agent-workspaces", repoStem, batchStem);
+  if (input.workspaceRoot) return (0, import_path17.resolve)(input.workspaceRoot);
+  const batchStem = (0, import_path17.basename)((0, import_path17.resolve)(input.batchPath)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
+  const repoStem = (0, import_path17.basename)((0, import_path17.resolve)(input.privateRepoRoot)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
+  return (0, import_path17.resolve)((0, import_os2.tmpdir)(), "foh-external-agent-workspaces", repoStem, batchStem);
 }
 function findNearestGitRoot(startPath) {
-  let current = (0, import_path13.resolve)(startPath);
+  let current = (0, import_path17.resolve)(startPath);
   while (true) {
-    if ((0, import_fs15.existsSync)((0, import_path13.join)(current, ".git"))) return current;
-    const parent = (0, import_path13.dirname)(current);
+    if ((0, import_fs18.existsSync)((0, import_path17.join)(current, ".git"))) return current;
+    const parent = (0, import_path17.dirname)(current);
     if (parent === current) return null;
     current = parent;
   }
 }
 function resolvePrivateRepoRoot(input) {
   if (input.explicitPrivateRepoRoot) {
-    return { root: (0, import_path13.resolve)(input.explicitPrivateRepoRoot), explicit: true };
+    return { root: (0, import_path17.resolve)(input.explicitPrivateRepoRoot), explicit: true };
   }
-  const cwd = (0, import_path13.resolve)(input.cwd || process.cwd());
+  const cwd = (0, import_path17.resolve)(input.cwd || process.cwd());
   const gitRoot = findNearestGitRoot(cwd);
   if (gitRoot) return { root: gitRoot, explicit: false };
   return {
-    root: (0, import_path13.join)(cwd, ".foh-no-private-repo-root-sentinel"),
+    root: (0, import_path17.join)(cwd, ".foh-no-private-repo-root-sentinel"),
     explicit: false
   };
 }
 function promptVersionFromPath(promptPath) {
-  const raw = (0, import_fs15.readFileSync)(promptPath, "utf8");
+  const raw = (0, import_fs18.readFileSync)(promptPath, "utf8");
   if (raw.includes("Do not assume access to the private source repository")) return "blank-setup.v1";
   return "unknown";
 }
@@ -39900,7 +40233,7 @@ function createExternalAgentExecutorPlan(options) {
   if (runner !== "codex" && runner !== "gemini") {
     throw new ExternalAgentExecutorError("unsupported_external_agent_runner", `Unsupported runner: ${runner}`);
   }
-  const batchPath = (0, import_path13.resolve)(options.batchPath);
+  const batchPath = (0, import_path17.resolve)(options.batchPath);
   const batch = readBatch(batchPath);
   const runnerProbe = validateRunner(options, runner);
   const codexSandboxBackend = normalizeCodexSandboxBackend(options.codexSandboxBackend);
@@ -39919,17 +40252,17 @@ function createExternalAgentExecutorPlan(options) {
       `Workspace root must be outside the private repository. workspace=${workspaceRoot} repo=${privateRepoRoot}`
     );
   }
-  (0, import_fs15.mkdirSync)(workspaceRoot, { recursive: true });
-  const batchDir = (0, import_path13.resolve)(String(batch.batch_dir || (0, import_path13.resolve)(batchPath, "..")));
+  (0, import_fs18.mkdirSync)(workspaceRoot, { recursive: true });
+  const batchDir = (0, import_path17.resolve)(String(batch.batch_dir || (0, import_path17.resolve)(batchPath, "..")));
   const timeoutMinutes = Number.isFinite(options.timeoutMinutes) && Number(options.timeoutMinutes) > 0 ? Number(options.timeoutMinutes) : 30;
   const runs = batch.runs.map((run) => {
     const runId = safeRunId(requireString(run.run_id, "runs[].run_id"));
-    const runDir = (0, import_path13.resolve)(requireString(run.run_dir, `runs[${runId}].run_dir`));
-    const promptPath = (0, import_path13.resolve)(requireString(run.prompt_path, `runs[${runId}].prompt_path`));
-    const workspaceDir = (0, import_path13.join)(workspaceRoot, runId);
-    (0, import_fs15.mkdirSync)(workspaceDir, { recursive: true });
-    (0, import_fs15.writeFileSync)(
-      (0, import_path13.join)(workspaceDir, "README.md"),
+    const runDir = (0, import_path17.resolve)(requireString(run.run_dir, `runs[${runId}].run_dir`));
+    const promptPath = (0, import_path17.resolve)(requireString(run.prompt_path, `runs[${runId}].prompt_path`));
+    const workspaceDir = (0, import_path17.join)(workspaceRoot, runId);
+    (0, import_fs18.mkdirSync)(workspaceDir, { recursive: true });
+    (0, import_fs18.writeFileSync)(
+      (0, import_path17.join)(workspaceDir, "README.md"),
       [
         "# FOH External-Agent Workspace",
         "",
@@ -39947,11 +40280,11 @@ function createExternalAgentExecutorPlan(options) {
     });
     const promptVersion = String(env[EXTERNAL_AGENT_PROMPT_VERSION_ENV] || "unknown");
     const outputStem = runner === "gemini" ? "gemini" : "codex";
-    const jsonlPath = (0, import_path13.join)(runDir, `${outputStem}-exec.jsonl`);
-    const lastMessagePath = (0, import_path13.join)(runDir, `${outputStem}-last-message.md`);
-    const stderrPath = (0, import_path13.join)(runDir, `${outputStem}-stderr.txt`);
-    const runPath = (0, import_path13.join)(runDir, "run.json");
-    const artifactSafetyPath = (0, import_path13.join)(runDir, "artifact-safety.json");
+    const jsonlPath = (0, import_path17.join)(runDir, `${outputStem}-exec.jsonl`);
+    const lastMessagePath = (0, import_path17.join)(runDir, `${outputStem}-last-message.md`);
+    const stderrPath = (0, import_path17.join)(runDir, `${outputStem}-stderr.txt`);
+    const runPath = (0, import_path17.join)(runDir, "run.json");
+    const artifactSafetyPath = (0, import_path17.join)(runDir, "artifact-safety.json");
     const args = runner === "gemini" ? [
       ...runnerProbe.globalArgs,
       ...runnerProbe.execArgs
@@ -40042,280 +40375,11 @@ function createExternalAgentExecutorPlan(options) {
   };
 }
 function writeExternalAgentExecutorPlan(plan) {
-  const path2 = (0, import_path13.join)(plan.batch_dir, "executor-plan.json");
-  (0, import_fs15.mkdirSync)(plan.batch_dir, { recursive: true });
-  (0, import_fs15.writeFileSync)(path2, `${JSON.stringify(plan, null, 2)}
+  const path2 = (0, import_path17.join)(plan.batch_dir, "executor-plan.json");
+  (0, import_fs18.mkdirSync)(plan.batch_dir, { recursive: true });
+  (0, import_fs18.writeFileSync)(path2, `${JSON.stringify(plan, null, 2)}
 `, "utf8");
   return path2;
-}
-function proofArtifactPasses(runDir) {
-  const proofPath = (0, import_path13.join)(runDir, "proof.json");
-  if (!(0, import_fs15.existsSync)(proofPath)) return false;
-  try {
-    const parsed = JSON.parse((0, import_fs15.readFileSync)(proofPath, "utf8"));
-    return parsed.ok === true || parsed.status === "pass" || parsed.status === "passed";
-  } catch {
-    return false;
-  }
-}
-function readIfExists(path2) {
-  return (0, import_fs15.existsSync)(path2) ? (0, import_fs15.readFileSync)(path2, "utf8") : "";
-}
-function redactArtifactFile(path2, input = {}) {
-  if (!(0, import_fs15.existsSync)(path2)) return;
-  const original = (0, import_fs15.readFileSync)(path2, "utf8");
-  const redacted = redactExternalAgentArtifactText(original, input);
-  if (redacted !== original) (0, import_fs15.writeFileSync)(path2, redacted, "utf8");
-}
-function redactOutputArtifacts(run, input = {}) {
-  redactArtifactFile(run.outputs.jsonl, input);
-  redactArtifactFile(run.outputs.last_message, input);
-  redactArtifactFile(run.outputs.stderr, input);
-  redactArtifactFile((0, import_path13.join)(run.run_dir, "commands.ndjson"), input);
-  if (!(0, import_fs15.existsSync)(run.run_dir)) return;
-  for (const name of (0, import_fs15.readdirSync)(run.run_dir)) {
-    if (name.startsWith("command-output-cmd_") && !name.endsWith(".redacted")) {
-      redactArtifactFile((0, import_path13.join)(run.run_dir, name), input);
-    }
-  }
-}
-function copyCommandCaptureArtifacts(input) {
-  const commandLog = (0, import_path13.join)(input.captureDir, "commands.ndjson");
-  if ((0, import_fs15.existsSync)(commandLog)) {
-    (0, import_fs15.writeFileSync)((0, import_path13.join)(input.runDir, "commands.ndjson"), (0, import_fs15.readFileSync)(commandLog, "utf8"), "utf8");
-  }
-  for (const name of (0, import_fs15.readdirSync)(input.captureDir)) {
-    if (name.startsWith("command-output-cmd_")) {
-      (0, import_fs15.copyFileSync)((0, import_path13.join)(input.captureDir, name), (0, import_path13.join)(input.runDir, name));
-    } else if (EXTERNAL_AGENT_METADATA_FILENAMES.includes(name)) {
-      (0, import_fs15.copyFileSync)((0, import_path13.join)(input.captureDir, name), (0, import_path13.join)(input.runDir, name));
-    }
-  }
-}
-function relativeArtifactName(path2) {
-  return (0, import_path13.basename)(path2);
-}
-function classifyRun(input) {
-  if (input.timedOut) return { status: "hold", reasonCode: `${input.run.command}_runner_timeout` };
-  if (!input.artifactSafetyOk) return { status: "fail", reasonCode: "external_agent_artifact_safety_blocked" };
-  const completedCommands = readCommandRecords(input.run.run_dir).filter((record2) => record2.phase === "completed");
-  const observedVersions = completedCommands.map((record2) => String(record2.cli_version || "").trim()).filter((version2) => /^\d+\.\d+\.\d+$/.test(version2));
-  if (observedVersions.some((version2) => version2 !== CLI_VERSION)) {
-    return { status: "hold", reasonCode: "external_agent_cli_version_drift" };
-  }
-  const commandReasonCodes = completedCommands.flatMap((record2) => [
-    String(record2.reason_code || ""),
-    ...Array.isArray(record2.check_reason_codes) ? record2.check_reason_codes.map((code) => String(code || "")) : []
-  ]).filter(Boolean);
-  const hasCommandReason = (pattern) => commandReasonCodes.some((reason) => pattern.test(reason));
-  if (hasCommandReason(new RegExp(PAID_RESOURCE_BLOCKED_REASON_CODE, "i"))) {
-    return { status: "hold", reasonCode: PAID_RESOURCE_BLOCKED_REASON_CODE };
-  }
-  if (hasCommandReason(/provider_capacity_blocked/i)) {
-    return { status: "hold", reasonCode: "provider_capacity_blocked" };
-  }
-  if (hasCommandReason(/byon_voice_number_not_configured/i)) {
-    return { status: "hold", reasonCode: "byon_voice_number_not_configured" };
-  }
-  if (hasCommandReason(/contact_phone_provisioning_failed/i)) {
-    return { status: "hold", reasonCode: "voice_contact_phone_provisioning_failed" };
-  }
-  if (hasCommandReason(/voice_contact_expected_no_spend_hold/i)) {
-    return { status: "hold", reasonCode: "voice_contact_expected_no_spend_hold" };
-  }
-  if (hasCommandReason(/contact_phone_missing/i)) {
-    return { status: "hold", reasonCode: "voice_contact_phone_missing" };
-  }
-  if (hasCommandReason(/sim(?:ulation)?[_-]?cert(?:ify|ification)?.*failed|simulation_certification_failed/i)) {
-    return { status: "hold", reasonCode: "simulation_certification_failed" };
-  }
-  if (hasCommandReason(/proof_held/i)) {
-    return { status: "hold", reasonCode: "external_agent_proof_held" };
-  }
-  if (hasCommandReason(/agent_limit_reached/i)) {
-    return { status: "hold", reasonCode: "eval_org_agent_limit_reached" };
-  }
-  const lastMessage = readIfExists(input.run.outputs.last_message);
-  const stderr = readIfExists(input.run.outputs.stderr);
-  const combined = `${lastMessage}
-${stderr}`;
-  if (/need[^.\n]*(?:private|source)[^.\n]*repo|cannot[^.\n]*without[^.\n]*(?:private|source)[^.\n]*repo|clone[^.\n]*(?:private|source)[^.\n]*repo/i.test(combined)) {
-    return { status: "fail", reasonCode: "private_repo_assumption_detected" };
-  }
-  if (/(?:blocked|rejected|declined) by policy|EXEC_POLICY_BLOCKED|command execution was rejected|shell commands were rejected/i.test(combined)) {
-    return { status: "hold", reasonCode: "codex_exec_policy_blocked" };
-  }
-  if (/bwrap:.*(?:RTM_NEWADDR|Operation not permitted|setting up uid map: Permission denied)|bubblewrap.*(?:RTM_NEWADDR|Operation not permitted|setting up uid map: Permission denied)|Failed RTM_NEWADDR|ENV_SANDBOX_EXEC_BLOCKED|permission profiles requiring direct runtime enforcement are incompatible with --use-legacy-landlock|legacy[_ -]?landlock.*incompatible/i.test(combined)) {
-    return { status: "hold", reasonCode: "codex_sandbox_exec_blocked" };
-  }
-  if (/ENV_NETWORK_DNS_BLOCK|Could not resolve host|npm ping.*timeout|NO_EXECUTABLE_INSTALL/i.test(combined)) {
-    return { status: "hold", reasonCode: "codex_network_dns_blocked" };
-  }
-  if (new RegExp(PAID_RESOURCE_BLOCKED_REASON_CODE, "i").test(combined)) {
-    return { status: "hold", reasonCode: PAID_RESOURCE_BLOCKED_REASON_CODE };
-  }
-  if (/provider_capacity_blocked/i.test(combined)) {
-    return { status: "hold", reasonCode: "provider_capacity_blocked" };
-  }
-  if (/byon_voice_number_not_configured/i.test(combined)) {
-    return { status: "hold", reasonCode: "byon_voice_number_not_configured" };
-  }
-  if (/contact_phone_provisioning_failed/i.test(combined)) {
-    return { status: "hold", reasonCode: "voice_contact_phone_provisioning_failed" };
-  }
-  if (/voice_contact_expected_no_spend_hold/i.test(combined)) {
-    return { status: "hold", reasonCode: "voice_contact_expected_no_spend_hold" };
-  }
-  if (/contact_phone_missing/i.test(combined)) {
-    return { status: "hold", reasonCode: "voice_contact_phone_missing" };
-  }
-  if (/simulation_certification_failed/i.test(combined)) {
-    return { status: "hold", reasonCode: "simulation_certification_failed" };
-  }
-  if (/proof_held/i.test(combined)) {
-    return { status: "hold", reasonCode: "external_agent_proof_held" };
-  }
-  if (/agent_limit_reached/i.test(combined)) {
-    return { status: "hold", reasonCode: "eval_org_agent_limit_reached" };
-  }
-  if (/browser|approve|approval|login|auth|sign in/i.test(combined) && !proofArtifactPasses(input.run.run_dir)) {
-    return { status: "hold", reasonCode: "auth_browser_approval_required" };
-  }
-  if (input.exitCode !== 0) return { status: "hold", reasonCode: `${input.run.command}_runner_nonzero_exit` };
-  if (proofArtifactPasses(input.run.run_dir)) return { status: "pass", reasonCode: null };
-  return { status: "hold", reasonCode: "external_agent_proof_artifact_missing" };
-}
-function buildExecutedRunArtifact(input) {
-  const commands = readCommandRecords(input.run.run_dir);
-  const agentMetadata = readExternalAgentMetadata(input.run.run_dir);
-  return {
-    schema_version: "external_agent_run.v1",
-    run_id: input.run.run_id,
-    status: input.status,
-    failure_reason_code: input.reasonCode,
-    model_provider: input.run.model_provider,
-    model_name: input.run.model_name,
-    runner_model: input.run.runner_model,
-    agent_shell: `${input.run.command}-exec`,
-    workspace_type: "clean-no-repo-programmatic",
-    prompt_version: input.run.prompt_version,
-    prompt_path: "prompt.txt",
-    started_at: input.startedAt,
-    ended_at: input.endedAt,
-    manual_intervention_count: 0,
-    manual_interventions: [],
-    environment: {
-      os: process.platform,
-      node_version: process.version,
-      npm_version: null,
-      foh_cli_version: CLI_VERSION,
-      runner_exit_code: input.exitCode,
-      runner_timed_out: input.timedOut,
-      duration_ms: input.durationMs
-    },
-    public_entrypoints: [
-      "https://frontofhouse.okii.uk",
-      "https://frontofhouse.okii.uk/llms.txt",
-      "https://frontofhouse.okii.uk/openapi.yaml",
-      "npx --yes @f-o-h/cli@latest"
-    ],
-    commands_run: commands.map((command) => command.command),
-    docs_pages_used: agentMetadata.docs_pages_used,
-    eval_state: {
-      lifecycle_strategy: "reuse_existing_eval_state",
-      org_reuse_expected: true,
-      agent_reuse_expected: true,
-      widget_reuse_expected: true,
-      fresh_org_expected: false,
-      ephemeral_org_expected: false,
-      fresh_agent_expected: false,
-      phone_purchase_expected: false,
-      paid_resource_creation_expected: false,
-      spend_policy_expected: NO_SPEND_POLICY,
-      cleanup_expected: false,
-      cleanup_strategy: "no_cleanup_for_reused_eval_state",
-      paid_resource_strategy: "blocked_unless_explicit_byon_or_operator_approved",
-      rationale: "Mass external-agent evals benchmark public docs/CLI/API clarity; reuse avoids paid phone and Twilio inventory churn."
-    },
-    artifacts: {
-      terminal_transcript: relativeArtifactName(input.run.outputs.jsonl),
-      command_log: (0, import_fs15.existsSync)((0, import_path13.join)(input.run.run_dir, "commands.ndjson")) ? "commands.ndjson" : null,
-      proof_bundle: (0, import_fs15.existsSync)((0, import_path13.join)(input.run.run_dir, "proof.json")) ? "proof.json" : null,
-      replay_packet: (0, import_fs15.existsSync)((0, import_path13.join)(input.run.run_dir, "replay.json")) ? "replay.json" : null,
-      knowledge_packet: (0, import_fs15.existsSync)((0, import_path13.join)(input.run.run_dir, "knowledge.json")) ? "knowledge.json" : null,
-      improvement_packet: input.status === "pass" ? null : "improvement-packet.json",
-      agent_metadata: agentMetadata.path,
-      notes: (0, import_fs15.existsSync)((0, import_path13.join)(input.run.run_dir, "notes.md")) ? "notes.md" : null,
-      runner_last_message: relativeArtifactName(input.run.outputs.last_message),
-      runner_stderr: relativeArtifactName(input.run.outputs.stderr),
-      codex_last_message: input.run.command === "codex" ? relativeArtifactName(input.run.outputs.last_message) : null,
-      codex_stderr: input.run.command === "codex" ? relativeArtifactName(input.run.outputs.stderr) : null,
-      artifact_safety: relativeArtifactName(input.run.outputs.artifact_safety)
-    },
-    summary: input.status === "pass" ? `Controlled ${input.run.command} external-agent run produced passing proof evidence.` : `Controlled ${input.run.command} external-agent run ended as ${input.status} with reason ${input.reasonCode}.`,
-    next_commands: input.status === "pass" ? [externalAgentSummaryCommand((0, import_path13.dirname)(input.run.run_dir))] : [
-      "foh eval external-agent scan-artifacts --run-dir <run_dir> --private-repo-root <private_repo_root> --write-redacted --json",
-      "foh bug improve --from external-agent-run --file <run_dir>/run.json --out <run_dir>/improvement-packet.json --json",
-      externalAgentSummaryCommand((0, import_path13.dirname)(input.run.run_dir))
-    ]
-  };
-}
-function spawnRunner(input) {
-  return new Promise((resolveRun) => {
-    const started = Date.now();
-    const commandInvocation = buildCommandInvocation(input.command, input.args);
-    const child = (0, import_child_process4.spawn)(commandInvocation.command, commandInvocation.args, {
-      cwd: input.cwd,
-      env: input.env,
-      shell: false,
-      stdio: ["pipe", "pipe", "pipe"],
-      windowsHide: true
-    });
-    const stdout = (0, import_fs15.createWriteStream)(input.stdoutPath, { flags: "w" });
-    const stderr = (0, import_fs15.createWriteStream)(input.stderrPath, { flags: "w" });
-    child.stdout.pipe(stdout);
-    child.stderr.pipe(stderr);
-    child.stdin.end(input.prompt);
-    let timedOut = false;
-    const timer = setTimeout(() => {
-      timedOut = true;
-      if (child.pid && process.platform === "win32") {
-        (0, import_child_process4.spawnSync)("taskkill.exe", ["/pid", String(child.pid), "/t", "/f"], { stdio: "ignore" });
-      } else {
-        child.kill("SIGKILL");
-      }
-    }, input.timeoutMs);
-    child.on("close", (exitCode) => {
-      clearTimeout(timer);
-      stdout.end();
-      stderr.end();
-      resolveRun({
-        exitCode,
-        timedOut,
-        durationMs: Date.now() - started
-      });
-    });
-    child.on("error", () => {
-      clearTimeout(timer);
-      stdout.end();
-      stderr.end();
-      resolveRun({
-        exitCode: null,
-        timedOut,
-        durationMs: Date.now() - started
-      });
-    });
-  });
-}
-function buildCommandInvocation(command, args) {
-  if (process.platform === "win32" && command.toLowerCase().endsWith(".cmd")) {
-    const binDir = (0, import_path13.dirname)(command);
-    const codexEntrypoint = (0, import_path13.join)(binDir, "node_modules", "@openai", "codex", "bin", "codex.js");
-    if ((0, import_fs15.existsSync)(codexEntrypoint)) return { command: process.execPath, args: [codexEntrypoint, ...args] };
-    const geminiEntrypoint = (0, import_path13.join)(binDir, "node_modules", "@google", "gemini-cli", "bundle", "gemini.js");
-    if ((0, import_fs15.existsSync)(geminiEntrypoint)) return { command: process.execPath, args: ["--no-warnings=DEP0040", geminiEntrypoint, ...args] };
-  }
-  return { command, args };
 }
 async function executeExternalAgentExecutorPlan(plan, options = {}) {
   const startedAt = (/* @__PURE__ */ new Date()).toISOString();
@@ -40328,8 +40392,8 @@ async function executeExternalAgentExecutorPlan(plan, options = {}) {
   if (authPreflight && !authPreflight.ok) {
     const endedAt2 = (/* @__PURE__ */ new Date()).toISOString();
     const blockedResults = plan.runs.map((run) => {
-      (0, import_fs15.mkdirSync)(run.run_dir, { recursive: true });
-      const runArtifact = buildExecutedRunArtifact({
+      (0, import_fs18.mkdirSync)(run.run_dir, { recursive: true });
+      const runArtifact = buildExecutedExternalAgentRunArtifact({
         run,
         startedAt,
         endedAt: endedAt2,
@@ -40339,7 +40403,7 @@ async function executeExternalAgentExecutorPlan(plan, options = {}) {
         timedOut: false,
         durationMs: 0
       });
-      (0, import_fs15.writeFileSync)(run.outputs.run, `${JSON.stringify(runArtifact, null, 2)}
+      (0, import_fs18.writeFileSync)(run.outputs.run, `${JSON.stringify(runArtifact, null, 2)}
 `, "utf8");
       return {
         run_id: run.run_id,
@@ -40366,41 +40430,41 @@ async function executeExternalAgentExecutorPlan(plan, options = {}) {
   }
   for (const run of plan.runs) {
     const runStartedAt = (/* @__PURE__ */ new Date()).toISOString();
-    const commandCaptureDir = (0, import_path13.join)(run.workspace_dir, ".foh-capture");
-    (0, import_fs15.mkdirSync)(commandCaptureDir, { recursive: true });
+    const commandCaptureDir = (0, import_path17.join)(run.workspace_dir, ".foh-capture");
+    (0, import_fs18.mkdirSync)(commandCaptureDir, { recursive: true });
     const env = buildCodexExecutorEnv({
       sourceEnv: options.env,
       runDir: commandCaptureDir,
       promptVersion: run.prompt_version
     });
-    const spawned = await spawnRunner({
+    const spawned = await spawnExternalAgentRunner({
       command: runnerCommand,
       args: run.args,
       cwd: run.workspace_dir,
       env,
-      prompt: (0, import_fs15.readFileSync)(run.prompt_path, "utf8"),
+      prompt: (0, import_fs18.readFileSync)(run.prompt_path, "utf8"),
       stdoutPath: run.outputs.jsonl,
       stderrPath: run.outputs.stderr,
       timeoutMs: plan.timeout_minutes * 60 * 1e3
     });
-    copyCommandCaptureArtifacts({ captureDir: commandCaptureDir, runDir: run.run_dir });
+    copyExternalAgentCommandCaptureArtifacts({ captureDir: commandCaptureDir, runDir: run.run_dir });
     const privateRepoRoot = options.privateRepoRoot || plan.private_repo_root;
-    redactOutputArtifacts(run, { privateRepoRoot });
+    redactExternalAgentOutputArtifacts(run, { privateRepoRoot });
     const artifactSafety = scanExternalAgentArtifacts({
       runDir: run.run_dir,
       privateRepoRoot,
       writeRedacted: true
     });
-    (0, import_fs15.writeFileSync)(run.outputs.artifact_safety, `${JSON.stringify(artifactSafety, null, 2)}
+    (0, import_fs18.writeFileSync)(run.outputs.artifact_safety, `${JSON.stringify(artifactSafety, null, 2)}
 `, "utf8");
     const runEndedAt = (/* @__PURE__ */ new Date()).toISOString();
-    const classification = classifyRun({
+    const classification = classifyExternalAgentRun({
       run,
       exitCode: spawned.exitCode,
       timedOut: spawned.timedOut,
       artifactSafetyOk: artifactSafety.ok
     });
-    const runArtifact = buildExecutedRunArtifact({
+    const runArtifact = buildExecutedExternalAgentRunArtifact({
       run,
       startedAt: runStartedAt,
       endedAt: runEndedAt,
@@ -40410,7 +40474,7 @@ async function executeExternalAgentExecutorPlan(plan, options = {}) {
       timedOut: spawned.timedOut,
       durationMs: spawned.durationMs
     });
-    (0, import_fs15.writeFileSync)(run.outputs.run, `${JSON.stringify(runArtifact, null, 2)}
+    (0, import_fs18.writeFileSync)(run.outputs.run, `${JSON.stringify(runArtifact, null, 2)}
 `, "utf8");
     results.push({
       run_id: run.run_id,
@@ -40459,13 +40523,13 @@ function defaultRunDir(modelName, promptVersion) {
   const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").replace("T", "-").slice(0, 23);
   const safeModel = String(modelName || "unknown-model").toLowerCase().replace(/[^a-z0-9_-]+/g, "-");
   const safePrompt = String(promptVersion || DEFAULT_PROMPT_VERSION).toLowerCase().replace(/[^a-z0-9_.-]+/g, "-");
-  return (0, import_path14.resolve)("test-results", "external-agent-runs", date4, `${safeModel}-${safePrompt}-${stamp}`);
+  return (0, import_path18.resolve)("test-results", "external-agent-runs", date4, `${safeModel}-${safePrompt}-${stamp}`);
 }
 function defaultBatchDir(promptVersion) {
   const date4 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
   const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").replace("T", "-").slice(0, 23);
   const safePrompt = String(promptVersion || DEFAULT_PROMPT_VERSION).toLowerCase().replace(/[^a-z0-9_.-]+/g, "-");
-  return (0, import_path14.resolve)("test-results", "external-agent-runs", date4, `batch-${safePrompt}-${stamp}`);
+  return (0, import_path18.resolve)("test-results", "external-agent-runs", date4, `batch-${safePrompt}-${stamp}`);
 }
 function safeSlug(value) {
   return String(value || "unknown").toLowerCase().replace(/[^a-z0-9_.-]+/g, "-").replace(/^-+|-+$/g, "") || "unknown";
@@ -40480,8 +40544,8 @@ function scanArtifactsCommand(runDir, privateRepoRoot) {
   return `foh eval external-agent scan-artifacts --run-dir ${quoteArg(runDir)}${privateRootArg} --write-redacted --json`;
 }
 function externalAgentSummaryCommand2(root) {
-  const summaryPath = (0, import_path14.join)(root, "latest-summary.json");
-  const reportPath = (0, import_path14.join)(root, "summary.report.json");
+  const summaryPath = (0, import_path18.join)(root, "latest-summary.json");
+  const reportPath = (0, import_path18.join)(root, "summary.report.json");
   return [
     "node",
     "scripts/summarize-external-agent-runs.mjs",
@@ -40595,14 +40659,14 @@ function writePrompt(runDir, promptVersion, context = {}) {
     replayPromptContext(context.replayFile),
     knowledgeMissPromptContext(context.knowledgeQuestion, context.expectedAnswer)
   ].join("");
-  const path2 = (0, import_path14.join)(runDir, "prompt.txt");
-  (0, import_fs16.writeFileSync)(path2, `${prompt}
+  const path2 = (0, import_path18.join)(runDir, "prompt.txt");
+  (0, import_fs19.writeFileSync)(path2, `${prompt}
 `, "utf8");
   return path2;
 }
 function writeSession(runDir, session) {
-  const path2 = (0, import_path14.join)(runDir, "session.json");
-  (0, import_fs16.writeFileSync)(path2, `${JSON.stringify(session, null, 2)}
+  const path2 = (0, import_path18.join)(runDir, "session.json");
+  (0, import_fs19.writeFileSync)(path2, `${JSON.stringify(session, null, 2)}
 `, "utf8");
   return path2;
 }
@@ -40678,9 +40742,9 @@ function buildRunArtifact(input) {
       notes: "notes.md"
     },
     summary: status === "pass" ? "External-agent capture session completed and was marked pass." : `External-agent capture session completed with ${commands.length} captured FOH command(s); classify and improve reason ${reasonCode}.`,
-    next_commands: status === "pass" ? [externalAgentSummaryCommand2((0, import_path14.dirname)(input.runDir))] : [
-      `foh bug improve --from external-agent-run --file ${(0, import_path14.join)(input.runDir, "run.json")} --out ${(0, import_path14.join)(input.runDir, "improvement-packet.json")} --json`,
-      externalAgentSummaryCommand2((0, import_path14.dirname)(input.runDir))
+    next_commands: status === "pass" ? [externalAgentSummaryCommand2((0, import_path18.dirname)(input.runDir))] : [
+      `foh bug improve --from external-agent-run --file ${(0, import_path18.join)(input.runDir, "run.json")} --out ${(0, import_path18.join)(input.runDir, "improvement-packet.json")} --json`,
+      externalAgentSummaryCommand2((0, import_path18.dirname)(input.runDir))
     ]
   };
 }
@@ -40689,16 +40753,16 @@ function registerEval(program3) {
   const external = evalCommand.command("external-agent").description("Capture clean external coding-agent setup attempts");
   external.command("batch").description("Create a deterministic multi-model external-agent batch plan").option("--models <list>", "Comma-separated provider/model list", DEFAULT_BATCH_MODELS).option("--prompt-version <version>", "Prompt version", DEFAULT_PROMPT_VERSION).option("--replay-file <path>", "Local transcript/replay artifact to seed replay-failure prompts").option("--knowledge-question <text>", "Question to seed knowledge-miss prompts").option("--expected-answer <text>", "Expected answer or missing fact for planted knowledge-miss prompts").option("--workspace-type <type>", "Workspace type label", "clean-no-repo").option("--agent-shell <name>", "Agent shell label", "vscode-terminal").option("--out-dir <path>", "Batch output directory").option("--json", "Output as JSON").action(async (opts) => {
     const promptVersion = String(opts.promptVersion || DEFAULT_PROMPT_VERSION);
-    const batchDir = (0, import_path14.resolve)(String(opts.outDir || defaultBatchDir(promptVersion)));
-    const replayFile = opts.replayFile ? (0, import_path14.resolve)(String(opts.replayFile)) : void 0;
+    const batchDir = (0, import_path18.resolve)(String(opts.outDir || defaultBatchDir(promptVersion)));
+    const replayFile = opts.replayFile ? (0, import_path18.resolve)(String(opts.replayFile)) : void 0;
     const knowledgeQuestion = opts.knowledgeQuestion ? String(opts.knowledgeQuestion) : void 0;
     const expectedAnswer = opts.expectedAnswer ? String(opts.expectedAnswer) : void 0;
     const models = parseModelList(String(opts.models || DEFAULT_BATCH_MODELS));
-    (0, import_fs16.mkdirSync)(batchDir, { recursive: true });
+    (0, import_fs19.mkdirSync)(batchDir, { recursive: true });
     const runs = models.map((model, index) => {
       const runId = `${String(index + 1).padStart(2, "0")}-${safeSlug(model.provider)}-${safeSlug(model.name)}`;
-      const runDir = (0, import_path14.join)(batchDir, runId);
-      (0, import_fs16.mkdirSync)(runDir, { recursive: true });
+      const runDir = (0, import_path18.join)(batchDir, runId);
+      (0, import_fs19.mkdirSync)(runDir, { recursive: true });
       const promptPath = writePrompt(runDir, promptVersion, { replayFile, knowledgeQuestion, expectedAnswer });
       const commandArgs = [
         "eval",
@@ -40745,8 +40809,8 @@ function registerEval(program3) {
       runs,
       summary_command: externalAgentSummaryCommand2(batchDir)
     };
-    const batchPath = (0, import_path14.join)(batchDir, "batch.json");
-    (0, import_fs16.writeFileSync)(batchPath, `${JSON.stringify(batch, null, 2)}
+    const batchPath = (0, import_path18.join)(batchDir, "batch.json");
+    (0, import_fs19.writeFileSync)(batchPath, `${JSON.stringify(batch, null, 2)}
 `, "utf8");
     format(cliEnvelope({
       schemaVersion: "external_agent_batch_plan_result.v1",
@@ -40766,11 +40830,11 @@ function registerEval(program3) {
   external.command("run").description("Launch an instrumented shell and emit external_agent_run.v1 when it exits").option("--model-provider <name>", "Model provider label", "unknown").option("--model-name <name>", "Model name label", "unknown-model").option("--prompt-version <version>", "Prompt version", DEFAULT_PROMPT_VERSION).option("--replay-file <path>", "Local transcript/replay artifact to seed replay-failure prompts").option("--knowledge-question <text>", "Question to seed knowledge-miss prompts").option("--expected-answer <text>", "Expected answer or missing fact for planted knowledge-miss prompts").option("--workspace-type <type>", "Workspace type label", "clean-no-repo").option("--agent-shell <name>", "Agent shell label", "vscode-terminal").option("--out-dir <path>", "Run output directory").option("--status <status>", "Final status when not interactively classified: pass|hold|fail", "hold").option("--reason-code <code>", "Failure/hold reason code", "external_agent_run_needs_review").option("--shell <command>", "Shell command to launch for capture").option("--no-shell", "Do not launch a shell; create/finalize artifacts immediately").option("--json", "Output as JSON").action(async (opts) => {
     const status = normalizeStatus(opts.status);
     const promptVersion = String(opts.promptVersion || DEFAULT_PROMPT_VERSION);
-    const runDir = (0, import_path14.resolve)(String(opts.outDir || defaultRunDir(opts.modelName, promptVersion)));
-    const replayFile = opts.replayFile ? (0, import_path14.resolve)(String(opts.replayFile)) : void 0;
+    const runDir = (0, import_path18.resolve)(String(opts.outDir || defaultRunDir(opts.modelName, promptVersion)));
+    const replayFile = opts.replayFile ? (0, import_path18.resolve)(String(opts.replayFile)) : void 0;
     const knowledgeQuestion = opts.knowledgeQuestion ? String(opts.knowledgeQuestion) : void 0;
     const expectedAnswer = opts.expectedAnswer ? String(opts.expectedAnswer) : void 0;
-    (0, import_fs16.mkdirSync)(runDir, { recursive: true });
+    (0, import_fs19.mkdirSync)(runDir, { recursive: true });
     const runId = runDir.split(/[\\/]/).filter(Boolean).slice(-1)[0];
     const promptPath = writePrompt(runDir, promptVersion, { replayFile, knowledgeQuestion, expectedAnswer });
     const shell = inferShell(opts.shell);
@@ -40796,7 +40860,7 @@ function registerEval(program3) {
       }
     };
     writeSession(runDir, session);
-    (0, import_fs16.writeFileSync)((0, import_path14.join)(runDir, "notes.md"), "# External Agent Run Notes\n\n", "utf8");
+    (0, import_fs19.writeFileSync)((0, import_path18.join)(runDir, "notes.md"), "# External Agent Run Notes\n\n", "utf8");
     let shellExitCode = null;
     if (opts.shell !== false) {
       process.stdout.write(`
@@ -40806,7 +40870,7 @@ Prompt: ${promptPath}
 Exit the shell to finalize run.json.
 
 `);
-      const result = (0, import_child_process5.spawnSync)(shell.command, shell.args, {
+      const result = (0, import_child_process6.spawnSync)(shell.command, shell.args, {
         stdio: "inherit",
         env: {
           ...process.env,
@@ -40818,8 +40882,8 @@ Exit the shell to finalize run.json.
       shellExitCode = typeof result.status === "number" ? result.status : null;
     }
     const artifact = buildRunArtifact({ runDir, session, status, reasonCode: opts.reasonCode, shellExitCode });
-    const runPath = (0, import_path14.join)(runDir, "run.json");
-    (0, import_fs16.writeFileSync)(runPath, `${JSON.stringify(artifact, null, 2)}
+    const runPath = (0, import_path18.join)(runDir, "run.json");
+    (0, import_fs19.writeFileSync)(runPath, `${JSON.stringify(artifact, null, 2)}
 `, "utf8");
     format(cliEnvelope({
       schemaVersion: "external_agent_capture_result.v1",
@@ -40829,7 +40893,7 @@ Exit the shell to finalize run.json.
       artifacts: {
         run: runPath,
         prompt: promptPath,
-        commands: (0, import_path14.join)(runDir, "commands.ndjson")
+        commands: (0, import_path18.join)(runDir, "commands.ndjson")
       },
       nextCommands: artifact.next_commands,
       extra: { run: artifact }
@@ -40892,8 +40956,8 @@ Exit the shell to finalize run.json.
           requireExplicitEvalAuth: true,
           minimumEvalAuthTtlMs: (plan.timeout_minutes + 5) * 60 * 1e3
         });
-        const resultPath = (0, import_path14.join)(plan.batch_dir, "execution-result.json");
-        (0, import_fs16.writeFileSync)(resultPath, `${JSON.stringify(result, null, 2)}
+        const resultPath = (0, import_path18.join)(plan.batch_dir, "execution-result.json");
+        (0, import_fs19.writeFileSync)(resultPath, `${JSON.stringify(result, null, 2)}
 `, "utf8");
         format(cliEnvelope({
           schemaVersion: "external_agent_execution_result.v1",
