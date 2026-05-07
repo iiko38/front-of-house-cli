@@ -32790,7 +32790,7 @@ var StdioServerTransport = class {
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.72";
+var CLI_VERSION = "0.1.73";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -39659,23 +39659,58 @@ function firstCommandTime(commands) {
   const times = commands.map((command) => String(command.started_at || command.recorded_at || command.completed_at || "")).map((raw) => ({ raw, time: Date.parse(raw) })).filter((entry) => Number.isFinite(entry.time)).sort((a, b) => a.time - b.time);
   return times[0]?.raw ?? null;
 }
+function commandReasonCodes(commands) {
+  const codes = /* @__PURE__ */ new Set();
+  for (const command of commands) {
+    if (command.reason_code) codes.add(String(command.reason_code));
+    for (const reasonCode of toArray2(command.check_reason_codes)) {
+      if (reasonCode) codes.add(String(reasonCode));
+    }
+  }
+  return Array.from(codes);
+}
+function syntheticStatusFromCommands(commands) {
+  const commandReasons = commandReasonCodes(commands);
+  const failed = commands.find((command) => {
+    const status = String(command.status || "").toLowerCase();
+    return status === "fail" || typeof command.exit_code === "number" && command.exit_code !== 0 && status !== "hold";
+  });
+  if (failed) {
+    return {
+      status: "fail",
+      reasonCode: String(failed.reason_code || commandReasons[0] || "external_agent_command_failed")
+    };
+  }
+  const held = commands.find((command) => String(command.status || "").toLowerCase() === "hold");
+  if (held) {
+    return {
+      status: "hold",
+      reasonCode: String(held.reason_code || commandReasons[0] || "external_agent_command_held")
+    };
+  }
+  if (commands.length === 0) {
+    return { status: "hold", reasonCode: "external_agent_capture_empty" };
+  }
+  return { status: "pass", reasonCode: null };
+}
 function synthesizeRunFromCapture(runPath) {
   const runDir = (0, import_path15.dirname)(runPath);
   const commands = collapseCommandRecords(readNdjson((0, import_path15.join)(runDir, "commands.ndjson")));
   const metadata = asObject((0, import_fs16.existsSync)((0, import_path15.join)(runDir, "external-agent-metadata.json")) ? readJson((0, import_path15.join)(runDir, "external-agent-metadata.json")) : {});
   const blockerCodes = toArray2(metadata?.blocker_reason_codes).map(String).filter(Boolean);
-  const holdReason = blockerCodes[0] || "external_agent_capture_unfinalized";
+  const commandClassification = syntheticStatusFromCommands(commands);
+  const status = commandClassification.status === "fail" ? "fail" : blockerCodes.length > 0 ? "hold" : commandClassification.status;
+  const reasonCode = commandClassification.status === "fail" ? commandClassification.reasonCode : blockerCodes[0] || commandClassification.reasonCode;
   const firstCommand = commands[0] || {};
   const startedAt = firstCommandTime(commands) || (/* @__PURE__ */ new Date(0)).toISOString();
   const endedAt = latestCommandTime(commands) || startedAt;
-  const status = blockerCodes.length > 0 ? "hold" : "pass";
   const docs = toArray2(metadata?.docs_pages_used).map(String).filter(Boolean);
   const runId = (0, import_path15.dirname)(runPath).split(/[\\/]/).filter(Boolean).slice(-3).join("-") || "capture-only-run";
   return {
     schema_version: "external_agent_run.v1",
     run_id: runId,
     status,
-    failure_reason_code: status === "pass" ? null : holdReason,
+    failure_reason_code: status === "pass" ? null : reasonCode || "external_agent_capture_unfinalized",
     model_provider: "unknown",
     model_name: "unknown",
     prompt_version: String(firstCommand.prompt_version || "unknown"),
@@ -39872,7 +39907,7 @@ function summarizeExternalAgentRuns(options) {
     for (const page of toArray2(artifactSummary.docs_pages_observed)) increment(docsCounts, page);
   }
   const topFailures = ranked(failureCounts);
-  const commandReasonCodes = ranked(commandReasonCounts);
+  const commandReasonCodes2 = ranked(commandReasonCounts);
   const recommendedFixes = topFailures.map((failure) => ({
     reason_code: failure.key,
     count: failure.count,
@@ -39900,7 +39935,7 @@ function summarizeExternalAgentRuns(options) {
       missing_completion_count: missingCompletionCount,
       commands_with_duration_count: commandsWithDurationCount,
       total_command_duration_ms: totalCommandDurationMs,
-      command_reason_codes: commandReasonCodes,
+      command_reason_codes: commandReasonCodes2,
       slow_steps: slowSteps.sort((a, b) => Number(b.duration_ms || 0) - Number(a.duration_ms || 0) || String(a.command || "").localeCompare(String(b.command || ""))).slice(0, 20)
     },
     codex_telemetry: {
@@ -39974,11 +40009,11 @@ function classifyExternalAgentRun(input) {
   if (observedVersions.some((version2) => version2 !== CLI_VERSION)) {
     return { status: "hold", reasonCode: "external_agent_cli_version_drift" };
   }
-  const commandReasonCodes = completedCommands.flatMap((record2) => [
+  const commandReasonCodes2 = completedCommands.flatMap((record2) => [
     String(record2.reason_code || ""),
     ...Array.isArray(record2.check_reason_codes) ? record2.check_reason_codes.map((code) => String(code || "")) : []
   ]).filter(Boolean);
-  const hasCommandReason = (pattern) => commandReasonCodes.some((reason) => pattern.test(reason));
+  const hasCommandReason = (pattern) => commandReasonCodes2.some((reason) => pattern.test(reason));
   if (hasCommandReason(new RegExp(PAID_RESOURCE_BLOCKED_REASON_CODE, "i"))) {
     return { status: "hold", reasonCode: PAID_RESOURCE_BLOCKED_REASON_CODE };
   }
