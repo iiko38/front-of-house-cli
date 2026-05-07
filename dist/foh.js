@@ -32790,7 +32790,7 @@ var StdioServerTransport = class {
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.71";
+var CLI_VERSION = "0.1.72";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -39593,9 +39593,11 @@ function ranked(map3) {
 function collectDocUrls(text) {
   return Array.from(new Set((String(text || "").match(DOC_URL_RE) || []).map((url2) => url2.replace(/[.?!:]+$/g, "")).filter((url2) => url2.startsWith("https://frontofhouse.okii.uk/")))).sort();
 }
-function findRunFiles(root) {
+function findRunCandidates(root) {
   if (!(0, import_fs16.existsSync)(root)) return [];
-  const files = [];
+  const candidates = [];
+  const seenRunDirs = /* @__PURE__ */ new Set();
+  const captureDirs = [];
   const stack = [root];
   while (stack.length > 0) {
     const current = stack.pop();
@@ -39605,11 +39607,18 @@ function findRunFiles(root) {
       if (entry.isDirectory()) {
         stack.push(absolute);
       } else if (entry.isFile() && entry.name === "run.json") {
-        files.push(absolute);
+        candidates.push({ path: absolute, synthetic: false });
+        seenRunDirs.add((0, import_path15.dirname)(absolute));
+      } else if (entry.isFile() && entry.name === "commands.ndjson") {
+        captureDirs.push(current);
       }
     }
   }
-  return files.sort();
+  for (const captureDir of captureDirs) {
+    if (seenRunDirs.has(captureDir)) continue;
+    candidates.push({ path: (0, import_path15.join)(captureDir, "run.json"), synthetic: true });
+  }
+  return candidates.sort((a, b) => a.path.localeCompare(b.path));
 }
 function validateExternalAgentRun(value) {
   const findings = [];
@@ -39642,6 +39651,55 @@ function runSortTime(run) {
   const time3 = Date.parse(raw);
   return Number.isFinite(time3) ? time3 : 0;
 }
+function latestCommandTime(commands) {
+  const times = commands.map((command) => String(command.completed_at || command.started_at || command.recorded_at || "")).map((raw) => ({ raw, time: Date.parse(raw) })).filter((entry) => Number.isFinite(entry.time)).sort((a, b) => b.time - a.time);
+  return times[0]?.raw ?? null;
+}
+function firstCommandTime(commands) {
+  const times = commands.map((command) => String(command.started_at || command.recorded_at || command.completed_at || "")).map((raw) => ({ raw, time: Date.parse(raw) })).filter((entry) => Number.isFinite(entry.time)).sort((a, b) => a.time - b.time);
+  return times[0]?.raw ?? null;
+}
+function synthesizeRunFromCapture(runPath) {
+  const runDir = (0, import_path15.dirname)(runPath);
+  const commands = collapseCommandRecords(readNdjson((0, import_path15.join)(runDir, "commands.ndjson")));
+  const metadata = asObject((0, import_fs16.existsSync)((0, import_path15.join)(runDir, "external-agent-metadata.json")) ? readJson((0, import_path15.join)(runDir, "external-agent-metadata.json")) : {});
+  const blockerCodes = toArray2(metadata?.blocker_reason_codes).map(String).filter(Boolean);
+  const holdReason = blockerCodes[0] || "external_agent_capture_unfinalized";
+  const firstCommand = commands[0] || {};
+  const startedAt = firstCommandTime(commands) || (/* @__PURE__ */ new Date(0)).toISOString();
+  const endedAt = latestCommandTime(commands) || startedAt;
+  const status = blockerCodes.length > 0 ? "hold" : "pass";
+  const docs = toArray2(metadata?.docs_pages_used).map(String).filter(Boolean);
+  const runId = (0, import_path15.dirname)(runPath).split(/[\\/]/).filter(Boolean).slice(-3).join("-") || "capture-only-run";
+  return {
+    schema_version: "external_agent_run.v1",
+    run_id: runId,
+    status,
+    failure_reason_code: status === "pass" ? null : holdReason,
+    model_provider: "unknown",
+    model_name: "unknown",
+    prompt_version: String(firstCommand.prompt_version || "unknown"),
+    started_at: startedAt,
+    ended_at: endedAt,
+    manual_intervention_count: 0,
+    environment: {
+      foh_cli_version: firstCommand.cli_version || null,
+      capture_only: true
+    },
+    public_entrypoints: [
+      "https://frontofhouse.okii.uk",
+      "npx --yes @f-o-h/cli@latest"
+    ],
+    commands_run: commands.map((command) => String(command.command || "")).filter(Boolean),
+    docs_pages_used: docs,
+    artifacts: {
+      command_log: "commands.ndjson",
+      agent_metadata: (0, import_fs16.existsSync)((0, import_path15.join)(runDir, "external-agent-metadata.json")) ? "external-agent-metadata.json" : null,
+      capture_only: true
+    },
+    summary: "Synthetic run record created from external-agent capture artifacts because run.json was missing."
+  };
+}
 function cohortIdForRunPath(root, runPath) {
   const normalized = (0, import_path15.relative)(root, (0, import_path15.dirname)(runPath)).replaceAll("\\", "/");
   const parts = normalized.split("/").filter(Boolean);
@@ -39652,9 +39710,10 @@ function cohortIdForRunPath(root, runPath) {
 function readRunRecords(root, cwd) {
   const records = [];
   const invalid_runs = [];
-  for (const file2 of findRunFiles(root)) {
+  for (const candidate of findRunCandidates(root)) {
+    const file2 = candidate.path;
     try {
-      const parsed = readJson(file2);
+      const parsed = candidate.synthetic ? synthesizeRunFromCapture(file2) : readJson(file2);
       const findings = validateExternalAgentRun(parsed);
       if (findings.length > 0) {
         invalid_runs.push({ path: (0, import_path15.relative)(cwd, file2).replaceAll("\\", "/"), findings });
