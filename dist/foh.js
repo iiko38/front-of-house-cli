@@ -6046,7 +6046,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve13.call(this, root, ref);
+      let _sch = resolve14.call(this, root, ref);
       if (_sch === void 0) {
         const schema2 = (_a2 = root.localRefs) === null || _a2 === void 0 ? void 0 : _a2[ref];
         const { schemaId } = this.opts;
@@ -6073,7 +6073,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve13(root, ref) {
+    function resolve14(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -6648,55 +6648,55 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve13(baseURI, relativeURI, options) {
+    function resolve14(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const resolved = resolveComponent(parse3(baseURI, schemelessOptions), parse3(relativeURI, schemelessOptions), schemelessOptions, true);
       schemelessOptions.skipEscape = true;
       return serialize(resolved, schemelessOptions);
     }
-    function resolveComponent(base, relative3, options, skipNormalization) {
+    function resolveComponent(base, relative4, options, skipNormalization) {
       const target = {};
       if (!skipNormalization) {
         base = parse3(serialize(base, options), options);
-        relative3 = parse3(serialize(relative3, options), options);
+        relative4 = parse3(serialize(relative4, options), options);
       }
       options = options || {};
-      if (!options.tolerant && relative3.scheme) {
-        target.scheme = relative3.scheme;
-        target.userinfo = relative3.userinfo;
-        target.host = relative3.host;
-        target.port = relative3.port;
-        target.path = removeDotSegments(relative3.path || "");
-        target.query = relative3.query;
+      if (!options.tolerant && relative4.scheme) {
+        target.scheme = relative4.scheme;
+        target.userinfo = relative4.userinfo;
+        target.host = relative4.host;
+        target.port = relative4.port;
+        target.path = removeDotSegments(relative4.path || "");
+        target.query = relative4.query;
       } else {
-        if (relative3.userinfo !== void 0 || relative3.host !== void 0 || relative3.port !== void 0) {
-          target.userinfo = relative3.userinfo;
-          target.host = relative3.host;
-          target.port = relative3.port;
-          target.path = removeDotSegments(relative3.path || "");
-          target.query = relative3.query;
+        if (relative4.userinfo !== void 0 || relative4.host !== void 0 || relative4.port !== void 0) {
+          target.userinfo = relative4.userinfo;
+          target.host = relative4.host;
+          target.port = relative4.port;
+          target.path = removeDotSegments(relative4.path || "");
+          target.query = relative4.query;
         } else {
-          if (!relative3.path) {
+          if (!relative4.path) {
             target.path = base.path;
-            if (relative3.query !== void 0) {
-              target.query = relative3.query;
+            if (relative4.query !== void 0) {
+              target.query = relative4.query;
             } else {
               target.query = base.query;
             }
           } else {
-            if (relative3.path[0] === "/") {
-              target.path = removeDotSegments(relative3.path);
+            if (relative4.path[0] === "/") {
+              target.path = removeDotSegments(relative4.path);
             } else {
               if ((base.userinfo !== void 0 || base.host !== void 0 || base.port !== void 0) && !base.path) {
-                target.path = "/" + relative3.path;
+                target.path = "/" + relative4.path;
               } else if (!base.path) {
-                target.path = relative3.path;
+                target.path = relative4.path;
               } else {
-                target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative3.path;
+                target.path = base.path.slice(0, base.path.lastIndexOf("/") + 1) + relative4.path;
               }
               target.path = removeDotSegments(target.path);
             }
-            target.query = relative3.query;
+            target.query = relative4.query;
           }
           target.userinfo = base.userinfo;
           target.host = base.host;
@@ -6704,7 +6704,7 @@ var require_fast_uri = __commonJS({
         }
         target.scheme = base.scheme;
       }
-      target.fragment = relative3.fragment;
+      target.fragment = relative4.fragment;
       return target;
     }
     function equal(uriA, uriB, options) {
@@ -6875,7 +6875,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve13,
+      resolve: resolve14,
       resolveComponent,
       equal,
       serialize,
@@ -10172,21 +10172,21 @@ async function promptLine(label, {
   allowEmpty = false,
   defaultValue
 } = {}) {
-  return await new Promise((resolve13) => {
+  return await new Promise((resolve14) => {
     const suffix = defaultValue ? ` [${defaultValue}]` : "";
     const rl = (0, import_readline.createInterface)({ input: process.stdin, output: process.stdout, terminal: true });
     rl.question(`${label}${suffix}: `, (answer) => {
       rl.close();
       const value = String(answer ?? "").trim();
       if (!value && typeof defaultValue === "string") {
-        resolve13(defaultValue);
+        resolve14(defaultValue);
         return;
       }
       if (!value && !allowEmpty) {
-        resolve13("");
+        resolve14("");
         return;
       }
-      resolve13(value);
+      resolve14(value);
     });
   });
 }
@@ -10194,7 +10194,7 @@ async function promptSecret(label) {
   if (!process.stdin.isTTY || !process.stdout.isTTY || typeof process.stdin.setRawMode !== "function") {
     return await promptLine(label);
   }
-  return await new Promise((resolve13) => {
+  return await new Promise((resolve14) => {
     const stdin = process.stdin;
     const stdout = process.stdout;
     const wasRaw = Boolean(stdin.isRaw);
@@ -10208,7 +10208,7 @@ async function promptSecret(label) {
     const finish = () => {
       cleanup();
       stdout.write("\n");
-      resolve13(value);
+      resolve14(value);
     };
     const onData = (chunk) => {
       const text = typeof chunk === "string" ? chunk : chunk.toString("utf8");
@@ -10217,7 +10217,7 @@ async function promptSecret(label) {
           cleanup();
           process.exitCode = 130;
           stdout.write("\n");
-          return resolve13("");
+          return resolve14("");
         }
         if (char === "\r" || char === "\n") {
           finish();
@@ -10490,7 +10490,7 @@ async function storeAuthenticatedSession(params) {
   return output;
 }
 function sleep(ms) {
-  return new Promise((resolve13) => setTimeout(resolve13, ms));
+  return new Promise((resolve14) => setTimeout(resolve14, ms));
 }
 function hasExplicitTimeoutFlag(argv = process.argv) {
   return argv.some((arg) => arg === "--timeout-seconds" || arg.startsWith("--timeout-seconds="));
@@ -11048,7 +11048,7 @@ async function pollUntil(check2, opts) {
   }
 }
 function sleep2(ms) {
-  return new Promise((resolve13) => setTimeout(resolve13, ms));
+  return new Promise((resolve14) => setTimeout(resolve14, ms));
 }
 
 // src/commands/compliance.ts
@@ -14172,8 +14172,8 @@ function registerAgentGuardrailCommands(agent) {
     try {
       rule = JSON.parse(opts.rule);
     } catch {
-      const { readFileSync: readFileSync16 } = await import("fs");
-      rule = JSON.parse(readFileSync16(opts.rule, "utf-8"));
+      const { readFileSync: readFileSync17 } = await import("fs");
+      rule = JSON.parse(readFileSync17(opts.rule, "utf-8"));
     }
     const data = await apiFetch(`/v1/console/agents/${opts.agent}/guardrails`, {
       method: "POST",
@@ -14719,9 +14719,9 @@ function registerAgent(program3) {
       process.stdout.write(yaml);
       return;
     }
-    const { writeFileSync: writeFileSync13 } = await import("fs");
+    const { writeFileSync: writeFileSync14 } = await import("fs");
     const outputPath = opts.output ?? "tenant.yaml";
-    writeFileSync13(
+    writeFileSync14(
       outputPath,
       `# tenant.yaml - Front Of House agent manifest
 # Edit this file and run: foh plan tenant.yaml
@@ -16173,11 +16173,11 @@ function registerVoice(program3) {
     }
     const outputPath = String(opts.out || `foh-voice-preview-${provider}-${voiceId}.mp3`).trim();
     const audio = Buffer.from(await res.arrayBuffer());
-    const { mkdirSync: mkdirSync8, writeFileSync: writeFileSync13 } = await import("fs");
-    const { dirname: dirname11, resolve: resolve13 } = await import("path");
-    const absolutePath = resolve13(outputPath);
-    mkdirSync8(dirname11(absolutePath), { recursive: true });
-    writeFileSync13(absolutePath, audio);
+    const { mkdirSync: mkdirSync9, writeFileSync: writeFileSync14 } = await import("fs");
+    const { dirname: dirname12, resolve: resolve14 } = await import("path");
+    const absolutePath = resolve14(outputPath);
+    mkdirSync9(dirname12(absolutePath), { recursive: true });
+    writeFileSync14(absolutePath, audio);
     format({
       status: "ok",
       provider,
@@ -30668,7 +30668,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve13) => setTimeout(resolve13, pollInterval));
+        await new Promise((resolve14) => setTimeout(resolve14, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error2) {
@@ -30685,7 +30685,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve13, reject) => {
+    return new Promise((resolve14, reject) => {
       const earlyReject = (error2) => {
         reject(error2);
       };
@@ -30763,7 +30763,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve13(parseResult.data);
+            resolve14(parseResult.data);
           }
         } catch (error2) {
           reject(error2);
@@ -31024,12 +31024,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve13, reject) => {
+    return new Promise((resolve14, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve13, interval);
+      const timeoutId = setTimeout(resolve14, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -32129,7 +32129,7 @@ var McpServer = class {
     let task = createTaskResult.task;
     const pollInterval = task.pollInterval ?? 5e3;
     while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-      await new Promise((resolve13) => setTimeout(resolve13, pollInterval));
+      await new Promise((resolve14) => setTimeout(resolve14, pollInterval));
       const updatedTask = await extra.taskStore.getTask(taskId);
       if (!updatedTask) {
         throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -32778,19 +32778,19 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve13) => {
+    return new Promise((resolve14) => {
       const json3 = serializeMessage(message);
       if (this._stdout.write(json3)) {
-        resolve13();
+        resolve14();
       } else {
-        this._stdout.once("drain", resolve13);
+        this._stdout.once("drain", resolve14);
       }
     });
   }
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.70";
+var CLI_VERSION = "0.1.71";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -32975,7 +32975,7 @@ async function runFohCli(params) {
     effectiveArgv.push("--json");
   }
   const command = `foh ${effectiveArgv.join(" ")}`;
-  return await new Promise((resolve13) => {
+  return await new Promise((resolve14) => {
     const child = (0, import_node_child_process.spawn)(process.execPath, [cliEntry, ...effectiveArgv], {
       stdio: ["ignore", "pipe", "pipe"],
       env: {
@@ -33000,7 +33000,7 @@ async function runFohCli(params) {
     });
     child.once("error", (error2) => {
       clearTimeout(timeoutHandle);
-      resolve13({
+      resolve14({
         ok: false,
         command,
         argv: effectiveArgv,
@@ -33016,7 +33016,7 @@ async function runFohCli(params) {
       const stderrText = finalizeBoundedText(stderrBuffer);
       const exitCode = Number.isFinite(code ?? NaN) ? Number(code) : 1;
       const stdoutJson = tryParseJson(stdoutText);
-      resolve13({
+      resolve14({
         ok: !timedOut && exitCode === 0,
         command,
         argv: effectiveArgv,
@@ -35186,8 +35186,8 @@ function registerSetup(program3) {
         }
         try {
           const manifest = await agentExport(resolvedAgentId, { apiUrlOverride: opts.apiUrl });
-          const { writeFileSync: writeFileSync13 } = await import("fs");
-          writeFileSync13(
+          const { writeFileSync: writeFileSync14 } = await import("fs");
+          writeFileSync14(
             "tenant.yaml",
             `# tenant.yaml - Front Of House agent manifest
 # Edit this file and run: foh plan tenant.yaml
@@ -35357,8 +35357,8 @@ function registerSim(program3) {
       }
       const cert = response.certificate;
       if (opts.out) {
-        const { writeFileSync: writeFileSync13 } = await import("fs");
-        writeFileSync13(opts.out, JSON.stringify(cert, null, 2) + "\n", "utf-8");
+        const { writeFileSync: writeFileSync14 } = await import("fs");
+        writeFileSync14(opts.out, JSON.stringify(cert, null, 2) + "\n", "utf-8");
         process.stderr.write(`  Certificate written to ${opts.out}
 `);
       }
@@ -35408,8 +35408,8 @@ function registerSim(program3) {
         });
       }
       if (opts.out) {
-        const { writeFileSync: writeFileSync13 } = await import("fs");
-        writeFileSync13(opts.out, JSON.stringify(response.certificate, null, 2) + "\n", "utf-8");
+        const { writeFileSync: writeFileSync14 } = await import("fs");
+        writeFileSync14(opts.out, JSON.stringify(response.certificate, null, 2) + "\n", "utf-8");
         process.stderr.write(`  Final certificate written to ${opts.out}
 `);
       }
@@ -38469,7 +38469,7 @@ async function runSelf(args, apiUrlOverride) {
   if (apiUrlOverride && !spawnArgs.includes("--api-url")) {
     spawnArgs.push("--api-url", apiUrlOverride);
   }
-  return await new Promise((resolve13, reject) => {
+  return await new Promise((resolve14, reject) => {
     const child = (0, import_child_process2.spawn)(process.execPath, [process.argv[1], ...spawnArgs], {
       stdio: "inherit",
       env: {
@@ -38479,7 +38479,7 @@ async function runSelf(args, apiUrlOverride) {
       }
     });
     child.once("error", reject);
-    child.once("close", (code) => resolve13(typeof code === "number" ? code : 1));
+    child.once("close", (code) => resolve14(typeof code === "number" ? code : 1));
   });
 }
 function shouldUseInteractiveHome(argv) {
@@ -38857,17 +38857,17 @@ function detectUpdateAvailability(currentVersion, cwd = process.cwd()) {
 async function applyRepoUpdate(repoRoot) {
   const scriptPath = (0, import_path9.join)(repoRoot, "scripts", "Install-FohCli.ps1");
   if (process.platform === "win32") {
-    return await new Promise((resolve13, reject) => {
+    return await new Promise((resolve14, reject) => {
       const child = (0, import_child_process3.spawn)(
         "powershell",
         ["-ExecutionPolicy", "Bypass", "-File", scriptPath],
         { stdio: "inherit" }
       );
       child.once("error", reject);
-      child.once("close", (code) => resolve13(typeof code === "number" ? code : 1));
+      child.once("close", (code) => resolve14(typeof code === "number" ? code : 1));
     });
   }
-  return await new Promise((resolve13, reject) => {
+  return await new Promise((resolve14, reject) => {
     const child = (0, import_child_process3.spawn)(
       "corepack",
       ["pnpm", "cli:install:global"],
@@ -38877,7 +38877,7 @@ async function applyRepoUpdate(repoRoot) {
       }
     );
     child.once("error", reject);
-    child.once("close", (code) => resolve13(typeof code === "number" ? code : 1));
+    child.once("close", (code) => resolve14(typeof code === "number" ? code : 1));
   });
 }
 function shouldShowUpdateNotice(argv = process.argv) {
@@ -39013,8 +39013,8 @@ function registerUpdate(program3) {
 }
 
 // src/commands/eval.ts
-var import_fs19 = require("fs");
-var import_path18 = require("path");
+var import_fs20 = require("fs");
+var import_path19 = require("path");
 var import_child_process6 = require("child_process");
 
 // src/lib/external-agent-artifact-safety.ts
@@ -39349,9 +39349,9 @@ function readCommandRecords(runDir) {
 }
 
 // src/lib/external-agent-executor.ts
-var import_fs18 = require("fs");
+var import_fs19 = require("fs");
 var import_os2 = require("os");
-var import_path17 = require("path");
+var import_path18 = require("path");
 var import_child_process5 = require("child_process");
 
 // src/lib/external-agent-executor-env.ts
@@ -39518,40 +39518,394 @@ function copyExternalAgentCommandCaptureArtifacts(input) {
 }
 
 // src/lib/external-agent-executor-classification.ts
+var import_fs17 = require("fs");
+var import_path16 = require("path");
+
+// src/lib/external-agent-run-summary.ts
 var import_fs16 = require("fs");
 var import_path15 = require("path");
+var REQUIRED_RUN_FIELDS = [
+  "schema_version",
+  "run_id",
+  "status",
+  "model_provider",
+  "model_name",
+  "prompt_version",
+  "started_at",
+  "manual_intervention_count",
+  "environment",
+  "public_entrypoints",
+  "commands_run",
+  "docs_pages_used",
+  "artifacts"
+];
+var VALID_STATUSES = /* @__PURE__ */ new Set(["pass", "hold", "fail"]);
+var DOC_URL_RE = /https:\/\/frontofhouse\.okii\.uk\/[^\s"'`)<>,;\\\]}]*/g;
+function quoteShellArg(value) {
+  const text = String(value);
+  if (/^[A-Za-z0-9_./:=@-]+$/.test(text)) return text;
+  return `"${text.replace(/(["$`])/g, "\\$1")}"`;
+}
+function externalAgentSummaryCommand(root) {
+  const summaryPath = (0, import_path15.join)(root, "latest-summary.json");
+  const reportPath = (0, import_path15.join)(root, "summary.report.json");
+  return [
+    "foh",
+    "eval",
+    "external-agent",
+    "summary",
+    "--root",
+    quoteShellArg(root),
+    "--out",
+    quoteShellArg(summaryPath),
+    "--report",
+    quoteShellArg(reportPath),
+    "--json"
+  ].join(" ");
+}
+function readJson(filePath) {
+  return JSON.parse((0, import_fs16.readFileSync)(filePath, "utf8").replace(/^\uFEFF/, ""));
+}
+function readNdjson(filePath) {
+  if (!(0, import_fs16.existsSync)(filePath)) return [];
+  return (0, import_fs16.readFileSync)(filePath, "utf8").split(/\r?\n/).map((line) => line.trim()).filter(Boolean).map((line) => {
+    try {
+      const parsed = JSON.parse(line);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : null;
+    } catch {
+      return null;
+    }
+  }).filter((record2) => Boolean(record2));
+}
+function asObject(value) {
+  return value && typeof value === "object" && !Array.isArray(value) ? value : null;
+}
+function toArray2(value) {
+  return Array.isArray(value) ? value : [];
+}
+function increment(map3, key, amount = 1) {
+  const normalized = String(key || "unknown");
+  map3.set(normalized, (map3.get(normalized) || 0) + amount);
+}
+function ranked(map3) {
+  return Array.from(map3.entries()).map(([key, count]) => ({ key, count })).sort((a, b) => b.count - a.count || a.key.localeCompare(b.key));
+}
+function collectDocUrls(text) {
+  return Array.from(new Set((String(text || "").match(DOC_URL_RE) || []).map((url2) => url2.replace(/[.?!:]+$/g, "")).filter((url2) => url2.startsWith("https://frontofhouse.okii.uk/")))).sort();
+}
+function findRunFiles(root) {
+  if (!(0, import_fs16.existsSync)(root)) return [];
+  const files = [];
+  const stack = [root];
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current) continue;
+    for (const entry of (0, import_fs16.readdirSync)(current, { withFileTypes: true })) {
+      const absolute = (0, import_path15.join)(current, entry.name);
+      if (entry.isDirectory()) {
+        stack.push(absolute);
+      } else if (entry.isFile() && entry.name === "run.json") {
+        files.push(absolute);
+      }
+    }
+  }
+  return files.sort();
+}
+function validateExternalAgentRun(value) {
+  const findings = [];
+  const run = asObject(value);
+  if (!run) return [{ id: "run_not_object", detail: "run artifact must be an object" }];
+  for (const field of REQUIRED_RUN_FIELDS) {
+    if (!(field in run)) findings.push({ id: "required_field_missing", field });
+  }
+  if (run.schema_version !== "external_agent_run.v1") {
+    findings.push({ id: "schema_version_invalid", expected: "external_agent_run.v1", actual: run.schema_version ?? null });
+  }
+  if (!VALID_STATUSES.has(String(run.status || ""))) {
+    findings.push({ id: "status_invalid", expected: Array.from(VALID_STATUSES), actual: run.status ?? null });
+  }
+  if ((run.status === "hold" || run.status === "fail") && !String(run.failure_reason_code || "").trim()) {
+    findings.push({ id: "failure_reason_code_missing" });
+  }
+  if (!Number.isInteger(run.manual_intervention_count) || Number(run.manual_intervention_count) < 0) {
+    findings.push({ id: "manual_intervention_count_invalid" });
+  }
+  if (!Array.isArray(run.commands_run)) findings.push({ id: "commands_run_invalid" });
+  if (!Array.isArray(run.docs_pages_used)) findings.push({ id: "docs_pages_used_invalid" });
+  if (!asObject(run.environment)) findings.push({ id: "environment_invalid" });
+  if (!asObject(run.artifacts)) findings.push({ id: "artifacts_invalid" });
+  if (toArray2(run.public_entrypoints).length === 0) findings.push({ id: "public_entrypoints_missing" });
+  return findings;
+}
+function runSortTime(run) {
+  const raw = String(run.ended_at || run.started_at || "");
+  const time3 = Date.parse(raw);
+  return Number.isFinite(time3) ? time3 : 0;
+}
+function cohortIdForRunPath(root, runPath) {
+  const normalized = (0, import_path15.relative)(root, (0, import_path15.dirname)(runPath)).replaceAll("\\", "/");
+  const parts = normalized.split("/").filter(Boolean);
+  if (parts.length === 0) return ".";
+  if (/^\d{4}-\d{2}-\d{2}$/.test(parts[0]) && parts[1]) return `${parts[0]}/${parts[1]}`;
+  return parts[0];
+}
+function readRunRecords(root, cwd) {
+  const records = [];
+  const invalid_runs = [];
+  for (const file2 of findRunFiles(root)) {
+    try {
+      const parsed = readJson(file2);
+      const findings = validateExternalAgentRun(parsed);
+      if (findings.length > 0) {
+        invalid_runs.push({ path: (0, import_path15.relative)(cwd, file2).replaceAll("\\", "/"), findings });
+        continue;
+      }
+      const run = parsed;
+      records.push({
+        path: file2,
+        run,
+        cohort_id: cohortIdForRunPath(root, file2),
+        sort_time: runSortTime(run)
+      });
+    } catch (error2) {
+      invalid_runs.push({
+        path: (0, import_path15.relative)(cwd, file2).replaceAll("\\", "/"),
+        findings: [{ id: "json_parse_failed", detail: error2 instanceof Error ? error2.message : String(error2) }]
+      });
+    }
+  }
+  return { records, invalid_runs };
+}
+function latestCohortId(records) {
+  return records.slice().sort((a, b) => b.sort_time - a.sort_time || b.path.localeCompare(a.path))[0]?.cohort_id ?? null;
+}
+function ownerSubsystemFor(reasonCode) {
+  const reason = String(reasonCode || "").toLowerCase();
+  if (reason.includes("simulation") || reason.includes("certification") || reason.includes("scenario")) return "dojo_certification";
+  if (reason.includes("contact_phone") || reason.includes("voice_contact") || reason.includes("provider_capacity") || reason.includes("byon")) return "voice_contact";
+  if (reason.includes("exec_policy") || reason.includes("policy_blocked") || reason.includes("sandbox") || reason.includes("runner") || reason.includes("codex")) return "infra_runner";
+  if (reason.includes("api") || reason.includes("http_4") || reason.includes("http_5") || reason.includes("404") || reason.includes("500") || reason.includes("roundtrip")) return "api_contract";
+  if (reason.includes("cli") || reason.includes("command") || reason.includes("flag")) return "cli";
+  if (reason.includes("docs") || reason.includes("unclear") || reason.includes("not_found")) return "docs";
+  if (reason.includes("auth") || reason.includes("org") || reason.includes("config")) return "infra_runner";
+  if (reason.includes("runtime") || reason.includes("widget") || reason.includes("proof")) return "runtime";
+  return "product_ux";
+}
+function recommendedFixFor(reasonCode) {
+  const owner = ownerSubsystemFor(reasonCode);
+  if (owner === "api_contract") return "fix_api";
+  if (owner === "cli") return "fix_cli";
+  if (owner === "docs") return "fix_docs";
+  if (owner === "runtime") return "fix_runtime";
+  if (owner === "dojo_certification") return "add_test";
+  return "fix_config";
+}
+function collapseCommandRecords(records) {
+  const order = [];
+  const byId = /* @__PURE__ */ new Map();
+  for (const record2 of records) {
+    const id = String(record2.command_id || `${record2.recorded_at || ""}:${record2.command || ""}`);
+    if (!byId.has(id)) order.push(id);
+    const previous = byId.get(id);
+    byId.set(id, record2.phase === "completed" ? record2 : previous || record2);
+  }
+  return order.map((id) => byId.get(id)).filter((record2) => Boolean(record2));
+}
+function analyzeRunArtifacts(runPath, run, cwd) {
+  const runDir = (0, import_path15.dirname)(runPath);
+  const commands = collapseCommandRecords(readNdjson((0, import_path15.join)(runDir, "commands.ndjson")));
+  const reasonCounts = /* @__PURE__ */ new Map();
+  const slowSteps = [];
+  let completed = 0;
+  let withDuration = 0;
+  let totalDuration = 0;
+  for (const command of commands) {
+    if (command.phase === "completed" || command.completed_at) completed += 1;
+    if (typeof command.duration_ms === "number") {
+      withDuration += 1;
+      totalDuration += command.duration_ms;
+      slowSteps.push({
+        run_id: run.run_id,
+        run_path: (0, import_path15.relative)(cwd, runPath).replaceAll("\\", "/"),
+        command: command.command || "",
+        duration_ms: command.duration_ms,
+        status: command.status || null,
+        reason_code: command.reason_code || null,
+        check_reason_codes: Array.isArray(command.check_reason_codes) ? command.check_reason_codes : []
+      });
+    }
+    if (command.reason_code) increment(reasonCounts, command.reason_code);
+    for (const reasonCode of toArray2(command.check_reason_codes)) {
+      if (reasonCode) increment(reasonCounts, reasonCode);
+    }
+  }
+  const codexEvents = readNdjson((0, import_path15.join)(runDir, "codex-exec.jsonl"));
+  const codexDocs = /* @__PURE__ */ new Set();
+  let codexCommandExecutions = 0;
+  let codexFailedExitCodes = 0;
+  for (const event of codexEvents) {
+    const item = asObject(event.item) || event;
+    if (item.type === "command_execution" && item.status === "completed") {
+      codexCommandExecutions += 1;
+      if (typeof item.exit_code === "number" && item.exit_code !== 0) codexFailedExitCodes += 1;
+    }
+    for (const url2 of collectDocUrls(JSON.stringify(event))) codexDocs.add(url2);
+  }
+  const docs = /* @__PURE__ */ new Set([
+    ...toArray2(run.docs_pages_used).map(String),
+    ...Array.from(codexDocs)
+  ]);
+  return {
+    command_log_present: (0, import_fs16.existsSync)((0, import_path15.join)(runDir, "commands.ndjson")),
+    command_count: commands.length,
+    completed_command_count: completed,
+    missing_completion_count: Math.max(0, commands.length - completed),
+    commands_with_duration_count: withDuration,
+    total_command_duration_ms: totalDuration,
+    command_reason_codes: ranked(reasonCounts),
+    slow_steps: slowSteps.sort((a, b) => Number(b.duration_ms) - Number(a.duration_ms)).slice(0, 10),
+    docs_pages_observed: Array.from(docs).sort(),
+    codex_command_execution_completed_count: codexCommandExecutions,
+    codex_failed_exit_code_count: codexFailedExitCodes
+  };
+}
+function summarizeExternalAgentRuns(options) {
+  const cwd = (0, import_path15.resolve)(options.cwd || process.cwd());
+  const root = (0, import_path15.resolve)(cwd, options.root);
+  const loaded = readRunRecords(root, cwd);
+  const selectedCohortId = options.cohortId || (options.currentBaselineOnly ? latestCohortId(loaded.records) : null);
+  const records = selectedCohortId ? loaded.records.filter((record2) => record2.cohort_id === selectedCohortId) : loaded.records;
+  const statusCounts = /* @__PURE__ */ new Map();
+  const modelCounts = /* @__PURE__ */ new Map();
+  const failureCounts = /* @__PURE__ */ new Map();
+  const commandReasonCounts = /* @__PURE__ */ new Map();
+  const docsCounts = /* @__PURE__ */ new Map();
+  const slowSteps = [];
+  let manualInterventions = 0;
+  let commandCount = 0;
+  let completedCommandCount = 0;
+  let missingCompletionCount = 0;
+  let commandsWithDurationCount = 0;
+  let totalCommandDurationMs = 0;
+  let commandLogRunCount = 0;
+  let codexCommandExecutions = 0;
+  let codexFailedExitCodes = 0;
+  for (const record2 of records) {
+    const run = record2.run;
+    increment(statusCounts, run.status);
+    increment(modelCounts, `${run.model_provider}/${run.model_name}`);
+    manualInterventions += Number(run.manual_intervention_count || 0);
+    if (run.status !== "pass") increment(failureCounts, run.failure_reason_code || "unknown");
+    const artifactSummary = analyzeRunArtifacts(record2.path, run, cwd);
+    if (artifactSummary.command_log_present) commandLogRunCount += 1;
+    commandCount += Number(artifactSummary.command_count || 0);
+    completedCommandCount += Number(artifactSummary.completed_command_count || 0);
+    missingCompletionCount += Number(artifactSummary.missing_completion_count || 0);
+    commandsWithDurationCount += Number(artifactSummary.commands_with_duration_count || 0);
+    totalCommandDurationMs += Number(artifactSummary.total_command_duration_ms || 0);
+    codexCommandExecutions += Number(artifactSummary.codex_command_execution_completed_count || 0);
+    codexFailedExitCodes += Number(artifactSummary.codex_failed_exit_code_count || 0);
+    for (const row of toArray2(artifactSummary.slow_steps)) slowSteps.push(row);
+    for (const row of toArray2(artifactSummary.command_reason_codes)) {
+      const entry = asObject(row);
+      if (entry) increment(commandReasonCounts, entry.key, Number(entry.count || 1));
+    }
+    for (const page of toArray2(artifactSummary.docs_pages_observed)) increment(docsCounts, page);
+  }
+  const topFailures = ranked(failureCounts);
+  const commandReasonCodes = ranked(commandReasonCounts);
+  const recommendedFixes = topFailures.map((failure) => ({
+    reason_code: failure.key,
+    count: failure.count,
+    recommended_fix: recommendedFixFor(failure.key),
+    owner_subsystem: ownerSubsystemFor(failure.key)
+  }));
+  const nextRecommendedFix = recommendedFixes[0] || null;
+  return {
+    schema_version: "external_agent_run_summary.v1",
+    generated_at: (/* @__PURE__ */ new Date()).toISOString(),
+    root: (0, import_path15.relative)(cwd, root).replaceAll("\\", "/") || ".",
+    cohort_id: selectedCohortId,
+    current_baseline_only: Boolean(selectedCohortId),
+    run_count: records.length,
+    invalid_run_count: selectedCohortId ? 0 : loaded.invalid_runs.length,
+    status_counts: Object.fromEntries(statusCounts),
+    model_counts: ranked(modelCounts),
+    manual_intervention_count: manualInterventions,
+    top_failure_reason_codes: topFailures,
+    docs_pages_observed: ranked(docsCounts),
+    command_telemetry: {
+      run_count_with_command_log: commandLogRunCount,
+      command_count: commandCount,
+      completed_command_count: completedCommandCount,
+      missing_completion_count: missingCompletionCount,
+      commands_with_duration_count: commandsWithDurationCount,
+      total_command_duration_ms: totalCommandDurationMs,
+      command_reason_codes: commandReasonCodes,
+      slow_steps: slowSteps.sort((a, b) => Number(b.duration_ms || 0) - Number(a.duration_ms || 0) || String(a.command || "").localeCompare(String(b.command || ""))).slice(0, 20)
+    },
+    codex_telemetry: {
+      command_execution_completed_count: codexCommandExecutions,
+      failed_exit_code_count: codexFailedExitCodes
+    },
+    recommended_fixes: recommendedFixes,
+    next_recommended_fix: nextRecommendedFix,
+    fix_selection_policy: {
+      mode: "coherent_failure_cluster_first",
+      rule: "Fix the highest-impact owner subsystem locally with focused proof, then rerun the same prompt once externally.",
+      run_failure_weight: 3,
+      command_reason_weight: 1
+    },
+    next_commands: nextRecommendedFix ? [`foh bug improve --from external-agent-run --file <run_dir>/run.json --json`] : [],
+    invalid_runs: selectedCohortId ? [] : loaded.invalid_runs,
+    run_paths: records.map((record2) => (0, import_path15.relative)(cwd, record2.path).replaceAll("\\", "/")).sort()
+  };
+}
+function runExternalAgentRunSummary(options) {
+  const summary = summarizeExternalAgentRuns(options);
+  const invalidRuns = toArray2(summary.invalid_runs);
+  const status = invalidRuns.length > 0 ? "failed" : "passed";
+  const report = {
+    report_schema_version: "script_report.v1",
+    script: "foh eval external-agent summary",
+    checked_at: (/* @__PURE__ */ new Date()).toISOString(),
+    status,
+    errors: invalidRuns.map((entry) => {
+      const object3 = asObject(entry);
+      return `${object3?.path || "unknown"}: ${JSON.stringify(object3?.findings || [])}`;
+    }),
+    warnings: Number(summary.run_count || 0) === 0 ? ["no external-agent run artifacts found"] : [],
+    report: summary
+  };
+  if (options.out) {
+    (0, import_fs16.mkdirSync)((0, import_path15.dirname)((0, import_path15.resolve)(options.cwd || process.cwd(), options.out)), { recursive: true });
+    (0, import_fs16.writeFileSync)((0, import_path15.resolve)(options.cwd || process.cwd(), options.out), `${JSON.stringify(summary, null, 2)}
+`, "utf8");
+  }
+  if (options.report) {
+    (0, import_fs16.mkdirSync)((0, import_path15.dirname)((0, import_path15.resolve)(options.cwd || process.cwd(), options.report)), { recursive: true });
+    (0, import_fs16.writeFileSync)((0, import_path15.resolve)(options.cwd || process.cwd(), options.report), `${JSON.stringify(report, null, 2)}
+`, "utf8");
+  }
+  return { summary, report };
+}
+
+// src/lib/external-agent-executor-classification.ts
 function proofArtifactPasses(runDir) {
-  const proofPath = (0, import_path15.join)(runDir, "proof.json");
-  if (!(0, import_fs16.existsSync)(proofPath)) return false;
+  const proofPath = (0, import_path16.join)(runDir, "proof.json");
+  if (!(0, import_fs17.existsSync)(proofPath)) return false;
   try {
-    const parsed = JSON.parse((0, import_fs16.readFileSync)(proofPath, "utf8"));
+    const parsed = JSON.parse((0, import_fs17.readFileSync)(proofPath, "utf8"));
     return parsed.ok === true || parsed.status === "pass" || parsed.status === "passed";
   } catch {
     return false;
   }
 }
 function readIfExists(path2) {
-  return (0, import_fs16.existsSync)(path2) ? (0, import_fs16.readFileSync)(path2, "utf8") : "";
+  return (0, import_fs17.existsSync)(path2) ? (0, import_fs17.readFileSync)(path2, "utf8") : "";
 }
 function relativeArtifactName(path2) {
-  return (0, import_path15.basename)(path2);
-}
-function externalAgentSummaryCommand(root) {
-  return [
-    "node",
-    "scripts/summarize-external-agent-runs.mjs",
-    "--root",
-    quoteShellArg(root),
-    "--out",
-    quoteShellArg((0, import_path15.join)(root, "latest-summary.json")),
-    "--report",
-    quoteShellArg((0, import_path15.join)(root, "summary.report.json"))
-  ].join(" ");
-}
-function quoteShellArg(value) {
-  const text = String(value);
-  if (/^[A-Za-z0-9_./:=@-]+$/.test(text)) return text;
-  return `"${text.replace(/(["$`])/g, "\\$1")}"`;
+  return (0, import_path16.basename)(path2);
 }
 function classifyExternalAgentRun(input) {
   if (input.timedOut) return { status: "hold", reasonCode: `${input.run.command}_runner_timeout` };
@@ -39697,13 +40051,13 @@ function buildExecutedExternalAgentRunArtifact(input) {
     },
     artifacts: {
       terminal_transcript: relativeArtifactName(input.run.outputs.jsonl),
-      command_log: (0, import_fs16.existsSync)((0, import_path15.join)(input.run.run_dir, "commands.ndjson")) ? "commands.ndjson" : null,
-      proof_bundle: (0, import_fs16.existsSync)((0, import_path15.join)(input.run.run_dir, "proof.json")) ? "proof.json" : null,
-      replay_packet: (0, import_fs16.existsSync)((0, import_path15.join)(input.run.run_dir, "replay.json")) ? "replay.json" : null,
-      knowledge_packet: (0, import_fs16.existsSync)((0, import_path15.join)(input.run.run_dir, "knowledge.json")) ? "knowledge.json" : null,
+      command_log: (0, import_fs17.existsSync)((0, import_path16.join)(input.run.run_dir, "commands.ndjson")) ? "commands.ndjson" : null,
+      proof_bundle: (0, import_fs17.existsSync)((0, import_path16.join)(input.run.run_dir, "proof.json")) ? "proof.json" : null,
+      replay_packet: (0, import_fs17.existsSync)((0, import_path16.join)(input.run.run_dir, "replay.json")) ? "replay.json" : null,
+      knowledge_packet: (0, import_fs17.existsSync)((0, import_path16.join)(input.run.run_dir, "knowledge.json")) ? "knowledge.json" : null,
       improvement_packet: input.status === "pass" ? null : "improvement-packet.json",
       agent_metadata: agentMetadata.path,
-      notes: (0, import_fs16.existsSync)((0, import_path15.join)(input.run.run_dir, "notes.md")) ? "notes.md" : null,
+      notes: (0, import_fs17.existsSync)((0, import_path16.join)(input.run.run_dir, "notes.md")) ? "notes.md" : null,
       runner_last_message: relativeArtifactName(input.run.outputs.last_message),
       runner_stderr: relativeArtifactName(input.run.outputs.stderr),
       codex_last_message: input.run.command === "codex" ? relativeArtifactName(input.run.outputs.last_message) : null,
@@ -39711,25 +40065,25 @@ function buildExecutedExternalAgentRunArtifact(input) {
       artifact_safety: relativeArtifactName(input.run.outputs.artifact_safety)
     },
     summary: input.status === "pass" ? `Controlled ${input.run.command} external-agent run produced passing proof evidence.` : `Controlled ${input.run.command} external-agent run ended as ${input.status} with reason ${input.reasonCode}.`,
-    next_commands: input.status === "pass" ? [externalAgentSummaryCommand((0, import_path15.dirname)(input.run.run_dir))] : [
+    next_commands: input.status === "pass" ? [externalAgentSummaryCommand((0, import_path16.dirname)(input.run.run_dir))] : [
       "foh eval external-agent scan-artifacts --run-dir <run_dir> --private-repo-root <private_repo_root> --write-redacted --json",
       "foh bug improve --from external-agent-run --file <run_dir>/run.json --out <run_dir>/improvement-packet.json --json",
-      externalAgentSummaryCommand((0, import_path15.dirname)(input.run.run_dir))
+      externalAgentSummaryCommand((0, import_path16.dirname)(input.run.run_dir))
     ]
   };
 }
 
 // src/lib/external-agent-runner-execution.ts
 var import_child_process4 = require("child_process");
-var import_fs17 = require("fs");
-var import_path16 = require("path");
+var import_fs18 = require("fs");
+var import_path17 = require("path");
 function buildCommandInvocation(command, args) {
   if (process.platform === "win32" && command.toLowerCase().endsWith(".cmd")) {
-    const binDir = (0, import_path16.dirname)(command);
-    const codexEntrypoint = (0, import_path16.join)(binDir, "node_modules", "@openai", "codex", "bin", "codex.js");
-    if ((0, import_fs17.existsSync)(codexEntrypoint)) return { command: process.execPath, args: [codexEntrypoint, ...args] };
-    const geminiEntrypoint = (0, import_path16.join)(binDir, "node_modules", "@google", "gemini-cli", "bundle", "gemini.js");
-    if ((0, import_fs17.existsSync)(geminiEntrypoint)) return { command: process.execPath, args: ["--no-warnings=DEP0040", geminiEntrypoint, ...args] };
+    const binDir = (0, import_path17.dirname)(command);
+    const codexEntrypoint = (0, import_path17.join)(binDir, "node_modules", "@openai", "codex", "bin", "codex.js");
+    if ((0, import_fs18.existsSync)(codexEntrypoint)) return { command: process.execPath, args: [codexEntrypoint, ...args] };
+    const geminiEntrypoint = (0, import_path17.join)(binDir, "node_modules", "@google", "gemini-cli", "bundle", "gemini.js");
+    if ((0, import_fs18.existsSync)(geminiEntrypoint)) return { command: process.execPath, args: ["--no-warnings=DEP0040", geminiEntrypoint, ...args] };
   }
   return { command, args };
 }
@@ -39744,8 +40098,8 @@ function spawnExternalAgentRunner(input) {
       stdio: ["pipe", "pipe", "pipe"],
       windowsHide: true
     });
-    const stdout = (0, import_fs17.createWriteStream)(input.stdoutPath, { flags: "w" });
-    const stderr = (0, import_fs17.createWriteStream)(input.stderrPath, { flags: "w" });
+    const stdout = (0, import_fs18.createWriteStream)(input.stdoutPath, { flags: "w" });
+    const stderr = (0, import_fs18.createWriteStream)(input.stderrPath, { flags: "w" });
     child.stdout.pipe(stdout);
     child.stderr.pipe(stderr);
     child.stdin.end(input.prompt);
@@ -39857,14 +40211,14 @@ async function runExternalAgentEvalAuthPreflight(env = process.env, options = {}
   };
 }
 function normalizeForCompare(path2) {
-  const resolved = (0, import_path17.resolve)(path2);
+  const resolved = (0, import_path18.resolve)(path2);
   return process.platform === "win32" ? resolved.toLowerCase() : resolved;
 }
 function isPathInside(childPath, parentPath) {
   const child = normalizeForCompare(childPath);
   const parent = normalizeForCompare(parentPath);
-  const rel = (0, import_path17.relative)(parent, child);
-  return rel === "" || !!rel && !rel.startsWith("..") && !(0, import_path17.isAbsolute)(rel);
+  const rel = (0, import_path18.relative)(parent, child);
+  return rel === "" || !!rel && !rel.startsWith("..") && !(0, import_path18.isAbsolute)(rel);
 }
 function requireString(value, field) {
   if (typeof value !== "string" || value.trim() === "") {
@@ -39873,10 +40227,10 @@ function requireString(value, field) {
   return value;
 }
 function readBatch(batchPath) {
-  if (!(0, import_fs18.existsSync)(batchPath)) {
+  if (!(0, import_fs19.existsSync)(batchPath)) {
     throw new ExternalAgentExecutorError("external_agent_batch_not_found", `Batch file not found: ${batchPath}`);
   }
-  const parsed = JSON.parse((0, import_fs18.readFileSync)(batchPath, "utf8"));
+  const parsed = JSON.parse((0, import_fs19.readFileSync)(batchPath, "utf8"));
   if (parsed.schema_version !== "external_agent_batch_plan.v1") {
     throw new ExternalAgentExecutorError("invalid_external_agent_batch", "Batch schema_version must be external_agent_batch_plan.v1.");
   }
@@ -39913,8 +40267,8 @@ function resolveCodexProbeCommand() {
   if (process.platform !== "win32") return "codex";
   const appData = process.env.APPDATA;
   if (appData) {
-    const appDataShim = (0, import_path17.join)(appData, "npm", "codex.cmd");
-    if ((0, import_fs18.existsSync)(appDataShim)) return appDataShim;
+    const appDataShim = (0, import_path18.join)(appData, "npm", "codex.cmd");
+    if ((0, import_fs19.existsSync)(appDataShim)) return appDataShim;
   }
   return "codex.cmd";
 }
@@ -39925,8 +40279,8 @@ function resolveGeminiProbeCommand() {
   if (process.platform !== "win32") return "gemini";
   const appData = process.env.APPDATA;
   if (appData) {
-    const appDataShim = (0, import_path17.join)(appData, "npm", "gemini.cmd");
-    if ((0, import_fs18.existsSync)(appDataShim)) return appDataShim;
+    const appDataShim = (0, import_path18.join)(appData, "npm", "gemini.cmd");
+    if ((0, import_fs19.existsSync)(appDataShim)) return appDataShim;
   }
   return "gemini.cmd";
 }
@@ -40197,34 +40551,34 @@ function safeRunId(value) {
   return value.toLowerCase().replace(/[^a-z0-9_.-]+/g, "-").replace(/^-+|-+$/g, "") || "run";
 }
 function resolveWorkspaceRoot(input) {
-  if (input.workspaceRoot) return (0, import_path17.resolve)(input.workspaceRoot);
-  const batchStem = (0, import_path17.basename)((0, import_path17.resolve)(input.batchPath)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
-  const repoStem = (0, import_path17.basename)((0, import_path17.resolve)(input.privateRepoRoot)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
-  return (0, import_path17.resolve)((0, import_os2.tmpdir)(), "foh-external-agent-workspaces", repoStem, batchStem);
+  if (input.workspaceRoot) return (0, import_path18.resolve)(input.workspaceRoot);
+  const batchStem = (0, import_path18.basename)((0, import_path18.resolve)(input.batchPath)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
+  const repoStem = (0, import_path18.basename)((0, import_path18.resolve)(input.privateRepoRoot)).replace(/[^a-zA-Z0-9_.-]+/g, "-");
+  return (0, import_path18.resolve)((0, import_os2.tmpdir)(), "foh-external-agent-workspaces", repoStem, batchStem);
 }
 function findNearestGitRoot(startPath) {
-  let current = (0, import_path17.resolve)(startPath);
+  let current = (0, import_path18.resolve)(startPath);
   while (true) {
-    if ((0, import_fs18.existsSync)((0, import_path17.join)(current, ".git"))) return current;
-    const parent = (0, import_path17.dirname)(current);
+    if ((0, import_fs19.existsSync)((0, import_path18.join)(current, ".git"))) return current;
+    const parent = (0, import_path18.dirname)(current);
     if (parent === current) return null;
     current = parent;
   }
 }
 function resolvePrivateRepoRoot(input) {
   if (input.explicitPrivateRepoRoot) {
-    return { root: (0, import_path17.resolve)(input.explicitPrivateRepoRoot), explicit: true };
+    return { root: (0, import_path18.resolve)(input.explicitPrivateRepoRoot), explicit: true };
   }
-  const cwd = (0, import_path17.resolve)(input.cwd || process.cwd());
+  const cwd = (0, import_path18.resolve)(input.cwd || process.cwd());
   const gitRoot = findNearestGitRoot(cwd);
   if (gitRoot) return { root: gitRoot, explicit: false };
   return {
-    root: (0, import_path17.join)(cwd, ".foh-no-private-repo-root-sentinel"),
+    root: (0, import_path18.join)(cwd, ".foh-no-private-repo-root-sentinel"),
     explicit: false
   };
 }
 function promptVersionFromPath(promptPath) {
-  const raw = (0, import_fs18.readFileSync)(promptPath, "utf8");
+  const raw = (0, import_fs19.readFileSync)(promptPath, "utf8");
   if (raw.includes("Do not assume access to the private source repository")) return "blank-setup.v1";
   return "unknown";
 }
@@ -40233,7 +40587,7 @@ function createExternalAgentExecutorPlan(options) {
   if (runner !== "codex" && runner !== "gemini") {
     throw new ExternalAgentExecutorError("unsupported_external_agent_runner", `Unsupported runner: ${runner}`);
   }
-  const batchPath = (0, import_path17.resolve)(options.batchPath);
+  const batchPath = (0, import_path18.resolve)(options.batchPath);
   const batch = readBatch(batchPath);
   const runnerProbe = validateRunner(options, runner);
   const codexSandboxBackend = normalizeCodexSandboxBackend(options.codexSandboxBackend);
@@ -40252,17 +40606,17 @@ function createExternalAgentExecutorPlan(options) {
       `Workspace root must be outside the private repository. workspace=${workspaceRoot} repo=${privateRepoRoot}`
     );
   }
-  (0, import_fs18.mkdirSync)(workspaceRoot, { recursive: true });
-  const batchDir = (0, import_path17.resolve)(String(batch.batch_dir || (0, import_path17.resolve)(batchPath, "..")));
+  (0, import_fs19.mkdirSync)(workspaceRoot, { recursive: true });
+  const batchDir = (0, import_path18.resolve)(String(batch.batch_dir || (0, import_path18.resolve)(batchPath, "..")));
   const timeoutMinutes = Number.isFinite(options.timeoutMinutes) && Number(options.timeoutMinutes) > 0 ? Number(options.timeoutMinutes) : 30;
   const runs = batch.runs.map((run) => {
     const runId = safeRunId(requireString(run.run_id, "runs[].run_id"));
-    const runDir = (0, import_path17.resolve)(requireString(run.run_dir, `runs[${runId}].run_dir`));
-    const promptPath = (0, import_path17.resolve)(requireString(run.prompt_path, `runs[${runId}].prompt_path`));
-    const workspaceDir = (0, import_path17.join)(workspaceRoot, runId);
-    (0, import_fs18.mkdirSync)(workspaceDir, { recursive: true });
-    (0, import_fs18.writeFileSync)(
-      (0, import_path17.join)(workspaceDir, "README.md"),
+    const runDir = (0, import_path18.resolve)(requireString(run.run_dir, `runs[${runId}].run_dir`));
+    const promptPath = (0, import_path18.resolve)(requireString(run.prompt_path, `runs[${runId}].prompt_path`));
+    const workspaceDir = (0, import_path18.join)(workspaceRoot, runId);
+    (0, import_fs19.mkdirSync)(workspaceDir, { recursive: true });
+    (0, import_fs19.writeFileSync)(
+      (0, import_path18.join)(workspaceDir, "README.md"),
       [
         "# FOH External-Agent Workspace",
         "",
@@ -40280,11 +40634,11 @@ function createExternalAgentExecutorPlan(options) {
     });
     const promptVersion = String(env[EXTERNAL_AGENT_PROMPT_VERSION_ENV] || "unknown");
     const outputStem = runner === "gemini" ? "gemini" : "codex";
-    const jsonlPath = (0, import_path17.join)(runDir, `${outputStem}-exec.jsonl`);
-    const lastMessagePath = (0, import_path17.join)(runDir, `${outputStem}-last-message.md`);
-    const stderrPath = (0, import_path17.join)(runDir, `${outputStem}-stderr.txt`);
-    const runPath = (0, import_path17.join)(runDir, "run.json");
-    const artifactSafetyPath = (0, import_path17.join)(runDir, "artifact-safety.json");
+    const jsonlPath = (0, import_path18.join)(runDir, `${outputStem}-exec.jsonl`);
+    const lastMessagePath = (0, import_path18.join)(runDir, `${outputStem}-last-message.md`);
+    const stderrPath = (0, import_path18.join)(runDir, `${outputStem}-stderr.txt`);
+    const runPath = (0, import_path18.join)(runDir, "run.json");
+    const artifactSafetyPath = (0, import_path18.join)(runDir, "artifact-safety.json");
     const args = runner === "gemini" ? [
       ...runnerProbe.globalArgs,
       ...runnerProbe.execArgs
@@ -40375,9 +40729,9 @@ function createExternalAgentExecutorPlan(options) {
   };
 }
 function writeExternalAgentExecutorPlan(plan) {
-  const path2 = (0, import_path17.join)(plan.batch_dir, "executor-plan.json");
-  (0, import_fs18.mkdirSync)(plan.batch_dir, { recursive: true });
-  (0, import_fs18.writeFileSync)(path2, `${JSON.stringify(plan, null, 2)}
+  const path2 = (0, import_path18.join)(plan.batch_dir, "executor-plan.json");
+  (0, import_fs19.mkdirSync)(plan.batch_dir, { recursive: true });
+  (0, import_fs19.writeFileSync)(path2, `${JSON.stringify(plan, null, 2)}
 `, "utf8");
   return path2;
 }
@@ -40392,7 +40746,7 @@ async function executeExternalAgentExecutorPlan(plan, options = {}) {
   if (authPreflight && !authPreflight.ok) {
     const endedAt2 = (/* @__PURE__ */ new Date()).toISOString();
     const blockedResults = plan.runs.map((run) => {
-      (0, import_fs18.mkdirSync)(run.run_dir, { recursive: true });
+      (0, import_fs19.mkdirSync)(run.run_dir, { recursive: true });
       const runArtifact = buildExecutedExternalAgentRunArtifact({
         run,
         startedAt,
@@ -40403,7 +40757,7 @@ async function executeExternalAgentExecutorPlan(plan, options = {}) {
         timedOut: false,
         durationMs: 0
       });
-      (0, import_fs18.writeFileSync)(run.outputs.run, `${JSON.stringify(runArtifact, null, 2)}
+      (0, import_fs19.writeFileSync)(run.outputs.run, `${JSON.stringify(runArtifact, null, 2)}
 `, "utf8");
       return {
         run_id: run.run_id,
@@ -40430,8 +40784,8 @@ async function executeExternalAgentExecutorPlan(plan, options = {}) {
   }
   for (const run of plan.runs) {
     const runStartedAt = (/* @__PURE__ */ new Date()).toISOString();
-    const commandCaptureDir = (0, import_path17.join)(run.workspace_dir, ".foh-capture");
-    (0, import_fs18.mkdirSync)(commandCaptureDir, { recursive: true });
+    const commandCaptureDir = (0, import_path18.join)(run.workspace_dir, ".foh-capture");
+    (0, import_fs19.mkdirSync)(commandCaptureDir, { recursive: true });
     const env = buildCodexExecutorEnv({
       sourceEnv: options.env,
       runDir: commandCaptureDir,
@@ -40442,7 +40796,7 @@ async function executeExternalAgentExecutorPlan(plan, options = {}) {
       args: run.args,
       cwd: run.workspace_dir,
       env,
-      prompt: (0, import_fs18.readFileSync)(run.prompt_path, "utf8"),
+      prompt: (0, import_fs19.readFileSync)(run.prompt_path, "utf8"),
       stdoutPath: run.outputs.jsonl,
       stderrPath: run.outputs.stderr,
       timeoutMs: plan.timeout_minutes * 60 * 1e3
@@ -40455,7 +40809,7 @@ async function executeExternalAgentExecutorPlan(plan, options = {}) {
       privateRepoRoot,
       writeRedacted: true
     });
-    (0, import_fs18.writeFileSync)(run.outputs.artifact_safety, `${JSON.stringify(artifactSafety, null, 2)}
+    (0, import_fs19.writeFileSync)(run.outputs.artifact_safety, `${JSON.stringify(artifactSafety, null, 2)}
 `, "utf8");
     const runEndedAt = (/* @__PURE__ */ new Date()).toISOString();
     const classification = classifyExternalAgentRun({
@@ -40474,7 +40828,7 @@ async function executeExternalAgentExecutorPlan(plan, options = {}) {
       timedOut: spawned.timedOut,
       durationMs: spawned.durationMs
     });
-    (0, import_fs18.writeFileSync)(run.outputs.run, `${JSON.stringify(runArtifact, null, 2)}
+    (0, import_fs19.writeFileSync)(run.outputs.run, `${JSON.stringify(runArtifact, null, 2)}
 `, "utf8");
     results.push({
       run_id: run.run_id,
@@ -40523,13 +40877,13 @@ function defaultRunDir(modelName, promptVersion) {
   const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").replace("T", "-").slice(0, 23);
   const safeModel = String(modelName || "unknown-model").toLowerCase().replace(/[^a-z0-9_-]+/g, "-");
   const safePrompt = String(promptVersion || DEFAULT_PROMPT_VERSION).toLowerCase().replace(/[^a-z0-9_.-]+/g, "-");
-  return (0, import_path18.resolve)("test-results", "external-agent-runs", date4, `${safeModel}-${safePrompt}-${stamp}`);
+  return (0, import_path19.resolve)("test-results", "external-agent-runs", date4, `${safeModel}-${safePrompt}-${stamp}`);
 }
 function defaultBatchDir(promptVersion) {
   const date4 = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10);
   const stamp = (/* @__PURE__ */ new Date()).toISOString().replace(/[:.]/g, "-").replace("T", "-").slice(0, 23);
   const safePrompt = String(promptVersion || DEFAULT_PROMPT_VERSION).toLowerCase().replace(/[^a-z0-9_.-]+/g, "-");
-  return (0, import_path18.resolve)("test-results", "external-agent-runs", date4, `batch-${safePrompt}-${stamp}`);
+  return (0, import_path19.resolve)("test-results", "external-agent-runs", date4, `batch-${safePrompt}-${stamp}`);
 }
 function safeSlug(value) {
   return String(value || "unknown").toLowerCase().replace(/[^a-z0-9_.-]+/g, "-").replace(/^-+|-+$/g, "") || "unknown";
@@ -40542,20 +40896,6 @@ function quoteArg(value) {
 function scanArtifactsCommand(runDir, privateRepoRoot) {
   const privateRootArg = privateRepoRoot ? ` --private-repo-root ${quoteArg(privateRepoRoot)}` : "";
   return `foh eval external-agent scan-artifacts --run-dir ${quoteArg(runDir)}${privateRootArg} --write-redacted --json`;
-}
-function externalAgentSummaryCommand2(root) {
-  const summaryPath = (0, import_path18.join)(root, "latest-summary.json");
-  const reportPath = (0, import_path18.join)(root, "summary.report.json");
-  return [
-    "node",
-    "scripts/summarize-external-agent-runs.mjs",
-    "--root",
-    quoteArg(root),
-    "--out",
-    quoteArg(summaryPath),
-    "--report",
-    quoteArg(reportPath)
-  ].join(" ");
 }
 function executorRecoveryCommands(reasonCode, runner) {
   const normalizedRunner = String(runner || "codex").trim().toLowerCase();
@@ -40659,14 +40999,14 @@ function writePrompt(runDir, promptVersion, context = {}) {
     replayPromptContext(context.replayFile),
     knowledgeMissPromptContext(context.knowledgeQuestion, context.expectedAnswer)
   ].join("");
-  const path2 = (0, import_path18.join)(runDir, "prompt.txt");
-  (0, import_fs19.writeFileSync)(path2, `${prompt}
+  const path2 = (0, import_path19.join)(runDir, "prompt.txt");
+  (0, import_fs20.writeFileSync)(path2, `${prompt}
 `, "utf8");
   return path2;
 }
 function writeSession(runDir, session) {
-  const path2 = (0, import_path18.join)(runDir, "session.json");
-  (0, import_fs19.writeFileSync)(path2, `${JSON.stringify(session, null, 2)}
+  const path2 = (0, import_path19.join)(runDir, "session.json");
+  (0, import_fs20.writeFileSync)(path2, `${JSON.stringify(session, null, 2)}
 `, "utf8");
   return path2;
 }
@@ -40742,9 +41082,9 @@ function buildRunArtifact(input) {
       notes: "notes.md"
     },
     summary: status === "pass" ? "External-agent capture session completed and was marked pass." : `External-agent capture session completed with ${commands.length} captured FOH command(s); classify and improve reason ${reasonCode}.`,
-    next_commands: status === "pass" ? [externalAgentSummaryCommand2((0, import_path18.dirname)(input.runDir))] : [
-      `foh bug improve --from external-agent-run --file ${(0, import_path18.join)(input.runDir, "run.json")} --out ${(0, import_path18.join)(input.runDir, "improvement-packet.json")} --json`,
-      externalAgentSummaryCommand2((0, import_path18.dirname)(input.runDir))
+    next_commands: status === "pass" ? [externalAgentSummaryCommand((0, import_path19.dirname)(input.runDir))] : [
+      `foh bug improve --from external-agent-run --file ${(0, import_path19.join)(input.runDir, "run.json")} --out ${(0, import_path19.join)(input.runDir, "improvement-packet.json")} --json`,
+      externalAgentSummaryCommand((0, import_path19.dirname)(input.runDir))
     ]
   };
 }
@@ -40753,16 +41093,16 @@ function registerEval(program3) {
   const external = evalCommand.command("external-agent").description("Capture clean external coding-agent setup attempts");
   external.command("batch").description("Create a deterministic multi-model external-agent batch plan").option("--models <list>", "Comma-separated provider/model list", DEFAULT_BATCH_MODELS).option("--prompt-version <version>", "Prompt version", DEFAULT_PROMPT_VERSION).option("--replay-file <path>", "Local transcript/replay artifact to seed replay-failure prompts").option("--knowledge-question <text>", "Question to seed knowledge-miss prompts").option("--expected-answer <text>", "Expected answer or missing fact for planted knowledge-miss prompts").option("--workspace-type <type>", "Workspace type label", "clean-no-repo").option("--agent-shell <name>", "Agent shell label", "vscode-terminal").option("--out-dir <path>", "Batch output directory").option("--json", "Output as JSON").action(async (opts) => {
     const promptVersion = String(opts.promptVersion || DEFAULT_PROMPT_VERSION);
-    const batchDir = (0, import_path18.resolve)(String(opts.outDir || defaultBatchDir(promptVersion)));
-    const replayFile = opts.replayFile ? (0, import_path18.resolve)(String(opts.replayFile)) : void 0;
+    const batchDir = (0, import_path19.resolve)(String(opts.outDir || defaultBatchDir(promptVersion)));
+    const replayFile = opts.replayFile ? (0, import_path19.resolve)(String(opts.replayFile)) : void 0;
     const knowledgeQuestion = opts.knowledgeQuestion ? String(opts.knowledgeQuestion) : void 0;
     const expectedAnswer = opts.expectedAnswer ? String(opts.expectedAnswer) : void 0;
     const models = parseModelList(String(opts.models || DEFAULT_BATCH_MODELS));
-    (0, import_fs19.mkdirSync)(batchDir, { recursive: true });
-    const runs = models.map((model, index) => {
+    (0, import_fs20.mkdirSync)(batchDir, { recursive: true });
+    const runs2 = models.map((model, index) => {
       const runId = `${String(index + 1).padStart(2, "0")}-${safeSlug(model.provider)}-${safeSlug(model.name)}`;
-      const runDir = (0, import_path18.join)(batchDir, runId);
-      (0, import_fs19.mkdirSync)(runDir, { recursive: true });
+      const runDir = (0, import_path19.join)(batchDir, runId);
+      (0, import_fs20.mkdirSync)(runDir, { recursive: true });
       const promptPath = writePrompt(runDir, promptVersion, { replayFile, knowledgeQuestion, expectedAnswer });
       const commandArgs = [
         "eval",
@@ -40805,23 +41145,23 @@ function registerEval(program3) {
       expected_answer: expectedAnswer ?? null,
       workspace_type: String(opts.workspaceType || "clean-no-repo"),
       agent_shell: String(opts.agentShell || "vscode-terminal"),
-      run_count: runs.length,
-      runs,
-      summary_command: externalAgentSummaryCommand2(batchDir)
+      run_count: runs2.length,
+      runs: runs2,
+      summary_command: externalAgentSummaryCommand(batchDir)
     };
-    const batchPath = (0, import_path18.join)(batchDir, "batch.json");
-    (0, import_fs19.writeFileSync)(batchPath, `${JSON.stringify(batch, null, 2)}
+    const batchPath = (0, import_path19.join)(batchDir, "batch.json");
+    (0, import_fs20.writeFileSync)(batchPath, `${JSON.stringify(batch, null, 2)}
 `, "utf8");
     format(cliEnvelope({
       schemaVersion: "external_agent_batch_plan_result.v1",
       status: "exported",
       reasonCode: "external_agent_batch_plan_created",
-      summary: `External-agent batch plan created for ${runs.length} model(s).`,
+      summary: `External-agent batch plan created for ${runs2.length} model(s).`,
       artifacts: {
         batch: batchPath
       },
       nextCommands: [
-        ...runs.map((run) => run.launch_command),
+        ...runs2.map((run) => run.launch_command),
         batch.summary_command
       ],
       extra: { batch }
@@ -40830,11 +41170,11 @@ function registerEval(program3) {
   external.command("run").description("Launch an instrumented shell and emit external_agent_run.v1 when it exits").option("--model-provider <name>", "Model provider label", "unknown").option("--model-name <name>", "Model name label", "unknown-model").option("--prompt-version <version>", "Prompt version", DEFAULT_PROMPT_VERSION).option("--replay-file <path>", "Local transcript/replay artifact to seed replay-failure prompts").option("--knowledge-question <text>", "Question to seed knowledge-miss prompts").option("--expected-answer <text>", "Expected answer or missing fact for planted knowledge-miss prompts").option("--workspace-type <type>", "Workspace type label", "clean-no-repo").option("--agent-shell <name>", "Agent shell label", "vscode-terminal").option("--out-dir <path>", "Run output directory").option("--status <status>", "Final status when not interactively classified: pass|hold|fail", "hold").option("--reason-code <code>", "Failure/hold reason code", "external_agent_run_needs_review").option("--shell <command>", "Shell command to launch for capture").option("--no-shell", "Do not launch a shell; create/finalize artifacts immediately").option("--json", "Output as JSON").action(async (opts) => {
     const status = normalizeStatus(opts.status);
     const promptVersion = String(opts.promptVersion || DEFAULT_PROMPT_VERSION);
-    const runDir = (0, import_path18.resolve)(String(opts.outDir || defaultRunDir(opts.modelName, promptVersion)));
-    const replayFile = opts.replayFile ? (0, import_path18.resolve)(String(opts.replayFile)) : void 0;
+    const runDir = (0, import_path19.resolve)(String(opts.outDir || defaultRunDir(opts.modelName, promptVersion)));
+    const replayFile = opts.replayFile ? (0, import_path19.resolve)(String(opts.replayFile)) : void 0;
     const knowledgeQuestion = opts.knowledgeQuestion ? String(opts.knowledgeQuestion) : void 0;
     const expectedAnswer = opts.expectedAnswer ? String(opts.expectedAnswer) : void 0;
-    (0, import_fs19.mkdirSync)(runDir, { recursive: true });
+    (0, import_fs20.mkdirSync)(runDir, { recursive: true });
     const runId = runDir.split(/[\\/]/).filter(Boolean).slice(-1)[0];
     const promptPath = writePrompt(runDir, promptVersion, { replayFile, knowledgeQuestion, expectedAnswer });
     const shell = inferShell(opts.shell);
@@ -40860,7 +41200,7 @@ function registerEval(program3) {
       }
     };
     writeSession(runDir, session);
-    (0, import_fs19.writeFileSync)((0, import_path18.join)(runDir, "notes.md"), "# External Agent Run Notes\n\n", "utf8");
+    (0, import_fs20.writeFileSync)((0, import_path19.join)(runDir, "notes.md"), "# External Agent Run Notes\n\n", "utf8");
     let shellExitCode = null;
     if (opts.shell !== false) {
       process.stdout.write(`
@@ -40882,8 +41222,8 @@ Exit the shell to finalize run.json.
       shellExitCode = typeof result.status === "number" ? result.status : null;
     }
     const artifact = buildRunArtifact({ runDir, session, status, reasonCode: opts.reasonCode, shellExitCode });
-    const runPath = (0, import_path18.join)(runDir, "run.json");
-    (0, import_fs19.writeFileSync)(runPath, `${JSON.stringify(artifact, null, 2)}
+    const runPath = (0, import_path19.join)(runDir, "run.json");
+    (0, import_fs20.writeFileSync)(runPath, `${JSON.stringify(artifact, null, 2)}
 `, "utf8");
     format(cliEnvelope({
       schemaVersion: "external_agent_capture_result.v1",
@@ -40893,11 +41233,56 @@ Exit the shell to finalize run.json.
       artifacts: {
         run: runPath,
         prompt: promptPath,
-        commands: (0, import_path18.join)(runDir, "commands.ndjson")
+        commands: (0, import_path19.join)(runDir, "commands.ndjson")
       },
       nextCommands: artifact.next_commands,
       extra: { run: artifact }
     }), { json: Boolean(opts.json) });
+  });
+  external.command("summary").description("Summarize external_agent_run.v1 artifacts from a clean external-agent run root").requiredOption("--root <dir>", "Root containing external-agent run directories with run.json files").option("--out <path>", "Write summary JSON to this path").option("--report <path>", "Write script-style report JSON to this path").option("--current-baseline-only", "Summarize only the latest detected run cohort").option("--cohort <id>", "Summarize one explicit cohort id").option("--json", "Output as JSON").action(async (opts) => {
+    const { summary, report } = runExternalAgentRunSummary({
+      root: String(opts.root),
+      out: opts.out ? String(opts.out) : void 0,
+      report: opts.report ? String(opts.report) : void 0,
+      currentBaselineOnly: Boolean(opts.currentBaselineOnly),
+      cohortId: opts.cohort ? String(opts.cohort) : null
+    });
+    format(cliEnvelope({
+      schemaVersion: "external_agent_run_summary_result.v1",
+      status: report.status === "passed" ? "pass" : "fail",
+      reasonCode: report.status === "passed" ? "external_agent_run_summary_created" : "external_agent_run_summary_invalid_runs",
+      summary: `External-agent summary covers ${summary.run_count} run(s).`,
+      artifacts: {
+        summary: opts.out ? String(opts.out) : null,
+        report: opts.report ? String(opts.report) : null
+      },
+      nextCommands: summary.next_commands,
+      extra: { external_agent_summary: summary, report }
+    }), { json: Boolean(opts.json) });
+    if (report.status !== "passed") process.exitCode = 1;
+  });
+  const runs = external.command("runs").description("Compatibility namespace for external-agent run artifact utilities");
+  runs.command("summary").description("Compatibility alias for `foh eval external-agent summary`").requiredOption("--root <dir>", "Root containing external-agent run directories with run.json files").option("--out <path>", "Write summary JSON to this path").option("--report <path>", "Write script-style report JSON to this path").option("--current-baseline-only", "Summarize only the latest detected run cohort").option("--cohort <id>", "Summarize one explicit cohort id").option("--json", "Output as JSON").action(async (opts) => {
+    const { summary, report } = runExternalAgentRunSummary({
+      root: String(opts.root),
+      out: opts.out ? String(opts.out) : void 0,
+      report: opts.report ? String(opts.report) : void 0,
+      currentBaselineOnly: Boolean(opts.currentBaselineOnly),
+      cohortId: opts.cohort ? String(opts.cohort) : null
+    });
+    format(cliEnvelope({
+      schemaVersion: "external_agent_run_summary_result.v1",
+      status: report.status === "passed" ? "pass" : "fail",
+      reasonCode: report.status === "passed" ? "external_agent_run_summary_created" : "external_agent_run_summary_invalid_runs",
+      summary: `External-agent summary covers ${summary.run_count} run(s).`,
+      artifacts: {
+        summary: opts.out ? String(opts.out) : null,
+        report: opts.report ? String(opts.report) : null
+      },
+      nextCommands: summary.next_commands,
+      extra: { external_agent_summary: summary, report }
+    }), { json: Boolean(opts.json) });
+    if (report.status !== "passed") process.exitCode = 1;
   });
   external.command("scan-artifacts").description("Scan and redact external-agent run artifacts before they are promoted into improvement loops").requiredOption("--run-dir <path>", "External-agent run artifact directory").option("--private-repo-root <path>", "Private repository root that must not appear in artifacts").option("--write-redacted", "Write .redacted copies next to scanned artifacts").option("--json", "Output as JSON").action(async (opts) => {
     const report = scanExternalAgentArtifacts({
@@ -40956,8 +41341,8 @@ Exit the shell to finalize run.json.
           requireExplicitEvalAuth: true,
           minimumEvalAuthTtlMs: (plan.timeout_minutes + 5) * 60 * 1e3
         });
-        const resultPath = (0, import_path18.join)(plan.batch_dir, "execution-result.json");
-        (0, import_fs19.writeFileSync)(resultPath, `${JSON.stringify(result, null, 2)}
+        const resultPath = (0, import_path19.join)(plan.batch_dir, "execution-result.json");
+        (0, import_fs20.writeFileSync)(resultPath, `${JSON.stringify(result, null, 2)}
 `, "utf8");
         format(cliEnvelope({
           schemaVersion: "external_agent_execution_result.v1",
@@ -40974,7 +41359,7 @@ Exit the shell to finalize run.json.
               plan.runs.find((item) => item.run_id === run.run_id)?.run_dir || ".",
               plan.private_repo_root_explicit ? plan.private_repo_root : void 0
             )),
-            externalAgentSummaryCommand2(plan.batch_dir)
+            externalAgentSummaryCommand(plan.batch_dir)
           ],
           extra: { result }
         }), { json: Boolean(opts.json) });

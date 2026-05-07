@@ -1,6 +1,6 @@
 {
   "name": "@f-o-h/cli",
-  "version": "0.1.70",
+  "version": "0.1.71",
   "description": "FOH CLI - AI-operator provisioning tool for Front Of House",
   "license": "UNLICENSED",
   "bin": {
