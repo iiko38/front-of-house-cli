@@ -14461,55 +14461,65 @@ async function validateAgentLocalDraftShape(agentId, opts = {}) {
     warnings: ["local-only draft-shape validation was used"]
   });
 }
+async function publishAgentAction(opts) {
+  if (opts.breakGlassReason || opts.breakGlassIncident) {
+    if (!opts.breakGlassReason || !opts.breakGlassIncident) {
+      throw new FohError({
+        step: "agent.publish",
+        error: "Both --break-glass-reason and --break-glass-incident are required together",
+        remediation: "Provide both break-glass fields, or omit both for normal publish.",
+        statusCode: 400
+      });
+    }
+    const data2 = await apiFetch(`/v1/console/agents/${opts.agent}/publish`, {
+      method: "POST",
+      body: JSON.stringify({
+        break_glass: {
+          reason: String(opts.breakGlassReason),
+          incident_id: String(opts.breakGlassIncident)
+        }
+      }),
+      orgId: opts.org,
+      apiUrlOverride: opts.apiUrl
+    });
+    format({
+      status: "published_with_break_glass",
+      warning: "break-glass bypassed the normal validate -> publish evidence gate CLI sequence",
+      publish: data2
+    }, { json: opts.json ?? false });
+    return;
+  }
+  const data = await validateCertifyAndPublishAgent({
+    agentId: opts.agent,
+    orgId: opts.org,
+    apiUrlOverride: opts.apiUrl,
+    certMode: opts.certMode ?? "quick",
+    scenarioIds: opts.certScenarioIds,
+    adaptiveRuns: Number(opts.certAdaptiveRuns ?? "30"),
+    maxImprovementRounds: Number(opts.certMaxImprovementRounds ?? "1")
+  });
+  format({
+    status: "validated_published",
+    certification: data.certification,
+    publish: data.publish
+  }, { json: opts.json ?? false });
+}
+function registerAgentPublishCommand(parent, options = {}) {
+  const publish = parent.command("publish").description(options.publicAlias ? "Publish an agent using existing certification evidence" : "Validate and publish an agent using existing certification evidence").requiredOption("--agent <id>", "Agent ID").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON");
+  if (!options.publicAlias) {
+    publish.option("--cert-mode <m>", "Deprecated compatibility flag; publish consumes existing certification evidence", "quick").option("--cert-scenario-ids <csv>", "Deprecated compatibility flag; run foh certify before publish").option("--cert-adaptive-runs <n>", "Deprecated compatibility flag; run foh certify before publish", "30").option("--cert-max-improvement-rounds <n>", "Deprecated compatibility flag; run foh certify before publish", "1").option("--break-glass-reason <reason>", "Break-glass reason for publish override").option("--break-glass-incident <id>", "Break-glass incident ID for publish override");
+  }
+  publish.action(async (opts) => withCommandErrorHandling(async () => {
+    await publishAgentAction(opts);
+  }));
+}
 function registerAgentValidationCommands(agent) {
   agent.command("validate").description("Validate agent config \u2014 exits 1 if issues found").requiredOption("--agent <id>", "Agent ID").option("--local-only", "Run local draft-shape validation without calling remote validate endpoint").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
     const data = opts.localOnly ? await validateAgentLocalDraftShape(opts.agent, { apiUrlOverride: opts.apiUrl }) : await validateAgentRemoteOnly(opts.agent, { apiUrlOverride: opts.apiUrl });
     format(data, { json: opts.json ?? false });
     if (Array.isArray(data.issues) && data.issues.length > 0) markCommandFailed(1);
   }));
-  agent.command("publish").description("Validate and publish an agent using existing certification evidence").requiredOption("--agent <id>", "Agent ID").option("--cert-mode <m>", "Deprecated compatibility flag; publish consumes existing certification evidence", "quick").option("--cert-scenario-ids <csv>", "Deprecated compatibility flag; run foh sim certify before publish").option("--cert-adaptive-runs <n>", "Deprecated compatibility flag; run foh sim certify before publish", "30").option("--cert-max-improvement-rounds <n>", "Deprecated compatibility flag; run foh sim certify before publish", "1").option("--org <id>", "Org ID (default: stored org from foh org use)").option("--break-glass-reason <reason>", "Break-glass reason for publish override").option("--break-glass-incident <id>", "Break-glass incident ID for publish override").option("--api-url <url>", "API base URL override").option("--json", "Output as JSON").action(async (opts) => withCommandErrorHandling(async () => {
-    if (opts.breakGlassReason || opts.breakGlassIncident) {
-      if (!opts.breakGlassReason || !opts.breakGlassIncident) {
-        throw new FohError({
-          step: "agent.publish",
-          error: "Both --break-glass-reason and --break-glass-incident are required together",
-          remediation: "Provide both break-glass fields, or omit both for normal publish.",
-          statusCode: 400
-        });
-      }
-      const data2 = await apiFetch(`/v1/console/agents/${opts.agent}/publish`, {
-        method: "POST",
-        body: JSON.stringify({
-          break_glass: {
-            reason: String(opts.breakGlassReason),
-            incident_id: String(opts.breakGlassIncident)
-          }
-        }),
-        orgId: opts.org,
-        apiUrlOverride: opts.apiUrl
-      });
-      format({
-        status: "published_with_break_glass",
-        warning: "break-glass bypassed the normal validate -> publish evidence gate CLI sequence",
-        publish: data2
-      }, { json: opts.json ?? false });
-      return;
-    }
-    const data = await validateCertifyAndPublishAgent({
-      agentId: opts.agent,
-      orgId: opts.org,
-      apiUrlOverride: opts.apiUrl,
-      certMode: opts.certMode,
-      scenarioIds: opts.certScenarioIds,
-      adaptiveRuns: Number(opts.certAdaptiveRuns),
-      maxImprovementRounds: Number(opts.certMaxImprovementRounds)
-    });
-    format({
-      status: "validated_published",
-      certification: data.certification,
-      publish: data.publish
-    }, { json: opts.json ?? false });
-  }));
+  registerAgentPublishCommand(agent);
 }
 
 // src/commands/agent.ts
@@ -32798,7 +32808,7 @@ var StdioServerTransport = class {
 };
 
 // src/lib/cli-version.ts
-var CLI_VERSION = "0.1.75";
+var CLI_VERSION = "0.1.76";
 
 // src/commands/mcp-serve.ts
 var DEFAULT_TIMEOUT_MS = 12e4;
@@ -41728,10 +41738,8 @@ var CLI_MISSION_EXAMPLES = [
   { mission: "Start", command: "foh start", description: "guided setup and next action selector" },
   { mission: "Setup", command: "foh setup --phone-mode observe --json", description: "create or update agent, widget, voice config, and proof scaffold" },
   { mission: "Prove", command: "foh prove --agent <agent_id> --mission widget --json", description: "produce a machine-readable proof report" },
-  { mission: "Certify", command: "foh certify run --agent <agent_id> --profile release --json", description: "produce release evidence before publish" },
-  { mission: "Debug", command: "foh debug --out test-results/foh-cli-diag.latest.json --json", description: "collect auth/org/API diagnostics" },
-  { mission: "Improve", command: "foh bug improve --from-file <artifact.json> --json", description: "convert a failure artifact into a redacted improvement packet" },
-  { mission: "Publish", command: "foh agent publish --agent <agent_id> --json", description: "publish after proof gates pass" }
+  { mission: "Publish", command: "foh publish --agent <agent_id> --json", description: "publish when proof and release evidence pass" },
+  { mission: "Debug", command: "foh debug --out test-results/foh-cli-diag.latest.json --json", description: "collect auth/org/API diagnostics" }
 ];
 function missionHelpText() {
   return [
@@ -41739,7 +41747,7 @@ function missionHelpText() {
     "Common missions:",
     ...CLI_MISSION_EXAMPLES.map((item) => `  ${item.command.padEnd(66)} ${item.description}`),
     "",
-    "For AI agents: prefer --json and follow next_commands exactly when a command blocks."
+    "For AI agents: prefer --json, follow next_commands exactly, and treat certify/eval/bug as advanced operator surfaces."
   ].join("\n");
 }
 function addMissionHelp(program3) {
@@ -41832,6 +41840,7 @@ registerCertify(program2);
 registerDiag(program2);
 registerBug(program2);
 registerProve(program2);
+registerAgentPublishCommand(program2, { publicAlias: true });
 registerEval(program2);
 registerUpdate(program2);
 registerHome(program2);
